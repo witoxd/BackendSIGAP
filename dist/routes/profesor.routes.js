@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const acl_1 = require("../middleware/acl");
+const profesor_controller_1 = require("../controllers/profesor.controller");
+const profesor_validators_1 = require("../validators/profesor.validators");
+const domain_1 = require("../validators/domain");
+const validate_1 = require("../middleware/validate");
+const express_validator_1 = require("express-validator");
+const types_1 = require("../types");
+const router = (0, express_1.Router)();
+const profesorController = new profesor_controller_1.ProfesorController();
+router.use(auth_1.authenticate);
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.PROFESORES, types_1.Accion.READ), profesorController.getAll.bind(profesorController));
+router.get("/getById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.PROFESORES, types_1.Accion.READ), profesorController.getById.bind(profesorController));
+router.post("/create", profesor_validators_1.createProfesorHttpValidator, validate_1.validate, domain_1.validateCreateProfesorDomain, (0, acl_1.checkPermission)(types_1.Recurso.PROFESORES, types_1.Accion.CREATE), profesorController.create.bind(profesorController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), profesor_validators_1.updateProfesorHttpValidator, validate_1.validate, domain_1.validateUpdateProfesorDomain, (0, acl_1.checkPermission)(types_1.Recurso.PROFESORES, types_1.Accion.UPDATE), profesorController.update.bind(profesorController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.PROFESORES, types_1.Accion.DELETE), profesorController.delete.bind(profesorController));
+exports.default = router;
+//# sourceMappingURL=profesor.routes.js.map

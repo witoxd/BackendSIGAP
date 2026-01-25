@@ -1,0 +1,130 @@
+import type { Request, Response } from "express"
+import { MatriculaRepository } from "../models/Repository/MatriculaRepository"
+import { AppError } from "../utils/AppError"
+import { validationResult } from "express-validator"
+import { CreateMatriculaDTO, UpdateMatriculaDTO } from "../types"
+
+type CreateMatriculaStaticRequest = Request<never, unknown, CreateMatriculaDTO>
+
+export class MatriculaController {
+  async getAll(req: Request, res: Response) {
+    const limit = Number.parseInt(req.query.limit as string) || 50
+    const offset = Number.parseInt(req.query.offset as string) || 0
+
+    const matriculas = await MatriculaRepository.findAll(limit, offset)
+    const total = await MatriculaRepository.count()
+
+    res.status(200).json({
+      success: true,
+      data: matriculas,
+      pagination: {
+        total,
+        limit,
+        offset,
+        pages: Math.ceil(total / limit),
+      },
+    })
+  }
+
+  async getById(req: Request, res: Response) {
+    const { id } = req.params
+    const matricula = await MatriculaRepository.findById(Number(id))
+
+    if (!matricula) {
+      throw new AppError("Matrícula no encontrada", 404)
+    }
+
+    res.status(200).json({
+      success: true,
+      data: matricula,
+    })
+  }
+
+  async getByEstudiante(req: Request, res: Response) {
+    const  estudiante_id  = Number(req.params)
+    const matriculas = await MatriculaRepository.findByEstudiante(estudiante_id)
+
+    res.status(200).json({
+      success: true,
+      data: matriculas,
+    })
+  }
+
+  async getByCurso(req: Request, res: Response) {
+    const  curso_id  = Number(req.params)
+    const matriculas = await MatriculaRepository.findByCurso(curso_id)
+
+    res.status(200).json({
+      success: true,
+      data: matriculas,
+    })
+  }
+
+  async create(req: CreateMatriculaStaticRequest, res: Response) {
+
+
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      throw new AppError("Errores de validación", 400, errors.array())
+    }
+
+    const  {matricula: matriculaData}  = req.body
+
+    const existingMatricula = await MatriculaRepository.findByEstudianteAndCurso(matriculaData.estudiante_id, matriculaData.curso_id, matriculaData.anio_egreso)
+
+    if (existingMatricula) {
+      throw new AppError("El estudiante ya está matriculado en este curso", 409)
+    }
+
+    const existingEstudianteMatricula = await MatriculaRepository.findEstuidanteAndYear(matriculaData.estudiante_id, matriculaData.anio_egreso)
+
+    if(existingEstudianteMatricula){
+        throw new AppError("El estudiante ya está matriculado en algun curso en el presente año", 409)
+    }
+
+    const matricula = await MatriculaRepository.create(matriculaData)
+
+    res.status(201).json({
+      success: true,
+      data: matricula,
+      message: "Matrícula creada exitosamente",
+    })
+  }
+
+  async update(req: Request<{id: string}, unknown, UpdateMatriculaDTO>, res: Response) {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      throw new AppError("Errores de validación", 400, errors.array())
+    }
+
+    const id  = Number(req.params.id)
+
+    const {matricula: matriculaData} = req.body
+    const matricula = await MatriculaRepository.update(id, matriculaData)
+
+    if (!matricula) {
+      throw new AppError("Matrícula no encontrada", 404)
+    }
+
+    res.status(200).json({
+      success: true,
+      data: matricula,
+      message: "Matrícula actualizada exitosamente",
+    })
+  }
+
+  async delete(req: Request, res: Response) {
+    const { id } = req.params
+    const matricula = await MatriculaRepository.delete(Number(id))
+
+    if (!matricula) {
+      throw new AppError("Matrícula no encontrada", 404)
+    }
+
+    res.status(200).json({
+      success: true,
+      data: matricula,
+      message: "Matrícula eliminada exitosamente",
+    })
+  }
+}

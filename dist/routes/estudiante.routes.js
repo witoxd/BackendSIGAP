@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const acl_1 = require("../middleware/acl");
+const estudiante_controller_1 = require("../controllers/estudiante.controller");
+const estudiante_validators_1 = require("../validators/estudiante.validators");
+const domain_1 = require("../validators/domain");
+const validate_1 = require("../middleware/validate");
+const express_validator_1 = require("express-validator");
+const types_1 = require("../types");
+const router = (0, express_1.Router)();
+const estudianteController = new estudiante_controller_1.EstudianteController();
+router.use(auth_1.authenticate);
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.READ), estudianteController.getAll.bind(estudianteController));
+router.get("/getById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.READ), estudianteController.getById.bind(estudianteController));
+router.get("/getByDocumento/:numero_documento", (0, express_validator_1.param)("numero_documento").isString().withMessage("Documento invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.READ), estudianteController.getByDocumento.bind(estudianteController));
+router.post("/create", estudiante_validators_1.createEstudianteHttpValidator, validate_1.validate, domain_1.validateCreateEstudianteDomain, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.CREATE), estudianteController.create.bind(estudianteController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), estudiante_validators_1.updateEstudianteHttpValidator, validate_1.validate, domain_1.validateUpdateEstudianteDomain, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.UPDATE), estudianteController.update.bind(estudianteController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.DELETE), estudianteController.delete.bind(estudianteController));
+exports.default = router;
+//# sourceMappingURL=estudiante.routes.js.map

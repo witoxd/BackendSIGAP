@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const acl_1 = require("../middleware/acl");
+const egresado_controller_1 = require("../controllers/egresado.controller");
+const egresado_validators_1 = require("../validators/egresado.validators");
+const domain_1 = require("../validators/domain");
+const validate_1 = require("../middleware/validate");
+const express_validator_1 = require("express-validator");
+const types_1 = require("../types");
+const router = (0, express_1.Router)();
+const egresadoController = new egresado_controller_1.EgresadoController();
+router.use(auth_1.authenticate);
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.READ), egresadoController.getAll.bind(egresadoController));
+router.get("/getById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.READ), egresadoController.getById.bind(egresadoController));
+router.post("/create", egresado_validators_1.createEgresadoHttpValidator, validate_1.validate, domain_1.validateCreateEgresadoDomain, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.CREATE), egresadoController.create.bind(egresadoController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), egresado_validators_1.updateEgresadoHttpValidator, validate_1.validate, domain_1.validateUpdateEgresadoDomain, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.UPDATE), egresadoController.update.bind(egresadoController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.DELETE), egresadoController.delete.bind(egresadoController));
+exports.default = router;
+//# sourceMappingURL=egresado.routes.js.map

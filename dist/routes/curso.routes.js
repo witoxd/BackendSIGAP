@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const acl_1 = require("../middleware/acl");
+const curso_controller_1 = require("../controllers/curso.controller");
+const curso_validators_1 = require("../validators/curso.validators");
+const domain_1 = require("../validators/domain");
+const validate_1 = require("../middleware/validate");
+const express_validator_1 = require("express-validator");
+const types_1 = require("../types");
+const router = (0, express_1.Router)();
+const cursoController = new curso_controller_1.CursoController();
+router.use(auth_1.authenticate);
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.CURSOS, types_1.Accion.READ), cursoController.getAll.bind(cursoController));
+router.get("/getById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.CURSOS, types_1.Accion.READ), cursoController.getById.bind(cursoController));
+router.post("/create", curso_validators_1.createCursoHttpValidator, validate_1.validate, domain_1.validateCreateCursoDomain, (0, acl_1.checkPermission)(types_1.Recurso.CURSOS, types_1.Accion.CREATE), cursoController.create.bind(cursoController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), curso_validators_1.updateCursoHttpValidator, validate_1.validate, domain_1.validateUpdateCursoDomain, (0, acl_1.checkPermission)(types_1.Recurso.CURSOS, types_1.Accion.UPDATE), cursoController.update.bind(cursoController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.CURSOS, types_1.Accion.DELETE), cursoController.delete.bind(cursoController));
+exports.default = router;
+//# sourceMappingURL=curso.routes.js.map

@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const acl_1 = require("../middleware/acl");
+const jornada_controller_1 = require("../controllers/jornada.controller");
+const jornada_validators_1 = require("../validators/jornada.validators");
+const domain_1 = require("../validators/domain");
+const validate_1 = require("../middleware/validate");
+const express_validator_1 = require("express-validator");
+const types_1 = require("../types");
+const router = (0, express_1.Router)();
+const jornadaController = new jornada_controller_1.JornadaController();
+router.use(auth_1.authenticate);
+router.get("/", (0, acl_1.checkPermission)(types_1.Recurso.JORNADAS, types_1.Accion.READ), jornadaController.getAll.bind(jornadaController));
+router.get("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.JORNADAS, types_1.Accion.READ), jornadaController.getById.bind(jornadaController));
+router.post("/", jornada_validators_1.createJornadaHttpValidator, validate_1.validate, domain_1.validateCreateJornadaDomain, (0, acl_1.checkPermission)(types_1.Recurso.JORNADAS, types_1.Accion.CREATE), jornadaController.create.bind(jornadaController));
+router.put("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), jornada_validators_1.updateJornadaHttpValidator, validate_1.validate, domain_1.validateUpdateJornadaDomain, (0, acl_1.checkPermission)(types_1.Recurso.JORNADAS, types_1.Accion.UPDATE), jornadaController.update.bind(jornadaController));
+router.delete("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.JORNADAS, types_1.Accion.DELETE), jornadaController.delete.bind(jornadaController));
+exports.default = router;
+//# sourceMappingURL=jornada.routes.js.map

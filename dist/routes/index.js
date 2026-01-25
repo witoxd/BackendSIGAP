@@ -1,0 +1,42 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_routes_1 = __importDefault(require("./auth.routes"));
+const user_routes_1 = __importDefault(require("./user.routes"));
+const persona_routes_1 = __importDefault(require("./persona.routes"));
+const estudiante_routes_1 = __importDefault(require("./estudiante.routes"));
+const profesor_routes_1 = __importDefault(require("./profesor.routes"));
+const administrativo_routes_1 = __importDefault(require("./administrativo.routes"));
+const curso_routes_1 = __importDefault(require("./curso.routes"));
+const matricula_routes_1 = __importDefault(require("./matricula.routes"));
+const role_routes_1 = __importDefault(require("./role.routes"));
+const sede_routes_1 = __importDefault(require("./sede.routes"));
+const jornada_routes_1 = __importDefault(require("./jornada.routes"));
+const tipoDocumento_routes_1 = __importDefault(require("./tipoDocumento.routes"));
+const archivo_routes_1 = __importDefault(require("./archivo.routes"));
+const permiso_routes_1 = __importDefault(require("./permiso.routes"));
+const egresado_routes_1 = __importDefault(require("./egresado.routes"));
+const acudiente_routes_1 = __importDefault(require("./acudiente.routes"));
+const router = (0, express_1.Router)();
+router.use("/auth", auth_routes_1.default);
+router.use("/users", user_routes_1.default);
+router.use("/personas", persona_routes_1.default);
+router.use("/estudiantes", estudiante_routes_1.default);
+router.use("/profesores", profesor_routes_1.default);
+router.use("/administrativos", administrativo_routes_1.default);
+router.use("/cursos", curso_routes_1.default);
+router.use("/matriculas", matricula_routes_1.default);
+router.use("/roles", role_routes_1.default);
+router.use("/sedes", sede_routes_1.default);
+router.use("/jornadas", jornada_routes_1.default);
+router.use("/tipos-documento", tipoDocumento_routes_1.default);
+router.use("/archivos", archivo_routes_1.default);
+router.use("/permisos", permiso_routes_1.default);
+router.use("/egresados", egresado_routes_1.default);
+router.use("/acudientes", acudiente_routes_1.default);
+//router.use("/auditoria", auditoriaRoutes)
+exports.default = router;
+//# sourceMappingURL=index.js.map

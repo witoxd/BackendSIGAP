@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const acl_1 = require("../middleware/acl");
+const administrativo_controller_1 = require("../controllers/administrativo.controller");
+const administrativo_validators_1 = require("../validators/administrativo.validators");
+const domain_1 = require("../validators/domain");
+const validate_1 = require("../middleware/validate");
+const express_validator_1 = require("express-validator");
+const types_1 = require("../types");
+const router = (0, express_1.Router)();
+const administrativoController = new administrativo_controller_1.AdministrativoController();
+router.use(auth_1.authenticate);
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.ADMINISTRATIVOS, types_1.Accion.READ), administrativoController.getAll.bind(administrativoController));
+router.get("/getById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ADMINISTRATIVOS, types_1.Accion.READ), administrativoController.getById.bind(administrativoController));
+router.post("/create", administrativo_validators_1.createAdministrativoHttpValidator, validate_1.validate, domain_1.validateCreateAdministrativoDomain, (0, acl_1.checkPermission)(types_1.Recurso.ADMINISTRATIVOS, types_1.Accion.CREATE), administrativoController.create.bind(administrativoController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), administrativo_validators_1.updateAdministrativoHttpValidator, validate_1.validate, domain_1.validateUpdateAdministrativoDomain, (0, acl_1.checkPermission)(types_1.Recurso.ADMINISTRATIVOS, types_1.Accion.UPDATE), administrativoController.update.bind(administrativoController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ADMINISTRATIVOS, types_1.Accion.DELETE), administrativoController.delete.bind(administrativoController));
+exports.default = router;
+//# sourceMappingURL=administrativo.routes.js.map

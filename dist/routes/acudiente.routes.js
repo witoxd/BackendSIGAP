@@ -1,0 +1,23 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const acl_1 = require("../middleware/acl");
+const acudiente_controller_1 = require("../controllers/acudiente.controller");
+const acudiente_validators_1 = require("../validators/acudiente.validators");
+const domain_1 = require("../validators/domain");
+const validate_1 = require("../middleware/validate");
+const express_validator_1 = require("express-validator");
+const types_1 = require("../types");
+const router = (0, express_1.Router)();
+const acudienteController = new acudiente_controller_1.AcudienteController();
+router.use(auth_1.authenticate);
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.ACUDIENTES, types_1.Accion.READ), acudienteController.getAll.bind(acudienteController));
+router.get("/getById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ACUDIENTES, types_1.Accion.READ), acudienteController.getById.bind(acudienteController));
+router.post("/create", acudiente_validators_1.createAcudienteHttpValidator, validate_1.validate, domain_1.validateCreateAcudienteDomain, (0, acl_1.checkPermission)(types_1.Recurso.ACUDIENTES, types_1.Accion.CREATE), acudienteController.create.bind(acudienteController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), acudiente_validators_1.updateAcudienteHttpValidator, validate_1.validate, domain_1.validateUpdateAcudienteDomain, (0, acl_1.checkPermission)(types_1.Recurso.ACUDIENTES, types_1.Accion.UPDATE), acudienteController.update.bind(acudienteController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ACUDIENTES, types_1.Accion.DELETE), acudienteController.delete.bind(acudienteController));
+router.post("/assignToEstudiante", acudiente_validators_1.assignAcudienteHttpValidator, validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.CREATE), acudienteController.assignToEstudiante.bind(acudienteController));
+router.patch("/removeFromEstudiante/estudiante/:estudianteId/acudiente/:acudienteId", acudiente_validators_1.removeEstudianteToAcudienteHttpValidator, validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.ESTUDIANTES, types_1.Accion.DELETE), acudienteController.removeFromEstudiante.bind(acudienteController));
+exports.default = router;
+//# sourceMappingURL=acudiente.routes.js.map

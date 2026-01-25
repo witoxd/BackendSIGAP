@@ -1,0 +1,24 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const acl_1 = require("../middleware/acl");
+const persona_controller_1 = require("../controllers/persona.controller");
+const persona_validators_1 = require("../validators/persona.validators");
+const domain_1 = require("../validators/domain");
+const validate_1 = require("../middleware/validate");
+const express_validator_1 = require("express-validator");
+const types_1 = require("../types");
+const router = (0, express_1.Router)();
+const personaController = new persona_controller_1.PersonaController();
+router.use(auth_1.authenticate);
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.PERSONAS, types_1.Accion.READ), personaController.getAll.bind(personaController));
+router.get("/findById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.PERSONAS, types_1.Accion.READ), personaController.getById.bind(personaController));
+router.post("/create", persona_validators_1.createPersonaHttpValidator, validate_1.validate, domain_1.validateCreatePersonaDomain, (0, acl_1.checkPermission)(types_1.Recurso.PERSONAS, types_1.Accion.CREATE), personaController.create.bind(personaController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), persona_validators_1.updatePersonaHttpValidator, validate_1.validate, domain_1.validateUpdatePersonaDomain, (0, acl_1.checkPermission)(types_1.Recurso.PERSONAS, types_1.Accion.UPDATE), personaController.update.bind(personaController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.PERSONAS, types_1.Accion.DELETE), personaController.delete.bind(personaController));
+router.get("/getByDocumento/:numero_documento", (0, express_validator_1.param)("numero_documento").isString().withMessage("Documento invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.PERSONAS, types_1.Accion.READ), personaController.getByDocumento.bind(personaController));
+router.get("/searchIndex/:index", (0, express_validator_1.param)("index").isString().withMessage("Index de busqueda invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.PERSONAS, types_1.Accion.READ), personaController.SearchIndex.bind(personaController));
+router.get("/searchByDocumento/:numero_documento", (0, express_validator_1.param)("numero_documento").isString().withMessage("Index de busqueda invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.PERSONAS, types_1.Accion.READ), personaController.searchByDocumento.bind(personaController));
+exports.default = router;
+//# sourceMappingURL=persona.routes.js.map

@@ -1,0 +1,24 @@
+import { Persona } from "./Persona";
+import { Usuario } from "./Usuario";
+import { Role } from "./Role";
+import { UsuarioRole } from "./UsuarioRole";
+import { Estudiante } from "./Estudiante";
+import { Profesor } from "./Profesor";
+import { Administrativo } from "./Administrativo";
+import { Curso } from "./Curso";
+import { Matricula } from "./Matricula";
+import { Sede } from "./Sede";
+import { Jornada } from "./Jornada";
+import { TipoDocumento } from "./TipoDocumento";
+import { Archivos } from "./Archivo";
+import { Permiso } from "./Permiso";
+import { RolePermiso } from "./RolePermiso";
+import { Egresado } from "./Egresado";
+import { Acudiente } from "./Acudiente";
+import { AcudienteEstudiante } from "./AcudienteEstudiante";
+import { Auditoria } from "./Auditoria";
+export declare const setupAssociations: () => void;
+export declare const initializeModels: () => void;
+export declare const syncModels: (force?: boolean) => Promise<void>;
+export { Persona, Usuario, Role, UsuarioRole, Estudiante, Profesor, Administrativo, Curso, Matricula, Sede, Jornada, TipoDocumento, Archivos, Permiso, RolePermiso, Egresado, Acudiente, AcudienteEstudiante, Auditoria, };
+//# sourceMappingURL=sequelize-models.d.ts.map
