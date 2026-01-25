@@ -19,12 +19,27 @@ yarn-error.log*
 # env files
 .env*
 
-# vercel
-.vercel
+/app
+/next
+/components
+/hooks
+/lib
+/styles
+
+# config extra
+API_DOCUMENTATION.md
+components.json
+
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+tailwind.config.ts
+# next
+next-config.msj
+package-lock.json
+pnpm-lock.yalm
+postcss.config.msj
 
 # uploads - archivos subidos por usuarios
 /uploads
