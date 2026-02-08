@@ -7,7 +7,6 @@ import { CursoCreationAttributes } from "../models/sequelize/Curso";
 import { JornadaCreationAttributes } from "../models/sequelize/Jornada";
 import { MatriculaCreationAttributes } from "../models/sequelize/Matricula";
 import { EgresadoCreationAttributes } from "../models/sequelize/Egresado";
-import { SedeCreationAttributes } from "../models/sequelize/Sede";
 import { TipoDocumentoCreationAttributes } from "../models/sequelize/TipoDocumento";
 import { AcudienteEstudianteCreationAttributes } from "../models/sequelize/AcudienteEstudiante";
 import { ArchivosCreationAttributes } from "../models/sequelize/Archivo";
@@ -31,12 +30,6 @@ export interface CreateTipoDocumentoDTO {
 }
 export interface UpdateTipoDocumentoDTO {
     tipo_documento: Partial<TipoDocumentoCreationAttributes>;
-}
-export interface CreateSedeDTO {
-    sede: SedeCreationAttributes;
-}
-export interface UpdateSedeDTO {
-    sede: Partial<SedeCreationAttributes>;
 }
 export interface CreateEgresadoDTO {
     egresado: EgresadoCreationAttributes;
@@ -182,7 +175,6 @@ export declare enum Recurso {
     ROLES = "roles",
     PERMISOS = "permisos",
     ACUDIENTES = "acudientes",
-    SEDES = "sedes",
     JORNADAS = "jornadas"
 }
 //# sourceMappingURL=index.d.ts.map

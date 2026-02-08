@@ -38,7 +38,7 @@ class CursoRepository {
     }
     static findByProfesor(profesor_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)("SELECT * FFROM cursos WHERE profesor_id = $1 ORDER BY grado ASC", [profesor_id]);
+            const result = yield (0, database_1.query)("SELECT * FROM cursos WHERE profesor_id = $1 ORDER BY grado ASC", [profesor_id]);
             return result.rows;
         });
     }

@@ -20,13 +20,13 @@ const tipoDocumentoController = new TipoDocumentoController()
 router.use(authenticate)
 
 router.get(
-  "/",
+  "/getAll",
   checkPermission(Recurso.DOCUMENTOS, Accion.READ),
   tipoDocumentoController.getAll.bind(tipoDocumentoController),
 )
 
 router.get(
-  "/:id",
+  "/getById/:id",
   param("id").isInt({ min: 1 }).withMessage("ID invalido"),
   validate,
   checkPermission(Recurso.DOCUMENTOS, Accion.READ),
@@ -34,7 +34,7 @@ router.get(
 )
 
 router.post(
-  "/",
+  "/create",
   createTipoDocumentoHttpValidator,
   validate,
   validateCreateTipoDocumentoDomain,
@@ -43,7 +43,7 @@ router.post(
 )
 
 router.put(
-  "/:id",
+  "/update/:id",
   param("id").isInt({ min: 1 }).withMessage("ID invalido"),
   updateTipoDocumentoHttpValidator,
   validate,
@@ -53,7 +53,7 @@ router.put(
 )
 
 router.delete(
-  "/:id",
+  "/delete/:id",
   param("id").isInt({ min: 1 }).withMessage("ID invalido"),
   validate,
   checkPermission(Recurso.DOCUMENTOS, Accion.DELETE),

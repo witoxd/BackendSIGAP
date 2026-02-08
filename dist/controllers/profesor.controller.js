@@ -119,7 +119,7 @@ class ProfesorController {
     }
     delete(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const id = Number(req.params);
+            const id = Number(req.params.id);
             const profesor = yield ProfesorRepository_1.ProfesorRepository.delete(id);
             if (!profesor) {
                 throw new AppError_1.AppError("Profesor no encontrado", 404);

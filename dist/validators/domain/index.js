@@ -22,7 +22,6 @@ __exportStar(require("./curso.domain"), exports);
 __exportStar(require("./matricula.domain"), exports);
 __exportStar(require("./acudiente.domain"), exports);
 __exportStar(require("./egresado.domain"), exports);
-__exportStar(require("./sede.domain"), exports);
 __exportStar(require("./jornada.domain"), exports);
 __exportStar(require("./tipoDocumento.domain"), exports);
 __exportStar(require("./archivo.domain"), exports);

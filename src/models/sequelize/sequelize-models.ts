@@ -8,7 +8,7 @@ import { Profesor } from "./Profesor"
 import { Administrativo } from "./Administrativo"
 import { Curso } from "./Curso"
 import { Matricula } from "./Matricula"
-import { Sede } from "./Sede"
+
 import { Jornada } from "./Jornada"
 import { TipoDocumento } from "./TipoDocumento"
 import { Archivos } from "./Archivo"
@@ -68,15 +68,6 @@ export const setupAssociations = () => {
 
   Persona.hasOne(Acudiente, { foreignKey: "persona_id", as: "acudiente" })
   Acudiente.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
-
-  Sede.hasMany(Estudiante, { foreignKey: "sede_id", as: "estudiantes" })
-  Estudiante.belongsTo(Sede, { foreignKey: "sede_id", as: "sede" })
-
-  Sede.hasMany(Profesor, { foreignKey: "sede_id", as: "profesores" })
-  Profesor.belongsTo(Sede, { foreignKey: "sede_id", as: "sede" })
-
-  Sede.hasMany(Administrativo, { foreignKey: "sede_id", as: "administrativos" })
-  Administrativo.belongsTo(Sede, { foreignKey: "sede_id", as: "sede" })
 
   Jornada.hasMany(Matricula, { foreignKey: "jornada_id", as: "matriculas" })
   Matricula.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
@@ -146,7 +137,6 @@ export {
   Administrativo,
   Curso,
   Matricula,
-  Sede,
   Jornada,
   TipoDocumento,
   Archivos,

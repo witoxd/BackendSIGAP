@@ -22,6 +22,7 @@ export declare const uploadConfig: {
         constancia: string;
         carta: string;
         otro: string;
+        photo: string;
     };
     allowedMimeTypes: {
         [key: string]: string[];

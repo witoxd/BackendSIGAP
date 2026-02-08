@@ -4,7 +4,6 @@ import { sequelize } from "../../config/database"
 interface EstudianteAttributes {
   estudiante_id: number
   persona_id: number
-  sede_id: number
   estado: "activo" | "inactivo" | "graduado" | "suspendido" | "expulsado"
   fecha_ingreso: Date
 }
@@ -17,7 +16,6 @@ export class Estudiante
 {
   public estudiante_id!: number
   public persona_id!: number
-  public sede_id!: number
   public estado!: "activo" | "inactivo" | "graduado" | "suspendido" | "expulsado"
   public fecha_ingreso!: Date
 }
@@ -36,14 +34,6 @@ Estudiante.init(
       references: {
         model: "personas",
         key: "persona_id",
-      },
-    },
-    sede_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "sedes",
-        key: "sede_id"
       },
     },
     estado: {

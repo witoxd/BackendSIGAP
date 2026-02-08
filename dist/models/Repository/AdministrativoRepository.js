@@ -40,8 +40,8 @@ class AdministrativoRepository {
     }
     static create(data, client) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)(`INSERT INTO administrativos (persona_id, sede_id, cargo, fecha_contratacion, estado)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`, [data.persona_id, data.sede_id, data.cargo, data.fecha_contratacion || new Date(), data.estado || true], client);
+            const result = yield (0, database_1.query)(`INSERT INTO administrativos (persona_id , cargo, fecha_contratacion, estado)
+       VALUES ($1, $2, $3, $4) RETURNING *`, [data.persona_id, data.cargo, data.fecha_contratacion || new Date(), data.estado || true], client);
             return result.rows[0];
         });
     }

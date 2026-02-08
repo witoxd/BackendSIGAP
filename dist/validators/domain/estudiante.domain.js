@@ -40,7 +40,7 @@ const validateUpdateEstudianteDomain = (req, res, next) => __awaiter(void 0, voi
     try {
         const { estudiante, persona } = req.body;
         if (estudiante) {
-            yield Estudiante_1.Estudiante.build(estudiante).validate({ skip: ["persona_id", "sede_id", "jornada_id", "estado"] });
+            yield Estudiante_1.Estudiante.build(estudiante).validate({ skip: ["persona_id", "jornada_id", "estado"] });
         }
         if (persona) {
             yield Persona_1.Persona.build(persona).validate({ skip: ["nombres", "tipo_documento_id", "numero_documento", "fecha_nacimiento", "genero"] });

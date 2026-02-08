@@ -4,7 +4,7 @@ interface ArchivosAttributes {
     persona_id: number;
     nombre: string;
     descripcion?: string;
-    tipo_archivo: "certificado" | "diploma" | "constancia" | "carta" | "otro";
+    tipo_archivo: "certificado" | "diploma" | "constancia" | "carta" | "photo" | "otro";
     url_archivo: string;
     fecha_carga: Date;
     asignado_por?: number;
@@ -17,7 +17,7 @@ export declare class Archivos extends Model<ArchivosAttributes, ArchivosCreation
     persona_id: number;
     nombre: string;
     descripcion?: string;
-    tipo_archivo: "certificado" | "diploma" | "constancia" | "carta" | "otro";
+    tipo_archivo: "certificado" | "diploma" | "constancia" | "carta" | "photo" | "otro";
     url_archivo: string;
     fecha_carga: Date;
     asignado_por?: number;

@@ -12,10 +12,10 @@ const types_1 = require("../types");
 const router = (0, express_1.Router)();
 const matriculaController = new matricula_controller_1.MatriculaController();
 router.use(auth_1.authenticate);
-router.get("/", (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.READ), matriculaController.getAll.bind(matriculaController));
-router.get("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.READ), matriculaController.getById.bind(matriculaController));
-router.post("/", matricula_validators_1.createMatriculaHttpValidator, validate_1.validate, domain_1.validateCreateMatriculaDomain, (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.CREATE), matriculaController.create.bind(matriculaController));
-router.put("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), matricula_validators_1.updateMatriculaHttpValidator, validate_1.validate, domain_1.validateUpdateMatriculaDomain, (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.UPDATE), matriculaController.update.bind(matriculaController));
-router.delete("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.DELETE), matriculaController.delete.bind(matriculaController));
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.READ), matriculaController.getAll.bind(matriculaController));
+router.get("/getById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.READ), matriculaController.getById.bind(matriculaController));
+router.post("/create", matricula_validators_1.createMatriculaHttpValidator, validate_1.validate, domain_1.validateCreateMatriculaDomain, (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.CREATE), matriculaController.create.bind(matriculaController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), matricula_validators_1.updateMatriculaHttpValidator, validate_1.validate, domain_1.validateUpdateMatriculaDomain, (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.UPDATE), matriculaController.update.bind(matriculaController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.MATRICULAS, types_1.Accion.DELETE), matriculaController.delete.bind(matriculaController));
 exports.default = router;
 //# sourceMappingURL=matricula.routes.js.map

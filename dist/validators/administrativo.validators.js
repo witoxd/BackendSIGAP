@@ -12,10 +12,6 @@ exports.createAdministrativoHttpValidator = [
         .withMessage("El cargo debe ser texto")
         .notEmpty()
         .withMessage("El cargo es requerido"),
-    (0, express_validator_1.body)("administrativo.sede_id")
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage("El ID de sede debe ser un numero valido"),
     (0, express_validator_1.body)("administrativo.estado")
         .optional()
         .isBoolean()
@@ -34,10 +30,6 @@ exports.updateAdministrativoHttpValidator = [
         .optional()
         .isString()
         .withMessage("El cargo debe ser texto"),
-    (0, express_validator_1.body)("administrativo.sede_id")
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage("El ID de sede debe ser un numero valido"),
     (0, express_validator_1.body)("administrativo.estado")
         .optional()
         .isBoolean()

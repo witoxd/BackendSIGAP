@@ -5,7 +5,8 @@ export declare class MatriculaRepository {
     static findByEstudiante(estudianteId: number): Promise<any>;
     static findByCurso(cursoId: number): Promise<any>;
     static create(data: Omit<MatriculaCreationAttributes, "matricula_id">, client?: any): Promise<any>;
-    static findByEstudianteAndCurso(estudiante_id: number, curso_id: number): Promise<any>;
+    static findByEstudianteAndCurso(estudiante_id: number, curso_id: number, anio_egreso: number): Promise<any>;
+    static findEstuidanteAndYear(estudiante_id: number, anio_egreso: number): Promise<any>;
     static update(id: number, Data: Partial<MatriculaCreationAttributes>, client?: any): Promise<any>;
     static delete(id: number): Promise<any>;
     static count(): Promise<number>;

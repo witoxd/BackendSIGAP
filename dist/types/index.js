@@ -31,7 +31,6 @@ var Recurso;
     Recurso["ROLES"] = "roles";
     Recurso["PERMISOS"] = "permisos";
     Recurso["ACUDIENTES"] = "acudientes";
-    Recurso["SEDES"] = "sedes";
     Recurso["JORNADAS"] = "jornadas";
 })(Recurso || (exports.Recurso = Recurso = {}));
 //# sourceMappingURL=index.js.map

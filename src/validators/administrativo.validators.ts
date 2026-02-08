@@ -11,10 +11,6 @@ export const createAdministrativoHttpValidator: ValidationChain[] = [
     .withMessage("El cargo debe ser texto")
     .notEmpty()
     .withMessage("El cargo es requerido"),
-  body("administrativo.sede_id")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("El ID de sede debe ser un numero valido"),
   body("administrativo.estado")
     .optional()
     .isBoolean()
@@ -34,10 +30,6 @@ export const updateAdministrativoHttpValidator: ValidationChain[] = [
     .optional()
     .isString()
     .withMessage("El cargo debe ser texto"),
-  body("administrativo.sede_id")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("El ID de sede debe ser un numero valido"),
   body("administrativo.estado")
     .optional()
     .isBoolean()

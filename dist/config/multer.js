@@ -21,7 +21,8 @@ const UPLOAD_SUBDIRS = {
     diploma: "diploma",
     constancia: "constancia",
     carta: "carta",
-    otro: "otro"
+    otro: "otro",
+    photo: "photo"
 };
 // ============================================================================
 // FILTRO DE TIPOS DE ARCHIVO PERMITIDOS

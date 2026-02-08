@@ -80,7 +80,7 @@ const isSelfOrAdmin = (req, res, next) => {
     if (!req.user) {
         return next(new AppError_1.UnauthorizedError("Usuario no autenticado"));
     }
-    const requestedUserId = Number.parseInt(req.params.id);
+    const requestedUserId = Number(req.params.id);
     const isOwnProfile = req.user.userId === requestedUserId;
     const isAdminUser = req.user.roles.includes("admin");
     if (!isOwnProfile && !isAdminUser) {

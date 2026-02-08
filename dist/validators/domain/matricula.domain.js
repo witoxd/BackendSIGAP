@@ -14,9 +14,9 @@ const Matricula_1 = require("../../models/sequelize/Matricula");
 const sequelize_1 = require("sequelize");
 const validateCreateMatriculaDomain = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const matricula = req.body;
+        const { matricula: MatriculaData } = req.body;
         // Validacion dominio con Sequelize (NO DB)
-        yield Matricula_1.Matricula.build(matricula).validate();
+        yield Matricula_1.Matricula.build(MatriculaData).validate();
         next();
     }
     catch (error) {
@@ -36,8 +36,8 @@ const validateCreateMatriculaDomain = (req, res, next) => __awaiter(void 0, void
 exports.validateCreateMatriculaDomain = validateCreateMatriculaDomain;
 const validateUpdateMatriculaDomain = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const matricula = req.body;
-        yield Matricula_1.Matricula.build(matricula).validate({ skip: ["estudiante_id", "curso_id", "profesor_id"] });
+        const { matricula: MatriculaData } = req.body;
+        yield Matricula_1.Matricula.build(MatriculaData).validate({ skip: ["estudiante_id", "curso_id", "profesor_id", "jornada_id"] });
         next();
     }
     catch (error) {

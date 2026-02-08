@@ -14,9 +14,6 @@ exports.createEstudianteHttpValidator = [
         .optional()
         .isInt({ min: 1 })
         .withMessage("El ID de jornada debe ser un numero valido"),
-    (0, express_validator_1.body)("estudiante.sede_id")
-        .isInt({ min: 1 })
-        .withMessage("El ID de sede es requerido"),
     (0, express_validator_1.body)("estudiante.estado")
         .optional()
         .isIn(["activo", "inactivo", "graduado", "suspendido", "expulsado"])
@@ -67,10 +64,6 @@ exports.updateEstudianteHttpValidator = [
         .optional()
         .isInt({ min: 1 })
         .withMessage("El ID de jornada debe ser un numero valido"),
-    (0, express_validator_1.body)("estudiante.sede_id")
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage("El ID de sede debe ser un numero valido"),
     (0, express_validator_1.body)("estudiante.estado")
         .optional()
         .isIn(["activo", "inactivo", "graduado", "suspendido", "expulsado"])

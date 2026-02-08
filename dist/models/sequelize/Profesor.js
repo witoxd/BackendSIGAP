@@ -21,14 +21,6 @@ Profesor.init({
             key: "persona_id",
         },
     },
-    sede_id: {
-        type: sequelize_1.DataTypes.INTEGER,
-        allowNull: true,
-        references: {
-            model: "sedes",
-            key: "sede_id"
-        },
-    },
     fecha_contratacion: {
         type: sequelize_1.DataTypes.DATE,
         allowNull: false,

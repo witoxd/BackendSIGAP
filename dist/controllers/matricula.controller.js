@@ -72,9 +72,13 @@ class MatriculaController {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
             }
             const { matricula: matriculaData } = req.body;
-            const existingMatricula = yield MatriculaRepository_1.MatriculaRepository.findByEstudianteAndCurso(matriculaData.estudiante_id, matriculaData.curso_id);
+            const existingMatricula = yield MatriculaRepository_1.MatriculaRepository.findByEstudianteAndCurso(matriculaData.estudiante_id, matriculaData.curso_id, matriculaData.anio_egreso);
             if (existingMatricula) {
                 throw new AppError_1.AppError("El estudiante ya está matriculado en este curso", 409);
+            }
+            const existingEstudianteMatricula = yield MatriculaRepository_1.MatriculaRepository.findEstuidanteAndYear(matriculaData.estudiante_id, matriculaData.anio_egreso);
+            if (existingEstudianteMatricula) {
+                throw new AppError_1.AppError("El estudiante ya está matriculado en algun curso en el presente año", 409);
             }
             const matricula = yield MatriculaRepository_1.MatriculaRepository.create(matriculaData);
             res.status(201).json({

@@ -93,7 +93,7 @@ class AuthService {
                 throw new Error("El rol es requerido");
             }
             try {
-                yield client.query("INSERT INTO administrativos (persona_id, sede_id, cargo) VALUES ($1, 1, 'gestor')", [personaId]);
+                yield client.query("INSERT INTO administrativos (persona_id, cargo) VALUES ($1, 'gestor')", [personaId]);
             }
             catch (error) {
                 console.error("Error creando registro específico de rol:", error);

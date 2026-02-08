@@ -8,7 +8,6 @@ import administrativoRoutes from "./administrativo.routes"
 import cursoRoutes from "./curso.routes"
 import matriculaRoutes from "./matricula.routes"
 import roleRoutes from "./role.routes"
-import sedeRoutes from "./sede.routes"
 import jornadaRoutes from "./jornada.routes"
 import tipoDocumentoRoutes from "./tipoDocumento.routes"
 import archivoRoutes from "./archivo.routes"
@@ -28,11 +27,10 @@ router.use("/administrativos", administrativoRoutes) //listo
 router.use("/cursos", cursoRoutes) //listo
 router.use("/matriculas", matriculaRoutes) // listo
 router.use("/roles", roleRoutes) //En proceso
-router.use("/sedes", sedeRoutes) //En proceso (Posiblemente la eliminacion)
 router.use("/jornadas", jornadaRoutes) //listo
-router.use("/tipos-documento", tipoDocumentoRoutes)//En proceso
+router.use("/tipos-documento", tipoDocumentoRoutes)//listo
 router.use("/archivos", archivoRoutes) //listo y configurado
-router.use("/permisos", permisoRoutes) //En proceso
+router.use("/permisos", permisoRoutes) //No crear rutas, PELIGRO
 router.use("/egresados", egresadoRoutes) //listo
 router.use("/acudientes", acudienteRoutes) //listo
 //router.use("/auditoria", auditoriaRoutes)

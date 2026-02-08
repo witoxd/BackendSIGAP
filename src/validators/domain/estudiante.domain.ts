@@ -41,7 +41,7 @@ export const validateUpdateEstudianteDomain = async (
     const { estudiante, persona } = req.body
 
     if (estudiante) {
-      await Estudiante.build(estudiante).validate({ skip: ["persona_id", "sede_id", "jornada_id", "estado"] })
+      await Estudiante.build(estudiante).validate({ skip: ["persona_id", "jornada_id", "estado"] })
     }
     if (persona) {
       await Persona.build(persona).validate({ skip: ["nombres", "tipo_documento_id", "numero_documento", "fecha_nacimiento", "genero"] })

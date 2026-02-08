@@ -8,10 +8,6 @@ export const createProfesorHttpValidator: ValidationChain[] = [
   body("persona")
     .isObject()
     .withMessage("El objeto persona es requerido"),
-  body("profesor.sede_id")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("El ID de sede debe ser un numero valido"),
   body("profesor.fecha_contratacion")
     .optional()
     .isISO8601()
@@ -59,10 +55,6 @@ export const updateProfesorHttpValidator: ValidationChain[] = [
     .optional()
     .isObject()
     .withMessage("El objeto persona debe ser un objeto"),
-  body("profesor.sede_id")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("El ID de sede debe ser un numero valido"),
   body("profesor.fecha_contratacion")
     .optional()
     .isISO8601()

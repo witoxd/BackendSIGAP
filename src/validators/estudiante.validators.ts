@@ -12,9 +12,6 @@ export const createEstudianteHttpValidator: ValidationChain[] = [
     .optional()
     .isInt({ min: 1 })
     .withMessage("El ID de jornada debe ser un numero valido"),
-  body("estudiante.sede_id")
-    .isInt({ min: 1 })
-    .withMessage("El ID de sede es requerido"),
   body("estudiante.estado")
     .optional()
     .isIn(["activo", "inactivo", "graduado", "suspendido", "expulsado"])
@@ -66,10 +63,6 @@ export const updateEstudianteHttpValidator: ValidationChain[] = [
     .optional()
     .isInt({ min: 1 })
     .withMessage("El ID de jornada debe ser un numero valido"),
-  body("estudiante.sede_id")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("El ID de sede debe ser un numero valido"),
   body("estudiante.estado")
     .optional()
     .isIn(["activo", "inactivo", "graduado", "suspendido", "expulsado"])

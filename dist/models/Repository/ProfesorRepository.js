@@ -40,8 +40,8 @@ class ProfesorRepository {
     }
     static create(data, client) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)(`INSERT INTO profesores (persona_id, sede_id, fecha_contratacion, estado)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`, [data.persona_id, data.sede_id, data.fecha_contratacion || new Date(), data.estado || "activo"], client);
+            const result = yield (0, database_1.query)(`INSERT INTO profesores (persona_id, fecha_contratacion, estado)
+       VALUES ($1, $2, $3) RETURNING *`, [data.persona_id, data.fecha_contratacion || new Date(), data.estado || "activo"], client);
             return result.rows[0];
         });
     }

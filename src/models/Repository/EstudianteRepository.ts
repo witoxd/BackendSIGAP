@@ -36,9 +36,9 @@ export class EstudianteRepository {
 
   static async create(data: Omit<EstudianteCreationAttributes, "estudiante_id">, client?: any) {
     const result = await query(
-      `INSERT INTO estudiantes (persona_id, sede_id, fecha_ingreso, estado)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [data.persona_id, data.sede_id, data.fecha_ingreso || new Date(), data.estado || "activo"],
+      `INSERT INTO estudiantes (persona_id, fecha_ingreso, estado)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [data.persona_id, data.fecha_ingreso || new Date(), data.estado || "activo"],
       client
     )
     return result.rows[0]

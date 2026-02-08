@@ -113,12 +113,13 @@ class ArchivoController {
                     throw new AppError_1.AppError("Errores de validacion", 400, errors.array());
                 }
                 const userId = req.user.userId;
+                console.log("ID del usuario asignando: ", userId);
                 // Verificar que se subio un archivo
                 if (!req.file) {
                     throw new AppError_1.AppError("Se requiere un archivo", 400);
                 }
                 // Obtener datos del body
-                const { persona_id, descripcion, tipo_archivo, anio } = req.body;
+                const { persona_id, descripcion, tipo_archivo } = req.body;
                 // Verificar que la persona existe
                 const existingPersona = yield PersonaRepository_1.PersonaRepository.findById(Number(persona_id));
                 if (!existingPersona) {

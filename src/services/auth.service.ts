@@ -112,7 +112,7 @@ export class AuthService {
 
     try {
 
-          await client.query("INSERT INTO administrativos (persona_id, sede_id, cargo) VALUES ($1, 1, 'gestor')", [personaId])
+          await client.query("INSERT INTO administrativos (persona_id, cargo) VALUES ($1, 'gestor')", [personaId])
       
     } catch (error) {
       console.error("Error creando registro específico de rol:", error)

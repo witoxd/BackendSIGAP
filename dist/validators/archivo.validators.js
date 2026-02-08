@@ -31,7 +31,7 @@ exports.createArchivoHttpValidator = [
     (0, express_validator_1.body)("tipo_archivo")
         .notEmpty()
         .withMessage("El tipo de archivo es requerido")
-        .isIn(["certificado", "diploma", "constancia", "carta", "otro"])
+        .isIn(["certificado", "diploma", "constancia", "carta", "photo", "otro"])
         .withMessage("Tipo de archivo invalido. Valores permitidos: certificado, diploma, constancia, carta, otro"),
 ];
 /**

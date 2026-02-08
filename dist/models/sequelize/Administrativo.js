@@ -33,14 +33,6 @@ exports.AdministrativoInit = Administrativo.init({
         allowNull: false,
         defaultValue: database_1.sequelize.literal("CURRENT_TIMESTAMP"),
     },
-    sede_id: {
-        type: sequelize_1.DataTypes.INTEGER,
-        allowNull: true,
-        references: {
-            model: "sedes",
-            key: "sede_id",
-        },
-    },
     estado: {
         type: sequelize_1.DataTypes.BOOLEAN,
         allowNull: false,

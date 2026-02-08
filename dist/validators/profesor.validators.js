@@ -10,10 +10,6 @@ exports.createProfesorHttpValidator = [
     (0, express_validator_1.body)("persona")
         .isObject()
         .withMessage("El objeto persona es requerido"),
-    (0, express_validator_1.body)("profesor.sede_id")
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage("El ID de sede debe ser un numero valido"),
     (0, express_validator_1.body)("profesor.fecha_contratacion")
         .optional()
         .isISO8601()
@@ -60,10 +56,6 @@ exports.updateProfesorHttpValidator = [
         .optional()
         .isObject()
         .withMessage("El objeto persona debe ser un objeto"),
-    (0, express_validator_1.body)("profesor.sede_id")
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage("El ID de sede debe ser un numero valido"),
     (0, express_validator_1.body)("profesor.fecha_contratacion")
         .optional()
         .isISO8601()

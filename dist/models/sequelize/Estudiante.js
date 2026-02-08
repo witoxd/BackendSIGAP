@@ -21,22 +21,6 @@ Estudiante.init({
             key: "persona_id",
         },
     },
-    jornada_id: {
-        type: sequelize_1.DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: "jornadas",
-            key: "jornada_id",
-        },
-    },
-    sede_id: {
-        type: sequelize_1.DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: "sedes",
-            key: "sede_id"
-        },
-    },
     estado: {
         type: sequelize_1.DataTypes.ENUM("activo", "inactivo", "graduado", "suspendido", "expulsado"),
         allowNull: false,

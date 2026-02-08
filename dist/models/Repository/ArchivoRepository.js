@@ -42,7 +42,7 @@ class ArchivoRepository {
             const result = yield (0, database_1.query)(`SELECT a.* 
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
-       WHERE a.tipo_archivos = $1
+       WHERE a.tipo_archivo = $1
        ORDER BY a.fecha_carga DESC LIMIT $2 OFFSET $3`, [tipoarchivos, limit, offset]);
             return result.rows;
         });

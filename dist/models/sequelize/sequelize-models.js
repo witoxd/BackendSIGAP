@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Auditoria = exports.AcudienteEstudiante = exports.Acudiente = exports.Egresado = exports.RolePermiso = exports.Permiso = exports.Archivos = exports.TipoDocumento = exports.Jornada = exports.Sede = exports.Matricula = exports.Curso = exports.Administrativo = exports.Profesor = exports.Estudiante = exports.UsuarioRole = exports.Role = exports.Usuario = exports.Persona = exports.syncModels = exports.initializeModels = exports.setupAssociations = void 0;
+exports.Auditoria = exports.AcudienteEstudiante = exports.Acudiente = exports.Egresado = exports.RolePermiso = exports.Permiso = exports.Archivos = exports.TipoDocumento = exports.Jornada = exports.Matricula = exports.Curso = exports.Administrativo = exports.Profesor = exports.Estudiante = exports.UsuarioRole = exports.Role = exports.Usuario = exports.Persona = exports.syncModels = exports.initializeModels = exports.setupAssociations = void 0;
 const database_1 = require("../../config/database");
 const Persona_1 = require("./Persona");
 Object.defineProperty(exports, "Persona", { enumerable: true, get: function () { return Persona_1.Persona; } });
@@ -29,8 +29,6 @@ const Curso_1 = require("./Curso");
 Object.defineProperty(exports, "Curso", { enumerable: true, get: function () { return Curso_1.Curso; } });
 const Matricula_1 = require("./Matricula");
 Object.defineProperty(exports, "Matricula", { enumerable: true, get: function () { return Matricula_1.Matricula; } });
-const Sede_1 = require("./Sede");
-Object.defineProperty(exports, "Sede", { enumerable: true, get: function () { return Sede_1.Sede; } });
 const Jornada_1 = require("./Jornada");
 Object.defineProperty(exports, "Jornada", { enumerable: true, get: function () { return Jornada_1.Jornada; } });
 const TipoDocumento_1 = require("./TipoDocumento");
@@ -90,14 +88,8 @@ const setupAssociations = () => {
     Administrativo_1.Administrativo.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
     Persona_1.Persona.hasOne(Acudiente_1.Acudiente, { foreignKey: "persona_id", as: "acudiente" });
     Acudiente_1.Acudiente.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
-    Sede_1.Sede.hasMany(Estudiante_1.Estudiante, { foreignKey: "sede_id", as: "estudiantes" });
-    Estudiante_1.Estudiante.belongsTo(Sede_1.Sede, { foreignKey: "sede_id", as: "sede" });
-    Sede_1.Sede.hasMany(Profesor_1.Profesor, { foreignKey: "sede_id", as: "profesores" });
-    Profesor_1.Profesor.belongsTo(Sede_1.Sede, { foreignKey: "sede_id", as: "sede" });
-    Sede_1.Sede.hasMany(Administrativo_1.Administrativo, { foreignKey: "sede_id", as: "administrativos" });
-    Administrativo_1.Administrativo.belongsTo(Sede_1.Sede, { foreignKey: "sede_id", as: "sede" });
-    Jornada_1.Jornada.hasMany(Estudiante_1.Estudiante, { foreignKey: "jornada_id", as: "estudiantes" });
-    Estudiante_1.Estudiante.belongsTo(Jornada_1.Jornada, { foreignKey: "jornada_id", as: "jornada" });
+    Jornada_1.Jornada.hasMany(Matricula_1.Matricula, { foreignKey: "jornada_id", as: "matriculas" });
+    Matricula_1.Matricula.belongsTo(Jornada_1.Jornada, { foreignKey: "jornada_id", as: "jornada" });
     // Estudiante - Matricula (1:N)
     Estudiante_1.Estudiante.hasMany(Matricula_1.Matricula, { foreignKey: "estudiante_id", as: "matriculas" });
     Matricula_1.Matricula.belongsTo(Estudiante_1.Estudiante, { foreignKey: "estudiante_id", as: "estudiante" });

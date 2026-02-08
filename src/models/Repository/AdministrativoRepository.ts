@@ -35,9 +35,9 @@ export class AdministrativoRepository {
 
   static async create(data: Omit<AdministrativoCreationAttributes, "administrativo_id">, client?: any) {
     const result = await query(
-      `INSERT INTO administrativos (persona_id, sede_id, cargo, fecha_contratacion, estado)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [data.persona_id, data.sede_id, data.cargo, data.fecha_contratacion || new Date(),  data.estado || true],
+      `INSERT INTO administrativos (persona_id , cargo, fecha_contratacion, estado)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [data.persona_id, data.cargo, data.fecha_contratacion || new Date(),  data.estado || true],
       client
     )
     return result.rows[0]

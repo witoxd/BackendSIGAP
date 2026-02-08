@@ -20,6 +20,14 @@ Matricula.init({
             key: "estudiante_id",
         },
     },
+    jornada_id: {
+        type: sequelize_1.DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: "jornadas",
+            key: "jornada_id",
+        },
+    },
     profesor_id: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: false,
@@ -46,6 +54,11 @@ Matricula.init({
         allowNull: false,
         defaultValue: "activa",
     },
+    anio_egreso: {
+        type: sequelize_1.DataTypes.SMALLINT,
+        allowNull: false,
+        defaultValue: database_1.sequelize.literal("EXTRACT(YEAR FROM CURRENT_DATE)")
+    }
 }, {
     sequelize: database_1.sequelize,
     tableName: "matriculas",

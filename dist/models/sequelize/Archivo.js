@@ -32,7 +32,7 @@ Archivos.init({
         allowNull: true,
     },
     tipo_archivo: {
-        type: sequelize_1.DataTypes.ENUM("certificado", "diploma", "constancia", "carta", "otro"),
+        type: sequelize_1.DataTypes.ENUM("certificado", "diploma", "constancia", "carta", "photo", "otro"),
         allowNull: false,
     },
     url_archivo: {

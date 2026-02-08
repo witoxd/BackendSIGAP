@@ -6,7 +6,6 @@ interface AdministrativoAttributes {
   persona_id: number
   cargo: string
   fecha_contratacion: Date 
-  sede_id?: number
   estado: boolean
 }
 
@@ -20,7 +19,6 @@ export interface AdministrativoCreationAttributes extends Optional<Administrativ
   public persona_id!: number
   public cargo!: string
   public fecha_contratacion!: Date
-  public sede_id?: number
   public estado!: boolean
 }
 
@@ -51,14 +49,6 @@ export const AdministrativoInit = Administrativo.init(
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
-    },
-    sede_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: "sedes",
-        key: "sede_id",
-      },
     },
     estado: {
       type: DataTypes.BOOLEAN,
