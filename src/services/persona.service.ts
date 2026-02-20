@@ -20,14 +20,14 @@ export class PersonaService {
 
       await Persona.build(personaData).validate()
 
-      // 3️⃣ Crear persona
+      //  Crear persona
       return await PersonaRepository.create(personaData, client)
 
     } catch (error) {
-      // 4️⃣ Error de validación de dominio
+      //  Error de validación de dominio
       if (error instanceof ValidationError) {
         throw new AppError(
-          "Error de validación de persona",
+          "Persona no encontrada y datos inválidos para creación",
           400,
           error.errors.map(e => ({
             field: e.path,

@@ -23,19 +23,56 @@ export class PersonaRepository {
     return result.rows[0]
   }
 
-  static async SearchIndex(index: string) {
+  static async SearchIndex(index: string, limit = 50) {
+    const normalizedIndex = index.trim().replace(/\s+/g, " ")
+    if (!normalizedIndex) return []
 
-    const isDocumento = /^\d+$/.test(index)
+    const isDocumento = /^\d+$/.test(normalizedIndex)
 
-    console.log("Es documento?: ", isDocumento)
-
-    const result = await query(`SELECT * FROM personas WHERE
-       ( $2 = false AND to_tsvector
-         (  'spanish', coalesce(nombres, '') || '
-            ' || coalesce(apellido_paterno, '') || ' 
-            ' || coalesce(apellido_materno, '') )
-             @@ plainto_tsquery('spanish', $1))
-              OR ($2 = true AND numero_documento ILIKE '%' || $1 || '%' )`, [index, isDocumento])
+    const result = await query(
+      `WITH input AS (
+         SELECT $1::text AS q, $2::boolean AS is_documento
+       )
+       SELECT
+         p.*,
+         CASE
+           WHEN input.is_documento THEN
+             CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END
+           ELSE
+             ts_rank_cd(
+               to_tsvector('spanish',
+                 coalesce(p.nombres, '') || ' ' ||
+                 coalesce(p.apellido_paterno, '') || ' ' ||
+                 coalesce(p.apellido_materno, '')
+               ),
+               plainto_tsquery('spanish', input.q)
+             )
+         END AS rank
+       FROM personas p, input
+       WHERE (
+         input.is_documento = true
+         AND p.numero_documento ILIKE '%' || input.q || '%'
+       ) OR (
+         input.is_documento = false
+         AND (
+           to_tsvector('spanish',
+             coalesce(p.nombres, '') || ' ' ||
+             coalesce(p.apellido_paterno, '') || ' ' ||
+             coalesce(p.apellido_materno, '')
+           ) @@ plainto_tsquery('spanish', input.q)
+           OR (
+             char_length(input.q) < 4 AND (
+               p.nombres ILIKE '%' || input.q || '%'
+               OR p.apellido_paterno ILIKE '%' || input.q || '%'
+               OR p.apellido_materno ILIKE '%' || input.q || '%'
+             )
+           )
+         )
+       )
+       ORDER BY rank DESC, p.apellido_paterno, p.apellido_materno, p.nombres
+       LIMIT $3`,
+      [normalizedIndex, isDocumento, limit],
+    )
     return result.rows
   }
 
@@ -105,5 +142,4 @@ export class PersonaRepository {
 
 
 }
-
 
