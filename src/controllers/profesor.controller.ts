@@ -44,6 +44,31 @@ export class ProfesorController {
     })
   }
 
+  async SearchIndex(req: Request, res: Response) {
+    const limit = Number.parseInt(req.query.limit as string) || 50
+    const index = req.params.index as string
+
+    if (!index) {
+      throw new AppError("Parámetro index requerido", 400)
+    }
+
+    const profesores = await ProfesorRepository.SearchIndex(index, limit)
+
+    if (!profesores || profesores.length === 0) {
+      throw new AppError("Profesor no encontrado", 404)
+    }
+
+    res.status(200).json({
+      success: true,
+      data: profesores,
+      pagination: {
+        total: profesores.length,
+        limit,
+        pages: Math.ceil(profesores.length / limit),
+      },
+    })
+  }
+
 
 
   async create(req: CreateProfesorStaticRequest, res: Response) {
