@@ -1,14 +1,13 @@
 import type { Request, Response, NextFunction } from "express"
 import { ArchivoRepository } from "../models/Repository/ArchivoRepository"
+import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepository"
+import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { AppError } from "../utils/AppError"
 import { getPagination } from "../utils/validators"
-import type { CreateArchivoDTO, UpdateArchivoDTO } from "../types"
 import { validationResult } from "express-validator"
-import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { deleteFile, getFileUrl } from "../config/multer"
 import path from "path"
 import fs from "fs"
-
 
 export class ArchivoController {
   async getAll(req: Request, res: Response, next: NextFunction) {
@@ -68,14 +67,14 @@ export class ArchivoController {
 
   async getByTipo(req: Request, res: Response, next: NextFunction) {
     try {
-      const { tipo_archivo, page, limit } = req.query
+      const { tipo_archivo_id, page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
-      if (!tipo_archivo) {
-        throw new AppError("El tipo de archivo es requerido", 400)
+      if (!tipo_archivo_id) {
+        throw new AppError("El ID del tipo de archivo es requerido", 400)
       }
 
-      const archivos = await ArchivoRepository.findByTipo(tipo_archivo as string, pLimit, offset)
+      const archivos = await ArchivoRepository.findByTipo(Number(tipo_archivo_id), pLimit, offset)
 
       res.status(200).json({
         success: true,
@@ -86,50 +85,112 @@ export class ArchivoController {
     }
   }
 
+  async getByTipoAndPersona(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { tipo_archivo_id, persona_id, page, limit } = req.query
+      const { limit: pLimit, offset } = getPagination(page as string, limit as string)
+
+      if (!tipo_archivo_id || !persona_id) {
+        throw new AppError("El ID del tipo de archivo y el ID de la persona son requeridos", 400)
+      }
+
+      const archivos = await ArchivoRepository.findByTipoAndPerson(Number(tipo_archivo_id), Number(persona_id), pLimit, offset)
+
+      res.status(200).json({
+        success: true,
+        data: archivos,
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async getPhotoByPersonaId(req: Request, res: Response, next: NextFunction) {
+    try {
+      const personaId = Number(req.params.personaId)
+      const archivo = await ArchivoRepository.findPhotoByPersonaId(personaId)
+
+      if (!archivo) {
+        throw new AppError("Foto no encontrada para esta persona", 404)
+      }
+
+      const filePath = path.join(process.cwd(), archivo.url_archivo.replace(/^\//, ""))
+
+      if (!fs.existsSync(filePath)) {
+        throw new AppError("El archivo físico no existe", 404)
+      }
+
+      const ext = path.extname(filePath).toLowerCase()
+      const contentTypes: { [key: string]: string } = {
+        ".pdf": "application/pdf",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+      }
+
+      const contentType = contentTypes[ext] || "application/octet-stream"
+
+      res.setHeader("Content-Type", contentType)
+      res.setHeader("Content-Disposition", `inline; filename="${archivo.nombre}"`)
+      res.sendFile(filePath)
+    } catch (error) {
+      next(error)
+    }
+  }
+
   /**
-   * Crear un nuevo registro de archivo con subida de archivo fisico
-   * El archivo se sube usando multer y se guarda en el sistema de archivos
+   * Crear un nuevo archivo con subida física
    */
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
-        // Si hay errores de validacion, eliminar el archivo subido si existe
-        if (req.file) {
-          await deleteFile(req.file.path)
-        }
-        throw new AppError("Errores de validacion", 400, errors.array())
+        if (req.file) await deleteFile(req.file.path)
+        throw new AppError("Errores de validación", 400, errors.array())
       }
 
       const userId = req.user!.userId
-      console.log("ID del usuario asignando: ", userId)
 
-      // Verificar que se subio un archivo
       if (!req.file) {
         throw new AppError("Se requiere un archivo", 400)
       }
 
-      // Obtener datos del body
-      const { persona_id, descripcion, tipo_archivo } = req.body
+      const { persona_id, descripcion, tipo_archivo_id } = req.body
 
       // Verificar que la persona existe
-      const existingPersona = await PersonaRepository.findById(Number(persona_id))
-      if (!existingPersona) {
-        // Eliminar archivo subido si la persona no existe
+      const persona = await PersonaRepository.findById(Number(persona_id))
+      if (!persona) {
         await deleteFile(req.file.path)
-        throw new AppError("Persona asignada no existe", 404)
+        throw new AppError("Persona no encontrada", 404)
       }
 
-      // Obtener URL del archivo subido
+      // Verificar que el tipo de archivo existe
+      const tipoArchivo = await TipoArchivoRepository.findById(Number(tipo_archivo_id))
+      if (!tipoArchivo) {
+        await deleteFile(req.file.path)
+        throw new AppError("Tipo de archivo no encontrado", 404)
+      }
+
+      // Verificar que la extensión está permitida
+      const ext = path.extname(req.file.originalname).toLowerCase()
+      const isAllowed = await TipoArchivoRepository.isExtensionAllowed(Number(tipo_archivo_id), ext)
+      if (!isAllowed) {
+        await deleteFile(req.file.path)
+        throw new AppError(
+          `La extensión ${ext} no está permitida para el tipo de archivo ${tipoArchivo.nombre}`,
+          400
+        )
+      }
+
       const urlArchivo = getFileUrl(req.file)
 
-
-      // Crear registro en la base de datos
       const archivo = await ArchivoRepository.create({
         persona_id: Number(persona_id),
+        tipo_archivo_id: Number(tipo_archivo_id),
         nombre: req.file.originalname,
         descripcion: descripcion || null,
-        tipo_archivo: tipo_archivo || "otro",
         url_archivo: urlArchivo,
         asignado_por: userId,
       })
@@ -147,148 +208,187 @@ export class ArchivoController {
         },
       })
     } catch (error) {
-      // Limpiar archivo en caso de error
       if (req.file) {
         try {
           await deleteFile(req.file.path)
         } catch (deleteError) {
-          console.error("Error al eliminar archivo despues de fallo:", deleteError)
+          console.error("Error al eliminar archivo:", deleteError)
         }
       }
       next(error)
     }
   }
 
-
-//   /**
-//  * Crear uno o varios registros de archivos con subida fisica
-//  */
-async bulkCreate(req: Request, res: Response, next: NextFunction) {
-  try {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      // Eliminar archivos subidos si hay errores
-      if (req.files) {
-        await Promise.all(
-          (req.files as Express.Multer.File[]).map(file =>
-            deleteFile(file.path)
-          )
-        )
-      }
-      throw new AppError("Errores de validacion", 400, errors.array())
-    }
-
-    const userId = req.user!.userId
-    const files = req.files as Express.Multer.File[]
-
-    if (!files || files.length === 0) {
-      throw new AppError("Se requiere al menos un archivo", 400)
-    }
-
-    const { persona_id } = req.body
-
-    // Verificar persona
-    const existingPersona = await PersonaRepository.findById(Number(persona_id))
-    if (!existingPersona) {
-      await Promise.all(files.map(file => deleteFile(file.path)))
-      throw new AppError("Persona asignada no existe", 404)
-    }
-
-    // Parsear metadata
-    const metadataList = Array.isArray(req.body.metadata)
-      ? req.body.metadata.map((m: string) => JSON.parse(m))
-      : []
-
-    // Construir registros
-    const archivosData = files.map((file, index) => {
-      const meta = metadataList.find((m: { index: number }) => m.index === index)
-
-      return {
-        persona_id: Number(persona_id),
-        nombre: file.originalname,
-        descripcion: meta?.descripcion || null,
-        tipo_archivo: meta?.tipo_archivo || "otro",
-        url_archivo: getFileUrl(file),
-        asignado_por: userId,
-      }
-    })
-
-    // Guardar en BD
-    const archivos = await ArchivoRepository.bulkCreate(archivosData)
-
-    res.status(201).json({
-      success: true,
-      message: "Archivos creados exitosamente",
-      total: archivos.length,
-      data: archivos.map((archivo: any, index: number) => ({
-        ...archivo,
-        file_info: {
-          originalName: files[index].originalname,
-          size: files[index].size,
-          mimetype: files[index].mimetype,
-        },
-      })),
-    })
-  } catch (error) {
-    // Rollback fisico
-    if (req.files) {
-      try {
-        await Promise.all(
-          (req.files as Express.Multer.File[]).map(file =>
-            deleteFile(file.path)
-          )
-        )
-      } catch (deleteError) {
-        console.error("Error limpiando archivos:", deleteError)
-      }
-    }
-    next(error)
-  }
-}
-
-
   /**
-   * Actualizar un registro de archivo
-   * Opcionalmente puede incluir un nuevo archivo
+   * Crear múltiples archivos con metadata individual
+   * FORMATO: 
+   * - archivos: array de files
+   * - persona_id: número
+   * - metadata: JSON string array con: [{"tipo_archivo_id":1,"descripcion":"..."}, ...]
    */
-  async update(req: Request<{ id: string }, unknown, UpdateArchivoDTO>, res: Response, next: NextFunction) {
+  async bulkCreate(req: Request, res: Response, next: NextFunction) {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
-        // Si hay errores de validacion, eliminar el nuevo archivo subido si existe
-        if (req.file) {
-          await deleteFile(req.file.path)
+        if (req.files) {
+          await Promise.all((req.files as Express.Multer.File[]).map(file => deleteFile(file.path)))
         }
-        throw new AppError("Errores de validacion", 400, errors.array())
+        throw new AppError("Errores de validación", 400, errors.array())
+      }
+
+      const userId = req.user!.userId
+      const files = req.files as Express.Multer.File[]
+
+      if (!files || files.length === 0) {
+        throw new AppError("Se requiere al menos un archivo", 400)
+      }
+
+      const { persona_id, metadata } = req.body
+
+      // Verificar que la persona existe
+      const persona = await PersonaRepository.findById(Number(persona_id))
+      if (!persona) {
+        await Promise.all(files.map(file => deleteFile(file.path)))
+        throw new AppError("Persona no encontrada", 404)
+      }
+
+      // Parsear metadata (puede venir como string JSON o array)
+      let metadataArray: any[] = []
+      if (metadata) {
+        try {
+          metadataArray = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
+        } catch (e) {
+          await Promise.all(files.map(file => deleteFile(file.path)))
+          throw new AppError("El formato de metadata no es válido", 400)
+        }
+      }
+
+      // Validar que haya metadata para cada archivo
+      if (metadataArray.length !== files.length) {
+        await Promise.all(files.map(file => deleteFile(file.path)))
+        throw new AppError(
+          `Se requiere metadata para cada archivo. Archivos: ${files.length}, Metadata: ${metadataArray.length}`,
+          400
+        )
+      }
+
+      // Construir array de datos con validaciones
+      const archivosData = []
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const meta = metadataArray[i]
+
+        // Verificar tipo de archivo
+        const tipoArchivo = await TipoArchivoRepository.findById(Number(meta.tipo_archivo_id))
+        if (!tipoArchivo) {
+          await Promise.all(files.map(f => deleteFile(f.path)))
+          throw new AppError(`Tipo de archivo con ID ${meta.tipo_archivo_id} no encontrado`, 404)
+        }
+
+        // Verificar extensión permitida
+        const ext = path.extname(file.originalname).toLowerCase()
+        const isAllowed = await TipoArchivoRepository.isExtensionAllowed(Number(meta.tipo_archivo_id), ext)
+        if (!isAllowed) {
+          await Promise.all(files.map(f => deleteFile(f.path)))
+          throw new AppError(
+            `La extensión ${ext} no está permitida para ${tipoArchivo.nombre} (archivo: ${file.originalname})`,
+            400
+          )
+        }
+
+        archivosData.push({
+          persona_id: Number(persona_id),
+          tipo_archivo_id: Number(meta.tipo_archivo_id),
+          nombre: file.originalname,
+          descripcion: meta.descripcion || null,
+          url_archivo: getFileUrl(file),
+          asignado_por: userId,
+        })
+      }
+
+      // Guardar todos en la base de datos
+      const archivos = await ArchivoRepository.bulkCreate(archivosData)
+
+      res.status(201).json({
+        success: true,
+        message: `${archivos.length} archivos creados exitosamente`,
+        total: archivos.length,
+        data: archivos.map((archivo: any, index: number) => ({
+          ...archivo,
+          file_info: {
+            originalName: files[index].originalname,
+            size: files[index].size,
+            mimetype: files[index].mimetype,
+          },
+        })),
+      })
+    } catch (error) {
+      // Rollback: eliminar archivos físicos en caso de error
+      if (req.files) {
+        try {
+          await Promise.all((req.files as Express.Multer.File[]).map(file => deleteFile(file.path)))
+        } catch (deleteError) {
+          console.error("Error limpiando archivos:", deleteError)
+        }
+      }
+      next(error)
+    }
+  }
+
+  /**
+   * Actualizar un archivo (opcionalmente con nuevo archivo físico)
+   */
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        if (req.file) await deleteFile(req.file.path)
+        throw new AppError("Errores de validación", 400, errors.array())
       }
 
       const id = Number(req.params.id)
 
-      // Obtener archivo actual
       const archivoActual = await ArchivoRepository.findById(id)
       if (!archivoActual) {
-        // Eliminar nuevo archivo si el registro no existe
-        if (req.file) {
-          await deleteFile(req.file.path)
-        }
+        if (req.file) await deleteFile(req.file.path)
         throw new AppError("Archivo no encontrado", 404)
       }
 
-      const { archivo: updateData } = req.body as any
+      const updateData: any = {
+        descripcion: req.body.descripcion,
+        tipo_archivo_id: req.body.tipo_archivo_id ? Number(req.body.tipo_archivo_id) : undefined,
+      }
 
+      // Si se actualiza el tipo de archivo, validar que existe
+      if (updateData.tipo_archivo_id) {
+        const tipoArchivo = await TipoArchivoRepository.findById(updateData.tipo_archivo_id)
+        if (!tipoArchivo) {
+          if (req.file) await deleteFile(req.file.path)
+          throw new AppError("Tipo de archivo no encontrado", 404)
+        }
+      }
 
-      // Si se subio un nuevo archivo
       if (req.file) {
-        // Guardar ruta del archivo anterior para eliminarlo despues
         const oldFilePath = archivoActual.url_archivo
-
-        // Actualizar URL con el nuevo archivo
         updateData.url_archivo = getFileUrl(req.file)
+        updateData.nombre = req.file.originalname
 
-        // Actualizar registro en BD
+        // Validar extensión si hay tipo de archivo
+        const tipoArchivoId = updateData.tipo_archivo_id || archivoActual.tipo_archivo_id
+        const ext = path.extname(req.file.originalname).toLowerCase()
+        const isAllowed = await TipoArchivoRepository.isExtensionAllowed(tipoArchivoId, ext)
+        if (!isAllowed) {
+          await deleteFile(req.file.path)
+          const tipoArchivo = await TipoArchivoRepository.findById(tipoArchivoId)
+          throw new AppError(
+            `La extensión ${ext} no está permitida para ${tipoArchivo?.nombre}`,
+            400
+          )
+        }
+
         const archivo = await ArchivoRepository.update(id, updateData)
 
-        // Eliminar archivo anterior del sistema de archivos
+        // Eliminar archivo anterior
         if (oldFilePath) {
           try {
             const absolutePath = path.join(process.cwd(), oldFilePath.replace(/^\//, ""))
@@ -311,7 +411,6 @@ async bulkCreate(req: Request, res: Response, next: NextFunction) {
           },
         })
       } else {
-        // Actualizacion sin cambio de archivo
         const archivo = await ArchivoRepository.update(id, updateData)
 
         if (!archivo) {
@@ -325,12 +424,11 @@ async bulkCreate(req: Request, res: Response, next: NextFunction) {
         })
       }
     } catch (error) {
-      // Limpiar archivo nuevo en caso de error
       if (req.file) {
         try {
           await deleteFile(req.file.path)
         } catch (deleteError) {
-          console.error("Error al eliminar archivo despues de fallo:", deleteError)
+          console.error("Error al eliminar archivo:", deleteError)
         }
       }
       next(error)
@@ -338,29 +436,25 @@ async bulkCreate(req: Request, res: Response, next: NextFunction) {
   }
 
   /**
-   * Eliminar un archivo (registro y archivo fisico)
+   * Eliminar archivo (registro y archivo físico)
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Number(req.params.id)
 
-      // Obtener archivo para saber la ruta
       const archivo = await ArchivoRepository.findById(id)
       if (!archivo) {
         throw new AppError("Archivo no encontrado", 404)
       }
 
-      // Eliminar registro de la BD
       await ArchivoRepository.delete(id)
 
-      // Eliminar archivo fisico del sistema de archivos
       if (archivo.url_archivo) {
         try {
           const absolutePath = path.join(process.cwd(), archivo.url_archivo.replace(/^\//, ""))
           await deleteFile(absolutePath)
         } catch (deleteError) {
-          console.error("Error al eliminar archivo fisico:", deleteError)
-          // No lanzar error, el registro ya fue eliminado
+          console.error("Error al eliminar archivo físico:", deleteError)
         }
       }
 
@@ -374,7 +468,7 @@ async bulkCreate(req: Request, res: Response, next: NextFunction) {
   }
 
   /**
-   * Descargar un archivo
+   * Descargar archivo
    */
   async download(req: Request, res: Response, next: NextFunction) {
     try {
@@ -387,16 +481,12 @@ async bulkCreate(req: Request, res: Response, next: NextFunction) {
 
       const filePath = path.join(process.cwd(), archivo.url_archivo.replace(/^\//, ""))
 
-      // Verificar que el archivo existe
       if (!fs.existsSync(filePath)) {
-        throw new AppError("El archivo fisico no existe en el servidor", 404)
+        throw new AppError("El archivo físico no existe", 404)
       }
 
-      // Configurar headers para descarga
       res.setHeader("Content-Disposition", `attachment; filename="${archivo.nombre}"`)
       res.setHeader("Content-Type", "application/octet-stream")
-
-      // Enviar archivo
       res.sendFile(filePath)
     } catch (error) {
       next(error)
@@ -404,7 +494,7 @@ async bulkCreate(req: Request, res: Response, next: NextFunction) {
   }
 
   /**
-   * Ver archivo en el navegador (solo para PDFs e imagenes)
+   * Ver archivo en navegador
    */
   async view(req: Request, res: Response, next: NextFunction) {
     try {
@@ -417,12 +507,10 @@ async bulkCreate(req: Request, res: Response, next: NextFunction) {
 
       const filePath = path.join(process.cwd(), archivo.url_archivo.replace(/^\//, ""))
 
-      // Verificar que el archivo existe
       if (!fs.existsSync(filePath)) {
-        throw new AppError("El archivo fisico no existe en el servidor", 404)
+        throw new AppError("El archivo físico no existe", 404)
       }
 
-      // Determinar content type
       const ext = path.extname(filePath).toLowerCase()
       const contentTypes: { [key: string]: string } = {
         ".pdf": "application/pdf",
@@ -437,7 +525,6 @@ async bulkCreate(req: Request, res: Response, next: NextFunction) {
 
       res.setHeader("Content-Type", contentType)
       res.setHeader("Content-Disposition", `inline; filename="${archivo.nombre}"`)
-
       res.sendFile(filePath)
     } catch (error) {
       next(error)

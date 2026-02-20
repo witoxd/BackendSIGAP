@@ -30,23 +30,49 @@ export class ArchivoRepository {
     return result.rows
   }
 
-  static async findByTipo(tipoarchivos: string, limit = 50, offset = 0) {
+  static async findByTipo(tipoarchivos: number, limit = 50, offset = 0) {
     const result = await query(
       `SELECT a.* 
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
-       WHERE a.tipo_archivo = $1
+       WHERE a.tipo_archivo_id = $1
        ORDER BY a.fecha_carga DESC LIMIT $2 OFFSET $3`,
       [tipoarchivos, limit, offset],
     )
     return result.rows
   }
 
+   static async findByTipoAndPerson(tipoarchivos: number, persona_id: number, limit = 50, offset = 0) {
+    const result = await query(
+      `SELECT a.* 
+       FROM archivos a
+       LEFT JOIN personas p ON a.persona_id = p.persona_id
+       WHERE a.tipo_archivo_id = $1 AND a.persona_id = $2
+       ORDER BY a.fecha_carga DESC LIMIT $3 OFFSET $4`,
+      [tipoarchivos, persona_id,  limit, offset],
+    )
+    return result.rows
+  }
+
+  static async findPhotoByPersonaId(personaId: number) {
+    const result = await query(
+      `SELECT a.*
+       FROM archivos a INNER JOIN tipos_archivo ta ON a.tipo_archivo_id = ta.tipo_archivo_id
+       LEFT JOIN personas p ON a.persona_id = p.persona_id
+       WHERE a.persona_id = $1 AND ta.nombre = 'photo'
+       ORDER BY a.fecha_carga DESC LIMIT 1`,
+      [personaId]
+    )
+    return result.rows[0]
+  }
+
+
+
   static async create(data: Omit<ArchivosCreationAttributes, "archivo_id" | "fecha_carga" | "activo">, client?: any) {
     const result = await query(
-      `INSERT INTO archivos (persona_id, tipo_archivo, nombre, url_archivo, descripcion, asignado_por, fecha_carga, activo)
+      `INSERT INTO archivos (persona_id, tipo_archivo_id, nombre, url_archivo, descripcion, asignado_por, fecha_carga, activo)
        VALUES ($1, $2, $3, $4, $5, $6, NOW(), true) RETURNING *`,
-      [data.persona_id, data.tipo_archivo, data.nombre, data.url_archivo, data.descripcion, data.asignado_por],
+      [data.persona_id, data.tipo_archivo_id, data.nombre, data.url_archivo, data.descripcion, data.asignado_por],
       client
     )
     return result.rows[0]
@@ -59,7 +85,7 @@ export class ArchivoRepository {
       "persona_id",
       "nombre",
       "descripcion",
-      "tipo_archivo",
+      "tipo_archivo_id",
       "url_archivo",
       "asignado_por"
     ]
@@ -78,7 +104,7 @@ export class ArchivoRepository {
         item.persona_id,
         item.nombre,
         item.descripcion,
-        item.tipo_archivo,
+        item.tipo_archivo_id,
         item.url_archivo,
         item.asignado_por
       )
@@ -89,7 +115,7 @@ export class ArchivoRepository {
       VALUES ${placeholders.join(", ")}
       RETURNING *`, values, client)
     
-    return result
+    return result.rows
   
   }
 

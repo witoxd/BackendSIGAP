@@ -72,6 +72,14 @@ router.get(
   archivoController.view.bind(archivoController)
 )
 
+router.get(
+  "/viewPhoto/:personaId",
+  param("personaId").isInt({min: 1}).withMessage("ID de persona invalido"),
+  validate,
+  checkPermission(Recurso.DOCUMENTOS, Accion.READ),
+  archivoController.getPhotoByPersonaId.bind(archivoController)
+)
+
 // Crear archivo con subida de archivo
 // El campo del archivo debe llamarse "archivo" en el form-data
 router.post(
@@ -85,16 +93,16 @@ router.post(
   archivoController.create.bind(archivoController)
 )
 
-// router.post(
-//   "/bulkCreate",
-//   checkPermission(Recurso.DOCUMENTOS, Accion.CREATE),
-//   upload.array("archivos"), // Middleware de multer para uno o varios archivos
-//   handleMulterError, // Manejo de errores de multer
-//   createArchivoHttpValidator,
-//   validate,
-//   validateCreateArchivoDomain,
-//   archivoController.bulkCreate.bind(archivoController)
-// )
+router.post(
+  "/bulkCreate",
+  checkPermission(Recurso.DOCUMENTOS, Accion.CREATE),
+  upload.array("archivos"), // Middleware de multer para uno o varios archivos
+  handleMulterError, // Manejo de errores de multer
+  createArchivoHttpValidator,
+  validate,
+  validateCreateArchivoDomain,
+  archivoController.bulkCreate.bind(archivoController)
+)
 
 // Actualizar archivo (opcionalmente con nuevo archivo)
 router.put(
