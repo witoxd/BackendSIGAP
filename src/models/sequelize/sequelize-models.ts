@@ -8,7 +8,6 @@ import { Profesor } from "./Profesor"
 import { Administrativo } from "./Administrativo"
 import { Curso } from "./Curso"
 import { Matricula } from "./Matricula"
-
 import { Jornada } from "./Jornada"
 import { TipoDocumento } from "./TipoDocumento"
 import { Archivos } from "./Archivo"
@@ -18,6 +17,8 @@ import { Egresado } from "./Egresado"
 import { Acudiente } from "./Acudiente"
 import { AcudienteEstudiante } from "./AcudienteEstudiante"
 import { Auditoria } from "./Auditoria"
+import { Contacto } from "./Contacto"
+import { TipoArchivo } from "./TipoArchivo"
 
 // Definir relaciones entre modelos
 export const setupAssociations = () => {
@@ -52,7 +53,11 @@ export const setupAssociations = () => {
     as: "roles",
   })
   
+  // Persona - Contactos 1:N
+  Persona.hasMany(Contacto, { foreignKey: "persona_id", as: "contactos" })
+  Contacto.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
 
+  // Persona - TipoDoucmento N:1
   Persona.hasOne(TipoDocumento, { foreignKey: "tipo_documento_id", as: "tipo_documento" })
   TipoDocumento.belongsTo(Persona, { foreignKey: "tipo_documento_id", as: "personas" })
 
@@ -102,10 +107,15 @@ export const setupAssociations = () => {
 
 
 
-  // Persona - DocumentoPersona (1:N)
+  // Persona - Archivos (1:N)
   Persona.hasMany(Archivos, { foreignKey: "persona_id", as: "Archivos" })
   Archivos.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
 
+  // TipoArchivo - Archivos (1:N)
+  TipoArchivo.hasMany(Archivos, { foreignKey: "tipo_archivo_id", as: "archivos" })
+  Archivos.belongsTo(TipoArchivo, { foreignKey: "tipo_archivo_id", as: "tipo_archivo" })
+
+  // Usuario - Auditoria (1:N)
   Usuario.hasMany(Auditoria, { foreignKey: "usuario_id", as: "auditorias" })
   Auditoria.belongsTo(Usuario, { foreignKey: "usuario_id", as: "usuario" })
 }
