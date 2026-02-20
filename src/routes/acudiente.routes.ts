@@ -31,6 +31,14 @@ router.get(
   acudienteController.getById.bind(acudienteController),
 )
 
+router.get(
+  "/searchIndex/:index",
+  param("index").isString().withMessage("Index de busqueda invalido"),
+  validate,
+  checkPermission(Recurso.ACUDIENTES, Accion.READ),
+  acudienteController.SearchIndex.bind(acudienteController)
+)
+
 router.post(
   "/create",
   createAcudienteHttpValidator,

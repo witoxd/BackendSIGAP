@@ -66,6 +66,31 @@ export class AcudienteController {
     }
   }
 
+   async SearchIndex(req: Request, res: Response) {
+        const limit = Number.parseInt(req.query.limit as string) || 50
+        const index = req.params.index as string
+    
+        if (!index) {
+          throw new AppError("Parámetro index requerido", 400)
+        }
+    
+        const acudiente = await AcudienteRepository.SearchIndex(index, limit)
+    
+        if (!acudiente || acudiente.length === 0) {
+          throw new AppError("Acudiente no encontrado", 404)
+        }
+    
+        res.status(200).json({
+          success: true,
+          data: acudiente,
+          pagination: {
+            total: acudiente.length,
+            limit,
+            pages: Math.ceil(acudiente.length / limit),
+          },
+        })
+      }
+
   async create(req: CreateAcudienteStaticRequest, res: Response, next: NextFunction) {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
