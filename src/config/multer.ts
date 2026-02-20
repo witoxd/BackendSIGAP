@@ -3,8 +3,7 @@ import multer from "multer"
 import path from "path"
 import fs from "fs"
 import { AppError } from "../utils/AppError"
-import { Express } from "express"
-
+import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepository"
 // ============================================================================
 // CONFIGURACION DE ALMACENAMIENTO DE ARCHIVOS
 // ============================================================================
@@ -14,15 +13,8 @@ import { Express } from "express"
 const UPLOAD_BASE_DIR = process.env.UPLOAD_DIR || "uploads"
 
 // Subdirectorios por tipo de archivo
-const UPLOAD_SUBDIRS = {
-  documento: "documento",
-  certificado: "certificado",
-  diploma: "diploma",
-  constancia: "constancia",
-  carta: "carta",
-  otro: "otro",
-  photo: "photo"
-}
+
+
 
 // ============================================================================
 // FILTRO DE TIPOS DE ARCHIVO PERMITIDOS
@@ -41,7 +33,7 @@ const ALLOWED_MIME_TYPES: { [key: string]: string[] } = {
   "image/jpeg": [".jpg", ".jpeg"],
   "image/png": [".png"],
   // "image/gif": [".gif"],
-  // "image/webp": [".webp"],
+   "image/webp": [".webp"],
 
   // Documentos de Office
   // "application/msword": [".doc"],
@@ -131,38 +123,89 @@ const generateUniqueFilename = (
   return `${personaPart}_${tipoPart}_${safeBase}_${timestamp}_${randomString}${ext}`
 }
 
+// ============================================================================
+// CACHE CON TTL PARA TIPOS DE ARCHIVO
+// ============================================================================
+
+interface CachedTipoArchivo {
+  data: any
+  timestamp: number
+}
+
+const tiposArchivoCache = new Map<number, CachedTipoArchivo>()
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutos
+
+/**
+ * Obtiene un tipo de archivo con caché inteligente
+ * Consulta en tiempo real pero reutiliza datos si están dentro del TTL
+ * Esto garantiza integridad de datos (verificar estado activo/inactivo)
+ * mientras optimiza rendimiento
+ */
+const getTipoArchivo = async (id: number): Promise<any> => {
+  const cached = tiposArchivoCache.get(id)
+  const now = Date.now()
+  
+  if (cached && now - cached.timestamp < CACHE_TTL) {
+    return cached.data
+  }
+  
+  try {
+    const data = await TipoArchivoRepository.findById(id)
+    tiposArchivoCache.set(id, { data, timestamp: now })
+    return data
+  } catch (error) {
+    tiposArchivoCache.delete(id)
+    throw error
+  }
+}
+
 
 // ============================================================================
 // CONFIGURACION DE MULTER - ALMACENAMIENTO EN DISCO
 // ============================================================================
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Determinar subdirectorio basado en el tipo de archivo del body
-    const tipoArchivo = req.body.tipo_archivo || "otro"
+  destination: async (req, file, cb) => {
+    try {
+      // Determinar subdirectorio basado en el tipo de archivo del body
+      const tipoArchivo = Number(req.body.tipo_archivo_id)
 
-    const subdir = UPLOAD_SUBDIRS[tipoArchivo as keyof typeof UPLOAD_SUBDIRS] || UPLOAD_SUBDIRS.otro
+      const existingTipoArchivoData = await getTipoArchivo(tipoArchivo)
 
-    console.log("tipo de archivo: ", tipoArchivo, " Y la sub direccion ala que va: ", subdir)
-    const year =
-      req.body.anio ||
-      new Date().getFullYear().toString()
+      if (!existingTipoArchivoData) {
+        return cb(new AppError("Tipo de archivo no encontrado", 400) as any, "")
+      }
 
-    const personaId = req.body.persona_id
-      ? `persona_${req.body.persona_id}`
-      : "sin_persona"
+      // Validar integridad: verificar que el tipo esté activo (si existe propiedad activo)
+      if (existingTipoArchivoData.activo === false) {
+        return cb(new AppError("Tipo de archivo inactivo", 400) as any, "")
+      }
 
-    const uploadPath = path.join(
-      UPLOAD_BASE_DIR,
-      subdir,
-      year,
-      personaId
-    )
+      const subdir = existingTipoArchivoData.nombre
 
-    // Crear directorio si no existe
-    ensureDirectoryExists(uploadPath)
+      console.log("tipo de archivo: ", tipoArchivo, " Y la sub direccion ala que va: ", subdir)
+      const year =
+        req.body.anio ||
+        new Date().getFullYear().toString()
 
-    cb(null, uploadPath)
+      const personaId = req.body.persona_id
+        ? `persona_${req.body.persona_id}`
+        : "sin_persona"
+
+      const uploadPath = path.join(
+        UPLOAD_BASE_DIR,
+        subdir,
+        year,
+        personaId
+      )
+
+      // Crear directorio si no existe
+      ensureDirectoryExists(uploadPath)
+
+      cb(null, uploadPath)
+    } catch (error) {
+      cb(error as any, "")
+    }
   },
   filename: (req, file, cb) => {
     const uniqueFilename = generateUniqueFilename(file.originalname)
@@ -176,7 +219,10 @@ const storage = multer.diskStorage({
 
 const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
 
-  console.log(file)
+  console.log(file, req.body, req.files)
+  console.log("files:", req.files)
+console.log("files length:", (req.files as any[])?.length)
+
   // Verificar MIME type
   if (!isAllowedMimeType(file.mimetype)) {
     const allowedExts = getAllowedExtensions().join(", ")
@@ -261,7 +307,6 @@ export const handleMulterError = (err: any, req: any, res: any, next: any) => {
 
 export const uploadConfig = {
   baseDir: UPLOAD_BASE_DIR,
-  subdirs: UPLOAD_SUBDIRS,
   allowedMimeTypes: ALLOWED_MIME_TYPES,
   maxFileSize: MAX_FILE_SIZE,
   maxFileSizeFormatted: getMaxFileSizeFormatted(),
