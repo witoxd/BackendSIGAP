@@ -33,6 +33,14 @@ router.get(
   administrativoController.getById.bind(administrativoController),
 )
 
+router.get(
+  "/searchIndex/:index",
+  param("index").isString().withMessage("Index de busqueda invalido"),
+  validate,
+  checkPermission(Recurso.ADMINISTRATIVOS, Accion.READ),
+  administrativoController.SearchIndex.bind(administrativoController)
+)
+
 router.post(
   "/create",
   createAdministrativoHttpValidator,

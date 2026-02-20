@@ -5,8 +5,8 @@ import { validationResult } from "express-validator"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { CreateAdministrativoDTO, UpdateAdministrativoDTO } from "../types"
 import { PersonaService } from "../services/persona.service"
-
 import { transaction } from "../config/database"
+
 
 type CreateAdministrativoStaticRequest = Request<never, unknown, CreateAdministrativoDTO>
 
@@ -33,6 +33,8 @@ export class AdministrativoController {
     })
   }
 
+
+
   async getById(req: Request, res: Response) {
 
     const id = Number(req.params.id)
@@ -47,6 +49,31 @@ export class AdministrativoController {
       data: administrativo,
     })
   }
+
+  async SearchIndex(req: Request, res: Response) {
+      const limit = Number.parseInt(req.query.limit as string) || 50
+      const index = req.params.index as string
+  
+      if (!index) {
+        throw new AppError("Parámetro index requerido", 400)
+      }
+  
+      const administrativo = await AdministrativoRepository.SearchIndex(index, limit)
+  
+      if (!administrativo || administrativo.length === 0) {
+        throw new AppError("Administrativo no encontrado", 404)
+      }
+  
+      res.status(200).json({
+        success: true,
+        data: administrativo,
+        pagination: {
+          total: administrativo.length,
+          limit,
+          pages: Math.ceil(administrativo.length / limit),
+        },
+      })
+    }
 
 
   async create(req: CreateAdministrativoStaticRequest, res: Response, next: NextFunction) {
