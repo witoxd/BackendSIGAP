@@ -15,7 +15,7 @@ export const validateCreateArchivoDomain = async (
 ) => {
   try {
     // En form-data los campos vienen directamente en body (no anidados)
-    const { persona_id, nombre, descripcion, tipo_archivo } = req.body
+    const { persona_id, nombre, descripcion, tipo_archivo_id } = req.body
 
     // Construir objeto para validacion
     // url_archivo se genera despues de subir el archivo, usamos placeholder
@@ -23,7 +23,7 @@ export const validateCreateArchivoDomain = async (
       persona_id: Number(persona_id),
       nombre: nombre || "archivo_temporal",
       descripcion,
-      tipo_archivo,
+      tipo_archivo_id: Number(tipo_archivo_id),
       url_archivo: "/placeholder", // Temporal, se reemplaza con la URL real
       activo: true
     }

@@ -25,16 +25,16 @@ export const createArchivoHttpValidator: ValidationChain[] = [
     .isLength({ max: 200 })
     .withMessage("El nombre no puede exceder 200 caracteres"),
 
-  body("descripcion")
+  body("metadata.descripcion")
     .optional()
     .isString()
     .withMessage("La descripcion debe ser texto"),
 
-  body("tipo_archivo")
-    .notEmpty()
-    .withMessage("El tipo de archivo es requerido")
-    .isIn(["certificado", "diploma", "constancia", "carta", "photo", "otro"])
-    .withMessage("Tipo de archivo invalido. Valores permitidos: certificado, diploma, constancia, carta, otro"),
+  body("metadata.tipo_archivo_id")
+    .optional()
+    // .withMessage("El tipo de archivo es requerido")
+    .isInt({ min: 1 })
+    .withMessage("Tipo de archivo invalido)"),
 ]
 
 /**
