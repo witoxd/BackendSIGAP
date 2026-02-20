@@ -7,12 +7,9 @@
     "backend:build": "tsc -p tsconfig.backend.json",
     "backend:dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "backend:start": "node dist/server.js",
-    "build": "next build",
-    "dev": "next dev",
-    "lint": "eslint .",
     "seed:admin": "ts-node scripts/seed-admin.ts",
-    "seed:roles": "ts-node scripts/seed-roles-permissions.ts",
-    "start": "next start"
+    "seed:DefaultData": "ts-node scripts/seed-defaultData.ts",
+    "seed:roles": "ts-node scripts/seed-roles-permissions.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
