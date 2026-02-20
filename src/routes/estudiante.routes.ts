@@ -41,6 +41,14 @@ router.get(
   estudianteController.getByDocumento.bind(estudianteController)
 )
 
+router.get(
+  "/searchIndex/:index",
+  param("index").isString().withMessage("Index de busqueda invalido"),
+  validate,
+  checkPermission(Recurso.ESTUDIANTES, Accion.READ),
+  estudianteController.SearchIndex.bind(estudianteController)
+)
+
 router.post(
   "/create",
   createEstudianteHttpValidator,

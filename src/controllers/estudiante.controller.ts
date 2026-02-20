@@ -8,11 +8,11 @@ import { transaction } from "../config/database"
 
 type CreateEstudianteStaticRequest = Request<never, unknown, CreateEstudianteDTO>
 
-type UpdateEstudianteStaticRequest = Request<{id: string}, unknown, UpdateEstudianteDTO>
+type UpdateEstudianteStaticRequest = Request<{ id: string }, unknown, UpdateEstudianteDTO>
 
 export class EstudianteController {
 
-   async getAll(req: Request, res: Response) {
+  async getAll(req: Request, res: Response) {
     const limit = Number.parseInt(req.query.limit as string) || 50
     const offset = Number.parseInt(req.query.offset as string) || 0
 
@@ -31,8 +31,8 @@ export class EstudianteController {
     })
   }
 
-   async getById(req: Request, res: Response) {
-    const  id  = Number(req.params.id)
+  async getById(req: Request, res: Response) {
+    const id = Number(req.params.id)
     const estudiante = await EstudianteRepository.findById(id)
 
     if (!estudiante) {
@@ -45,7 +45,7 @@ export class EstudianteController {
     })
   }
 
-   async getByDocumento(req: Request, res: Response) {
+  async getByDocumento(req: Request, res: Response) {
     const { numero_documento } = req.params
 
     const estudiante = await EstudianteRepository.findByDocumento(numero_documento as string)
@@ -53,7 +53,7 @@ export class EstudianteController {
     if (!estudiante) {
       throw new AppError("Estudiante no encontrado", 404)
     }
-    
+
 
     res.status(200).json({
       success: true,
@@ -61,7 +61,29 @@ export class EstudianteController {
     })
   }
 
-   async create(req: CreateEstudianteStaticRequest, res: Response) {
+  async SearchIndex(req: Request, res: Response) {
+    const limit = Number.parseInt(req.query.limit as string) || 50
+    const index = req.params.index as string
+
+    if (!index) {
+      throw new AppError("Parámetro index requerido", 400)
+    }
+
+    const estudiantes = await EstudianteRepository.SearchIndex(index, limit)
+
+
+    res.status(200).json({
+      success: true,
+      data: estudiantes,
+      pagination: {
+        total: estudiantes.length,
+        limit,
+        pages: Math.ceil(estudiantes.length / limit),
+      },
+    })
+  }
+
+  async create(req: CreateEstudianteStaticRequest, res: Response) {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -75,19 +97,19 @@ export class EstudianteController {
       throw new AppError("Ya existe una persona con ese documento", 409)
     }
 
-    const {newPersona, newEstudiante} = await transaction(async (client) => {
-    // Crear persona primero
-    const newPersona = await PersonaRepository.create(PersonaData, client)
+    const { newPersona, newEstudiante } = await transaction(async (client) => {
+      // Crear persona primero
+      const newPersona = await PersonaRepository.create(PersonaData, client)
 
-    const existingEstudiante = await EstudianteRepository.findByPersonaId(newPersona.persona_id)
+      const existingEstudiante = await EstudianteRepository.findByPersonaId(newPersona.persona_id)
 
-    // Crear estudiante usando persona_id recién creado
-    const newEstudiante = await EstudianteRepository.create({
-      ...estudianteData,
-      persona_id: newPersona.persona_id,
-    }, client)
+      // Crear estudiante usando persona_id recién creado
+      const newEstudiante = await EstudianteRepository.create({
+        ...estudianteData,
+        persona_id: newPersona.persona_id,
+      }, client)
 
-    return {newEstudiante, newPersona}
+      return { newEstudiante, newPersona }
     })
 
 
@@ -103,7 +125,7 @@ export class EstudianteController {
   }
 
 
-   async update(req: UpdateEstudianteStaticRequest, res: Response) {
+  async update(req: UpdateEstudianteStaticRequest, res: Response) {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -120,37 +142,37 @@ export class EstudianteController {
 
     const { persona, estudiante: estudianteData } = req.body
 
-    
-        const  updatedEstudiante = await transaction(async (client) => {
-    // Si llega persona, actualizar persona
-    if (persona) {
-      // Validar documento único
-      if (persona.numero_documento) {
-        const personaConflicto = await PersonaRepository.findByDocumento(persona.numero_documento)
-        
-        if (personaConflicto && personaConflicto.persona_id !== existing.persona_id) {
-          throw new AppError("Ya existe otra persona con ese documento", 409)
+
+    const updatedEstudiante = await transaction(async (client) => {
+      // Si llega persona, actualizar persona
+      if (persona) {
+        // Validar documento único
+        if (persona.numero_documento) {
+          const personaConflicto = await PersonaRepository.findByDocumento(persona.numero_documento)
+
+          if (personaConflicto && personaConflicto.persona_id !== existing.persona_id) {
+            throw new AppError("Ya existe otra persona con ese documento", 409)
+          }
         }
+        await PersonaRepository.update(existing.persona_id, persona, client)
       }
-       await PersonaRepository.update(existing.persona_id, persona, client)
-    }
 
-    // Si llegan datos del estudiante, actualizarlos
-    let updatedEstudiante = null
-    if (estudianteData && Object.keys(estudianteData).length > 0) {
-      updatedEstudiante = await EstudianteRepository.update(estudianteId, estudianteData, client)
-    } else {
-      updatedEstudiante = await EstudianteRepository.findById(estudianteId)
-    }
+      // Si llegan datos del estudiante, actualizarlos
+      let updatedEstudiante = null
+      if (estudianteData && Object.keys(estudianteData).length > 0) {
+        updatedEstudiante = await EstudianteRepository.update(estudianteId, estudianteData, client)
+      } else {
+        updatedEstudiante = await EstudianteRepository.findById(estudianteId)
+      }
 
-    return updatedEstudiante
+      return updatedEstudiante
 
-  })
+    })
 
     // Obtener persona actualizada
     const updatedPersona = await PersonaRepository.findById(existing.persona_id)
 
-    // 5️⃣ Respuesta final unificada
+    // Respuesta final unificada
     return res.status(200).json({
       success: true,
       message: "Estudiante actualizado exitosamente",
@@ -162,7 +184,7 @@ export class EstudianteController {
   }
 
   async delete(req: Request, res: Response) {
-    const  id  = Number(req.params.id)
+    const id = Number(req.params.id)
     const estudiante = await EstudianteRepository.delete(id)
 
     if (!estudiante) {
@@ -173,9 +195,10 @@ export class EstudianteController {
 
     res.status(200).json({
       success: true,
-      data: {estudiante: estudiante,
+      data: {
+        estudiante: estudiante,
         persona: persona
-       },
+      },
       message: "Estudiante eliminado exitosamente",
     })
   }
