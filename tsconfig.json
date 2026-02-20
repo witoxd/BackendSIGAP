@@ -51,6 +51,7 @@
     "styles",
     "lib",
     "tailwind.config.ts",
-    "scripts"
+    "scripts",
+    "files"
   ]
 }
