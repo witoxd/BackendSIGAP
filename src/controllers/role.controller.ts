@@ -13,8 +13,8 @@ export const getAllRoles = async (req: Request, res: Response) => {
 }
 
 export const getRoleById = async (req: Request, res: Response) => {
-  const { id } = req.params
-  const role = await RoleRepository.findById(Number.parseInt(id))
+  const  id  = Number(req.params.id)
+  const role = await RoleRepository.findById(id)
 
   if (!role) {
     throw new AppError("Rol no encontrado", 404)
@@ -28,7 +28,7 @@ export const getRoleById = async (req: Request, res: Response) => {
 
 export const getRoleByName = async (req: Request, res: Response) => {
   const { nombre } = req.params
-  const role = await RoleRepository.findByName(nombre)
+  const role = await RoleRepository.findByName(nombre as string)
 
   if (!role) {
     throw new AppError("Rol no encontrado", 404)
@@ -66,16 +66,16 @@ export const updateRole = async (req: Request, res: Response) => {
     throw new AppError("Errores de validación", 400, errors.array())
   }
 
-  const { id } = req.params
+  const id  = Number(req.params.id)
 
   if (req.body.nombre) {
     const existingRole = await RoleRepository.findByName(req.body.nombre)
-    if (existingRole && existingRole.role_id !== Number.parseInt(id)) {
+    if (existingRole && existingRole.role_id !== id) {
       throw new AppError("Ya existe otro rol con ese nombre", 409)
     }
   }
 
-  const role = await RoleRepository.update(Number.parseInt(id), req.body)
+  const role = await RoleRepository.update(id, req.body)
 
   if (!role) {
     throw new AppError("Rol no encontrado", 404)
@@ -89,8 +89,8 @@ export const updateRole = async (req: Request, res: Response) => {
 }
 
 export const deleteRole = async (req: Request, res: Response) => {
-  const { id } = req.params
-  const role = await RoleRepository.delete(Number.parseInt(id))
+  const  id  = Number(req.params.id)
+  const role = await RoleRepository.delete(id)
 
   if (!role) {
     throw new AppError("Rol no encontrado", 404)

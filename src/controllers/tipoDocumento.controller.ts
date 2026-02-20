@@ -22,7 +22,7 @@ export class TipoDocumentoController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = Number.parseInt(req.params.id)
+      const id = Number(req.params.id)
       const tipoDocumento = await TipoDocumentoRepository.findById(id)
 
       if (!tipoDocumento) {
@@ -85,7 +85,7 @@ export class TipoDocumentoController {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = Number.parseInt(req.params.id)
+      const id = Number(req.params.id)
       const tipoDocumento = await TipoDocumentoRepository.delete(id)
 
       if (!tipoDocumento) {
