@@ -5,7 +5,7 @@ import { AdministrativoCreationAttributes } from "../sequelize/Administrativo"
 export class AdministrativoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
-      `SELECT a.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento, p.numero_documento
+      `SELECT a.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento_id, td.tipo_documento, p.numero_documento
        FROM administrativos a
        INNER JOIN personas p ON a.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -17,7 +17,7 @@ export class AdministrativoRepository {
 
   static async findById(id: number) {
     const result = await query(
-      `SELECT a.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento, p.numero_documento
+      `SELECT a.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento_id, td.tipo_documento, p.numero_documento
        FROM administrativos a
        INNER JOIN personas p ON a.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -47,6 +47,7 @@ export class AdministrativoRepository {
          p.nombres,
          p.apellido_paterno,
          p.apellido_materno,
+         td.tipo_documento_id,
          td.tipo_documento,
          p.numero_documento,
          CASE

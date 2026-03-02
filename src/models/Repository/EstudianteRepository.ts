@@ -5,7 +5,7 @@ import type { EstudianteCreationAttributes } from "../sequelize/Estudiante"
 export class EstudianteRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
-      `SELECT e.*, p.nombres, p.apellido_paterno, p.apellido_materno,td.tipo_documento, p.numero_documento, p.fecha_nacimiento
+      `SELECT e.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento_id, td.tipo_documento, p.numero_documento, p.fecha_nacimiento
        FROM estudiantes e
        INNER JOIN personas p ON e.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -49,6 +49,7 @@ export class EstudianteRepository {
          p.nombres,
          p.apellido_paterno,
          p.apellido_materno,
+         td.tipo_documento_id,
          td.tipo_documento,
          p.numero_documento,
          CASE

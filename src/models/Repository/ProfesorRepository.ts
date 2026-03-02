@@ -5,7 +5,7 @@ import { ProfesorCreationAttributes } from "../sequelize/Profesor"
 export class ProfesorRepository  {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
-      `SELECT pr.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento, p.numero_documento
+      `SELECT pr.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento_id, td.tipo_documento, p.numero_documento
        FROM profesores pr
        INNER JOIN personas p ON pr.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -17,7 +17,7 @@ export class ProfesorRepository  {
 
   static async findById(id: number) {
     const result = await query(
-      `SELECT pr.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento ,p.numero_documento
+      `SELECT pr.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento_id, td.tipo_documento ,p.numero_documento
        FROM profesores pr
        INNER JOIN personas p ON pr.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -81,6 +81,7 @@ export class ProfesorRepository  {
          p.nombres,
          p.apellido_paterno,
          p.apellido_materno,
+         td.tipo_documento_id,
          td.tipo_documento,
          p.numero_documento,
          CASE
