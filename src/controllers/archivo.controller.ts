@@ -227,6 +227,7 @@ export class ArchivoController {
    * - metadata: JSON string array con: [{"tipo_archivo_id":1,"descripcion":"..."}, ...]
    */
   async bulkCreate(req: Request, res: Response, next: NextFunction) {
+
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -279,6 +280,8 @@ export class ArchivoController {
         const meta = metadataArray[i]
 
         // Verificar tipo de archivo
+
+        console.log("Contenido del meta: ", meta)
         const tipoArchivo = await TipoArchivoRepository.findById(Number(meta.tipo_archivo_id))
         if (!tipoArchivo) {
           await Promise.all(files.map(f => deleteFile(f.path)))
