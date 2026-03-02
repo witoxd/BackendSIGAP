@@ -33,7 +33,7 @@ const ALLOWED_MIME_TYPES: { [key: string]: string[] } = {
   "image/jpeg": [".jpg", ".jpeg"],
   "image/png": [".png"],
   // "image/gif": [".gif"],
-   "image/webp": [".webp"],
+  "image/webp": [".webp"],
 
   // Documentos de Office
   // "application/msword": [".doc"],
@@ -144,11 +144,11 @@ const CACHE_TTL = 5 * 60 * 1000 // 5 minutos
 const getTipoArchivo = async (id: number): Promise<any> => {
   const cached = tiposArchivoCache.get(id)
   const now = Date.now()
-  
+
   if (cached && now - cached.timestamp < CACHE_TTL) {
     return cached.data
   }
-  
+
   try {
     const data = await TipoArchivoRepository.findById(id)
     tiposArchivoCache.set(id, { data, timestamp: now })
@@ -167,8 +167,14 @@ const getTipoArchivo = async (id: number): Promise<any> => {
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     try {
-      // Determinar subdirectorio basado en el tipo de archivo del body
-      const tipoArchivo = Number(req.body.tipo_archivo_id)
+      
+      const reqAny = req as any
+      if (reqAny._fileIndex === undefined) reqAny._fileIndex = 0
+      const currentIndex = reqAny._fileIndex++
+
+      // Parsear metadata (viene como string JSON desde el FormData)
+      const metadata = JSON.parse(req.body.metadata)
+      const tipoArchivo = Number(metadata[currentIndex]?.tipo_archivo_id)
 
       const existingTipoArchivoData = await getTipoArchivo(tipoArchivo)
 
@@ -221,7 +227,7 @@ const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
 
   console.log(file, req.body, req.files)
   console.log("files:", req.files)
-console.log("files length:", (req.files as any[])?.length)
+  console.log("files length:", (req.files as any[])?.length)
 
   // Verificar MIME type
   if (!isAllowedMimeType(file.mimetype)) {
