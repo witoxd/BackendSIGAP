@@ -7,10 +7,14 @@ export class ContactoRepository {
    */
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
-      `SELECT c.*, p.nombres, p.apellido_paterno, p.apellido_materno
-       FROM contactos c
-       INNER JOIN personas p ON c.persona_id = p.persona_id
-       ORDER BY c.es_principal DESC, c.contacto_id
+      `SELECT 
+      constacto_id,
+      persona_id,
+      tipo_contacto,
+      valor,
+      es_principal
+       FROM contactos WHERE activo = true
+       ORDER BY es_principal DESC, contacto_id
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     )
@@ -22,10 +26,14 @@ export class ContactoRepository {
    */
   static async findById(id: number) {
     const result = await query(
-      `SELECT c.*, p.nombres, p.apellido_paterno, p.apellido_materno
+      `SELECT 
+      constacto_id,
+      persona_id,
+      tipo_contacto,
+      valor,
+      es_principal
        FROM contactos c
-       INNER JOIN personas p ON c.persona_id = p.persona_id
-       WHERE c.contacto_id = $1`,
+       WHERE c.contacto_id = $1 AND WHERE activo = true`,
       [id]
     )
     return result.rows[0]
@@ -36,7 +44,13 @@ export class ContactoRepository {
    */
   static async findByPersonaId(personaId: number) {
     const result = await query(
-      `SELECT * FROM contactos 
+      `SELECT 
+      constacto_id,
+      persona_id,
+      tipo_contacto,
+      valor,
+      es_principal
+       FROM contactos 
        WHERE persona_id = $1 AND activo = true
        ORDER BY es_principal DESC, contacto_id`,
       [personaId]
