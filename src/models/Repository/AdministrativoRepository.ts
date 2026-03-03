@@ -17,8 +17,8 @@ export class AdministrativoRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
          'administrativo_id', a.administrativo_id,
@@ -49,8 +49,8 @@ export class AdministrativoRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
          'administrativo_id', a.administrativo_id,
@@ -81,8 +81,8 @@ export class AdministrativoRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
          'administrativo_id', a.administrativo_id,
@@ -121,8 +121,8 @@ export class AdministrativoRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
          'administrativo_id', a.administrativo_id,

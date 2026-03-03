@@ -7,7 +7,7 @@ export class EstudianteRepository {
     const result = await query(
       `SELECT 
       json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', e.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -17,13 +17,13 @@ export class EstudianteRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
        ) AS estudiante
        FROM estudiantes e
        INNER JOIN personas p ON e.persona_id = p.persona_id
@@ -40,7 +40,7 @@ export class EstudianteRepository {
     const result = await query(
       `SELECT
       json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', e.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -50,13 +50,13 @@ export class EstudianteRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
        ) AS estudiante
        FROM estudiantes e
        INNER JOIN personas p ON e.persona_id = p.persona_id
@@ -71,7 +71,7 @@ export class EstudianteRepository {
     const result = await query(
       `SELECT
         json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', e.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -81,18 +81,18 @@ export class EstudianteRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
        ) AS estudiante
-       FROM administrativos a
-       INNER JOIN personas p ON a.persona_id = p.persona_id
+       FROM estudiantes e
+       INNER JOIN personas p ON e.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
-       WHERE a.persona_id = $1`,
+       WHERE e.persona_id = $1`,
         [personaId])
     return result.rows[0]
   }
@@ -109,7 +109,7 @@ export class EstudianteRepository {
        )
        SELECT
         json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', e.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -119,14 +119,14 @@ export class EstudianteRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
-       ) AS estudiante
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
+       ) AS estudiante,
          CASE
            WHEN input.is_documento THEN
              CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END
@@ -209,7 +209,7 @@ export class EstudianteRepository {
     const result = await query(
       `SELECT
               json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', e.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -219,13 +219,13 @@ export class EstudianteRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
        ) AS estudiante
        FROM estudiantes e
        INNER JOIN personas p ON e.persona_id = p.persona_id

@@ -7,7 +7,7 @@ export class PersonaRepository {
     const result = await query(
       `SELECT 
             json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', p.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -17,10 +17,12 @@ export class PersonaRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona
-      FROM personas ORDER BY persona_id LIMIT $1 OFFSET $2`, [limit, offset])
+      FROM personas p INNER JOIN tipo_documento td
+     ON p.tipo_documento_id = td.tipo_documento_id
+      ORDER BY persona_id LIMIT $1 OFFSET $2`, [limit, offset])
     return result.rows
   }
 
@@ -28,7 +30,7 @@ export class PersonaRepository {
     const result = await query(
       `SELECT 
             json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', p.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -38,10 +40,10 @@ export class PersonaRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona
-      FROM personas WHERE persona_id = $1`, [id])
+      FROM personas p INNER JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id WHERE persona_id = $1`, [id])
     return result.rows[0]
   }
 
@@ -49,7 +51,7 @@ export class PersonaRepository {
     const result = await query(
       `SELECT 
             json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', p.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -59,10 +61,10 @@ export class PersonaRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona
-      FROM personas WHERE numero_documento = $1`, [numero_documento])
+      FROM personas p INNER JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id WHERE numero_documento = $1`, [numero_documento])
     return result.rows[0]
   }
 
@@ -70,7 +72,7 @@ export class PersonaRepository {
     const result = await query(
       `SELECT 
             json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', p.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -80,8 +82,8 @@ export class PersonaRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona
       FROM personas WHERE numero_documento ILIKE '%' || $1 || '%'`, [numero_documento])
     return result.rows[0]
@@ -99,7 +101,7 @@ export class PersonaRepository {
        )
        SELECT
                json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', p.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -109,8 +111,8 @@ export class PersonaRepository {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
          CASE
            WHEN input.is_documento THEN
@@ -125,7 +127,7 @@ export class PersonaRepository {
                plainto_tsquery('spanish', input.q)
              )
          END AS rank
-       FROM personas p, input
+       FROM personas p INNER JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id, input
        WHERE (
          input.is_documento = true
          AND p.numero_documento ILIKE '%' || input.q || '%'
@@ -155,14 +157,15 @@ export class PersonaRepository {
 
   static async create(data: Omit<PersonaCreationAttributes, "persona_id">, client?: any) {
     const result = await query(
-      `INSERT INTO personas (nombres, apellido_paterno, apellido_materno, tipo_documento_id, numero_documento, fecha_nacimiento, genero)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      `INSERT INTO personas (nombres, apellido_paterno, apellido_materno, tipo_documento_id, numero_documento, tipo_sangre, fecha_nacimiento, genero)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [
         data.nombres,
         data.apellido_paterno,
         data.apellido_materno,
         data.tipo_documento_id,
         data.numero_documento,
+        data.tipo_sangre,
         data.fecha_nacimiento,
         data.genero,
       ],
