@@ -4,22 +4,86 @@ import { AppError } from "@/src/utils/AppError"
 
 export class PersonaRepository {
   static async findAll(limit = 50, offset = 0) {
-    const result = await query("SELECT * FROM personas ORDER BY persona_id LIMIT $1 OFFSET $2", [limit, offset])
+    const result = await query(
+      `SELECT 
+            json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona
+      FROM personas ORDER BY persona_id LIMIT $1 OFFSET $2`, [limit, offset])
     return result.rows
   }
 
   static async findById(id: number) {
-    const result = await query("SELECT * FROM personas WHERE persona_id = $1", [id])
+    const result = await query(
+      `SELECT 
+            json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona
+      FROM personas WHERE persona_id = $1`, [id])
     return result.rows[0]
   }
 
   static async findByDocumento(numero_documento: string) {
-    const result = await query("SELECT * FROM personas WHERE numero_documento = $1", [numero_documento])
+    const result = await query(
+      `SELECT 
+            json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona
+      FROM personas WHERE numero_documento = $1`, [numero_documento])
     return result.rows[0]
   }
 
   static async searchByDocumento(numero_documento: string) {
-    const result = await query("SELECT * FROM personas WHERE numero_documento ILIKE '%' || $1 || '%'", [numero_documento])
+    const result = await query(
+      `SELECT 
+            json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona
+      FROM personas WHERE numero_documento ILIKE '%' || $1 || '%'`, [numero_documento])
     return result.rows[0]
   }
 
@@ -34,7 +98,20 @@ export class PersonaRepository {
          SELECT $1::text AS q, $2::boolean AS is_documento
        )
        SELECT
-         p.*,
+               json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
          CASE
            WHEN input.is_documento THEN
              CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END
@@ -128,7 +205,7 @@ export class PersonaRepository {
     return Number.parseInt(result.rows[0].count)
   }
 
-  
+
   static async getOrCreatePersona(personaData: PersonaCreationAttributes, client?: any) {
     const persona = await PersonaRepository.findByDocumento(
       personaData.numero_documento
