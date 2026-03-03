@@ -5,7 +5,27 @@ import { AdministrativoCreationAttributes } from "../sequelize/Administrativo"
 export class AdministrativoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
-      `SELECT a.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento_id, td.tipo_documento, p.numero_documento
+      `SELECT
+        json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
+       json_build_object(
+         'administrativo_id', a.administrativo_id,
+         'cargo', a.cargo,
+         'fecha_contratacion', a.fecha_contratacion,
+         'estado', a.estado
+       ) AS administrativo
        FROM administrativos a
        INNER JOIN personas p ON a.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -17,7 +37,27 @@ export class AdministrativoRepository {
 
   static async findById(id: number) {
     const result = await query(
-      `SELECT a.*, p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento_id, td.tipo_documento, p.numero_documento
+      `SELECT
+        json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
+       json_build_object(
+         'administrativo_id', a.administrativo_id,
+         'cargo', a.cargo,
+         'fecha_contratacion', a.fecha_contratacion,
+         'estado', a.estado
+       ) AS administrativo
        FROM administrativos a
        INNER JOIN personas p ON a.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -28,8 +68,35 @@ export class AdministrativoRepository {
   }
 
   static async findByPersonaId(personaId: number) {
-    const result = await query(`SELECT * FROM administrativos WHERE persona_id = $1`, [personaId])
-    return result.rows[0]
+    const result = await query(
+      `SELECT
+        json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
+       json_build_object(
+         'administrativo_id', a.administrativo_id,
+         'cargo', a.cargo,
+         'fecha_contratacion', a.fecha_contratacion,
+         'estado', a.estado
+       ) AS administrativo
+       FROM administrativos a
+       INNER JOIN personas p ON a.persona_id = p.persona_id
+       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+       WHERE a.persona_id = $1`,
+      [personaId],
+    )
+        return result.rows[0]
   }
   
    static async SearchIndex(index: string, limit = 50) {
@@ -43,13 +110,26 @@ export class AdministrativoRepository {
          SELECT $1::text AS q, $2::boolean AS is_documento
        )
        SELECT
-         a.*,
-         p.nombres,
-         p.apellido_paterno,
-         p.apellido_materno,
-         td.tipo_documento_id,
-         td.tipo_documento,
-         p.numero_documento,
+        json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
+       json_build_object(
+         'administrativo_id', a.administrativo_id,
+         'cargo', a.cargo,
+         'fecha_contratacion', a.fecha_contratacion,
+         'estado', a.estado
+       ) AS administrativo
          CASE
            WHEN input.is_documento THEN
              CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END
