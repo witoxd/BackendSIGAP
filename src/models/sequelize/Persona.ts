@@ -8,11 +8,12 @@ interface PersonaAttributes {
   apellido_materno: string
   tipo_documento_id: number
   numero_documento: string
+  tipo_sangre: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
   fecha_nacimiento: Date
   genero: "Masculino" | "Femenino" | "Otro"
 }
 
-export interface PersonaCreationAttributes extends Optional<PersonaAttributes, "persona_id" | "apellido_materno" | "apellido_paterno"> {}
+export interface PersonaCreationAttributes extends Optional<PersonaAttributes, "persona_id" | "apellido_materno" | "apellido_paterno"> { }
 
 export class Persona extends Model<PersonaAttributes, PersonaCreationAttributes> implements PersonaAttributes {
   public persona_id!: number
@@ -21,6 +22,7 @@ export class Persona extends Model<PersonaAttributes, PersonaCreationAttributes>
   public apellido_materno!: string
   public tipo_documento_id!: number
   public numero_documento!: string
+  public tipo_sangre!: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
   public fecha_nacimiento!: Date
   public genero!: "Masculino" | "Femenino" | "Otro"
 
@@ -60,7 +62,7 @@ Persona.init(
     tipo_documento_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references:{
+      references: {
         model: "tipo_documento",
         key: "tipo_documento_id",
       }
@@ -73,6 +75,10 @@ Persona.init(
         notEmpty: true,
         len: [5, 20],
       },
+    },
+    tipo_sangre: {
+      type: DataTypes.ENUM("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
+      allowNull: false,
     },
     fecha_nacimiento: {
       type: DataTypes.DATEONLY,
