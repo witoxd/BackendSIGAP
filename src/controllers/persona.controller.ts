@@ -137,7 +137,7 @@ export class PersonaController {
 
     if (PersonaData.numero_documento) {
       const existingPersona = await PersonaRepository.findByDocumento(PersonaData.numero_documento)
-      if (existingPersona && existingPersona.persona_id !== id) {
+      if (existingPersona.persona.persona_id !== id) {
         throw new AppError("Ya existe otra persona con ese número de documento", 409)
       }
     }
