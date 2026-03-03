@@ -4,7 +4,16 @@ import type { ArchivosCreationAttributes } from "../sequelize/Archivo"
 export class ArchivoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
-      `SELECT a.*
+      `SELECT 
+        a.archivo_id,
+        a.persona_id,
+        a.tipo_archivo_id,
+        a.nombre,
+        a.url_archivo,
+        a.descripcion,
+        a.asignado_por,
+        a.fecha_carga,
+        a.activo,
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
        ORDER BY a.fecha_carga DESC LIMIT $1 OFFSET $2`,
@@ -15,7 +24,16 @@ export class ArchivoRepository {
 
   static async findById(id: number) {
     const result = await query(
-      `SELECT a.*
+      `SELECT
+        a.archivo_id,
+        a.persona_id,
+        a.tipo_archivo_id,
+        a.nombre,
+        a.url_archivo,
+        a.descripcion,
+        a.asignado_por,
+        a.fecha_carga,
+        a.activo,
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
        WHERE a.archivo_id = $1`,
@@ -25,14 +43,32 @@ export class ArchivoRepository {
   }
 
   static async findByPersonaId(personaId: number) {
-    const result = await query(`SELECT * FROM archivos WHERE persona_id = $1
+    const result = await query(`SELECT
+        a.archivo_id,
+        a.persona_id,
+        a.tipo_archivo_id,
+        a.nombre,
+        a.url_archivo,
+        a.descripcion,
+        a.asignado_por,
+        a.fecha_carga,
+        a.activo, FROM archivos WHERE persona_id = $1
        ORDER BY fecha_carga DESC`, [personaId])
     return result.rows
   }
 
   static async findByTipo(tipoarchivos: number, limit = 50, offset = 0) {
     const result = await query(
-      `SELECT a.* 
+      `SELECT 
+        a.archivo_id,
+        a.persona_id,
+        a.tipo_archivo_id,
+        a.nombre,
+        a.url_archivo,
+        a.descripcion,
+        a.asignado_por,
+        a.fecha_carga,
+        a.activo,
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
        WHERE a.tipo_archivo_id = $1
@@ -42,14 +78,23 @@ export class ArchivoRepository {
     return result.rows
   }
 
-   static async findByTipoAndPerson(tipoarchivos: number, persona_id: number, limit = 50, offset = 0) {
+  static async findByTipoAndPerson(tipoarchivos: number, persona_id: number, limit = 50, offset = 0) {
     const result = await query(
-      `SELECT a.* 
+      `SELECT
+        a.archivo_id,
+        a.persona_id,
+        a.tipo_archivo_id,
+        a.nombre,
+        a.url_archivo,
+        a.descripcion,
+        a.asignado_por,
+        a.fecha_carga,
+        a.activo,
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
        WHERE a.tipo_archivo_id = $1 AND a.persona_id = $2
        ORDER BY a.fecha_carga DESC LIMIT $3 OFFSET $4`,
-      [tipoarchivos, persona_id,  limit, offset],
+      [tipoarchivos, persona_id, limit, offset],
     )
     return result.rows
   }
@@ -78,8 +123,8 @@ export class ArchivoRepository {
     return result.rows[0]
   }
 
-  static async bulkCreate(data: Omit<ArchivosCreationAttributes, "archivo_id" | "fecha_carga" | "activo">[], client?: any){
-      if (data.length === 0) return []
+  static async bulkCreate(data: Omit<ArchivosCreationAttributes, "archivo_id" | "fecha_carga" | "activo">[], client?: any) {
+    if (data.length === 0) return []
 
     const fields = [
       "persona_id",
@@ -110,13 +155,13 @@ export class ArchivoRepository {
       )
     })
 
-    const result = await query (`
+    const result = await query(`
       INSERT INTO archivos (${fields.join(", ")})
       VALUES ${placeholders.join(", ")}
       RETURNING *`, values, client)
-    
+
     return result.rows
-  
+
   }
 
   static async update(id: number, data: Partial<ArchivosCreationAttributes>, client?: any) {
