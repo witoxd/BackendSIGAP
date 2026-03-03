@@ -4,8 +4,30 @@ import { EgresadoCreationAttributes } from "../sequelize/Egresado"
 export class EgresadoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
-      `SELECT eg.*, e.*, p.nombres, p.apellido_paterno, p.apellido_materno,
-              p.numero_documento, td.tipo_documento
+      `SELECT 
+      json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
+       json_build_object(
+          'egresado_id', eg.egresado_id,
+          'fecha_grado', eg.fecha_grado,
+          'estudiante', json_build_object(
+         'estudiante_id', a.estudiante_id,
+         'fecha_ingreso', a.fecha_ingreso,
+         'estado', a.estado
+       )
+     ) AS egresado
        FROM egresados eg
        INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
        INNER JOIN personas p ON e.persona_id = p.persona_id
@@ -18,8 +40,30 @@ export class EgresadoRepository {
 
   static async findById(id: number) {
     const result = await query(
-      `SELECT eg.*, e.*, p.nombres, p.apellido_paterno, p.apellido_materno,
-              td.tipo_documento, p.numero_documento
+      `SELECT 
+         json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
+       json_build_object(
+          'egresado_id', eg.egresado_id,
+          'fecha_grado', eg.fecha_grado,
+          'estudiante', json_build_object(
+         'estudiante_id', a.estudiante_id,
+         'fecha_ingreso', a.fecha_ingreso,
+         'estado', a.estado
+       )
+     ) AS egresado,
        FROM egresados eg
        INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
        INNER JOIN personas p ON e.persona_id = p.persona_id
@@ -31,13 +75,65 @@ export class EgresadoRepository {
   }
 
   static async findByEstudianteId(estudianteId: number) {
-    const result = await query("SELECT * FROM egresados WHERE estudiante_id = $1", [estudianteId])
+    const result = await query(
+      `SELECT 
+         json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
+       json_build_object(
+          'egresado_id', eg.egresado_id,
+          'fecha_grado', eg.fecha_grado,
+          'estudiante', json_build_object(
+         'estudiante_id', a.estudiante_id,
+         'fecha_ingreso', a.fecha_ingreso,
+         'estado', a.estado
+       )
+     ) AS egresado
+      FROM egresados eg
+      INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
+      INNER JOIN personas p ON e.persona_id = p.persona_id
+      LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+      WHERE eg.estudiante_id = $1`, [estudianteId])
     return result.rows[0]
   }
 
   static async findByYear(year: number) {
     const result = await query(
-      `SELECT eg.*, e.*, p.nombres, p.apellido_paterno, p.apellido_materno
+      `SELECT
+          json_build_object(
+        'persona_id', a.persona_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'tipo_sangre', p.tipo_sangre,
+        'fecha_nacimiento', p.fecha_nacimiento,
+        'genero', p.genero,
+        'numero_documento', p.numero_documento,
+        'tipo_documento', json_build_object(
+          'tipo_documento_id', td.tipo_documento_id,
+          'tipo_documento', td.tipo_documento,
+        ),
+      ) AS persona,
+       json_build_object(
+          'egresado_id', eg.egresado_id,
+          'fecha_grado', eg.fecha_grado,
+          'estudiante', json_build_object(
+         'estudiante_id', a.estudiante_id,
+         'fecha_ingreso', a.fecha_ingreso,
+         'estado', a.estado
+       )
+     ) AS egresado
        FROM egresados eg
        INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
        INNER JOIN personas p ON e.persona_id = p.persona_id
