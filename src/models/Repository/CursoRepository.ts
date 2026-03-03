@@ -3,29 +3,15 @@ import { CursoCreationAttributes } from "../sequelize/Curso"
 
 export class CursoRepository {
   static async findAll(limit = 50, offset = 0) {
-    const result = await query("SELECT * FROM cursos ORDER BY grado DESC, grado ASC LIMIT $1 OFFSET $2", [limit, offset])
+    const result = await query("SELECT curso_id, nombre, grado FROM cursos ORDER BY grado DESC, grado ASC LIMIT $1 OFFSET $2", [limit, offset])
     return result.rows
   }
 
   static async findById(id: number) {
-    const result = await query("SELECT * FROM cursos WHERE curso_id = $1", [id])
+    const result = await query("SELECT curso_id, nombre, grado FROM cursos WHERE curso_id = $1", [id])
     return result.rows[0]
   }
 
-  static async findByGrado(grado: string) {
-    const result = await query("SELECT * FROM cursos WHERE grado = $1 ORDER BY grado DESC", [grado])
-    return result.rows[0]
-  }
-
-  static async findByAño(año: number) {
-    const result = await query("SELECT * FROM cursos WHERE año = $1 ORDER BY grado ASC", [año])
-    return result.rows
-  }
-
-  static async findByProfesor(profesor_id: number){
-    const result = await query("SELECT * FROM cursos WHERE profesor_id = $1 ORDER BY grado ASC", [profesor_id])
-    return result.rows
-  }
 
   static async create(data: Omit<CursoCreationAttributes, "curso_id">, client?: any) {
     const rsult = await query(
