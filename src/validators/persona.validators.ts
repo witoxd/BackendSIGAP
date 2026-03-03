@@ -11,77 +11,77 @@ export const personaBaseHttpValidator: ValidationChain[] = [
 ]
 
 export const createPersonaHttpValidator: ValidationChain[] = [
-  body("nombres")
+  body("persona.nombres")
     .isString()
     .withMessage("Los nombres deben ser texto")
     .notEmpty()
     .withMessage("Los nombres son requeridos")
     .isLength({ min: 2, max: 100 })
     .withMessage("Los nombres deben tener entre 2 y 100 caracteres"),
-  body("apellido_paterno")
+  body("persona.apellido_paterno")
     .optional()
     .isString()
     .withMessage("El apellido paterno debe ser texto")
     .isLength({ min: 2, max: 50 })
     .withMessage("El apellido paterno debe tener entre 2 y 50 caracteres"),
-  body("apellido_materno")
+  body("persona.apellido_materno")
     .optional()
     .isString()
     .withMessage("El apellido materno debe ser texto")
     .isLength({ min: 2, max: 50 })
     .withMessage("El apellido materno debe tener entre 2 y 50 caracteres"),
-  body("tipo_documento_id")
+  body("persona.tipo_documento_id")
     .isInt({ min: 1 })
     .withMessage("El tipo de documento es requerido y debe ser un numero valido"),
-  body("numero_documento")
+  body("persona.numero_documento")
     .isString()
     .withMessage("El numero de documento debe ser texto")
     .notEmpty()
     .withMessage("El numero de documento es requerido")
     .isLength({ min: 5, max: 20 })
     .withMessage("El numero de documento debe tener entre 5 y 20 caracteres"),
-  body("fecha_nacimiento")
+  body("persona.fecha_nacimiento")
     .isISO8601()
     .withMessage("La fecha de nacimiento debe ser una fecha valida"),
-  body("genero")
+  body("persona.genero")
     .isIn(["Masculino", "Femenino", "Otro"])
     .withMessage("El genero debe ser Masculino, Femenino u Otro"),
 ]
 
 export const updatePersonaHttpValidator: ValidationChain[] = [
-  body("nombres")
+  body("persona.nombres")
     .optional()
     .isString()
     .withMessage("Los nombres deben ser texto")
     .isLength({ min: 2, max: 100 })
     .withMessage("Los nombres deben tener entre 2 y 100 caracteres"),
-  body("apellido_paterno")
+  body("persona.apellido_paterno")
     .optional()
     .isString()
     .withMessage("El apellido paterno debe ser texto")
     .isLength({ min: 2, max: 50 })
     .withMessage("El apellido paterno debe tener entre 2 y 50 caracteres"),
-  body("apellido_materno")
+  body("persona.apellido_materno")
     .optional()
     .isString()
     .withMessage("El apellido materno debe ser texto")
     .isLength({ min: 2, max: 50 })
     .withMessage("El apellido materno debe tener entre 2 y 50 caracteres"),
-  body("tipo_documento_id")
+  body("persona.tipo_documento_id")
     .optional()
     .isInt({ min: 1 })
     .withMessage("El tipo de documento debe ser un numero valido"),
-  body("numero_documento")
+  body("persona.numero_documento")
     .optional()
     .isString()
     .withMessage("El numero de documento debe ser texto")
     .isLength({ min: 5, max: 20 })
     .withMessage("El numero de documento debe tener entre 5 y 20 caracteres"),
-  body("fecha_nacimiento")
+  body("persona.fecha_nacimiento")
     .optional()
     .isISO8601()
     .withMessage("La fecha de nacimiento debe ser una fecha valida"),
-  body("genero")
+  body("persona.genero")
     .optional()
     .isIn(["Masculino", "Femenino", "Otro"])
     .withMessage("El genero debe ser Masculino, Femenino u Otro"),

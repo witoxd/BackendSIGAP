@@ -8,7 +8,7 @@ export const validateCreatePersonaDomain = async (
   next: NextFunction
 ) => {
   try {
-    const persona = req.body
+    const {persona: persona} = req.body
 
     // Validacion dominio con Sequelize (NO DB)
     await Persona.build(persona).validate()
@@ -36,7 +36,7 @@ export const validateUpdatePersonaDomain = async (
   next: NextFunction
 ) => {
   try {
-    const persona = req.body
+    const {persona: persona} = req.body
 
     await Persona.build(persona).validate({ skip: ["tipo_documento_id", "numero_documento"] })
 
