@@ -101,8 +101,6 @@ export class EstudianteController {
       // Crear persona primero
       const newPersona = await PersonaRepository.create(PersonaData, client)
 
-      const existingEstudiante = await EstudianteRepository.findByPersonaId(newPersona.persona_id)
-
       // Crear estudiante usando persona_id recién creado
       const newEstudiante = await EstudianteRepository.create({
         ...estudianteData,
