@@ -7,7 +7,7 @@ export class ProfesorRepository  {
     const result = await query(
       `SELECT
        json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', pr.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -17,8 +17,8 @@ export class ProfesorRepository  {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
          'profesor_id', pr.profesor_id,
@@ -38,7 +38,7 @@ export class ProfesorRepository  {
     const result = await query(
       `SELECT
        json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', pr.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -48,8 +48,8 @@ export class ProfesorRepository  {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
          'profesor_id', pr.profesor_id,
@@ -69,7 +69,7 @@ export class ProfesorRepository  {
     const result = await query(
       `SELECT
          json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', pr.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -79,8 +79,8 @@ export class ProfesorRepository  {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
          'profesor_id', pr.profesor_id,
@@ -141,7 +141,7 @@ export class ProfesorRepository  {
        )
        SELECT
        json_build_object(
-        'persona_id', a.persona_id,
+        'persona_id', pr.persona_id,
         'nombres', p.nombres,
         'apellido_paterno', p.apellido_paterno,
         'apellido_materno', p.apellido_materno,
@@ -151,8 +151,8 @@ export class ProfesorRepository  {
         'numero_documento', p.numero_documento,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
+          'tipo_documento', td.tipo_documento
+        )
       ) AS persona,
        json_build_object(
          'profesor_id', pr.profesor_id,
