@@ -1,6 +1,11 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+
+// Contacto — información de contacto de personas
+// Relación 1:N con personas (una persona puede tener múltiples contactos: teléfono, email, dirección, etc.)
+// Dilema: Estudiante tambien es una persona tambien podra hacer uso de esta tabla????
+// Tener en cuenta no repetir datos
 interface ContactoAttributes {
   contacto_id: number
   persona_id: number

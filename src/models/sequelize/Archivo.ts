@@ -1,6 +1,7 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+
 interface ArchivosAttributes {
   archivo_id: number
   persona_id: number
