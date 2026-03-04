@@ -157,17 +157,36 @@ export class PersonaRepository {
 
   static async create(data: Omit<PersonaCreationAttributes, "persona_id">, client?: any) {
     const result = await query(
-      `INSERT INTO personas (nombres, apellido_paterno, apellido_materno, tipo_documento_id, numero_documento, tipo_sangre, fecha_nacimiento, genero)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      `INSERT INTO personas (
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      tipo_documento_id,
+      numero_documento,
+      grupo_sanguineo,
+      fecha_nacimiento,
+      genero,
+      grupo_etnico,
+      credo_religioso,
+      lugar_nacimiento,
+      serial_registro_civil,
+      expedida_en
+      )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
       [
         data.nombres,
         data.apellido_paterno,
         data.apellido_materno,
         data.tipo_documento_id,
         data.numero_documento,
-        data.tipo_sangre,
+        data.grupo_sanguineo,
         data.fecha_nacimiento,
         data.genero,
+        data.grupo_etnico,
+        data.credo_religioso,
+        data.lugar_nacimiento,
+        data.serial_registro_civil,
+        data.expedida_en
       ],
       client
     )
