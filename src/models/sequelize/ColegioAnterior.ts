@@ -5,8 +5,6 @@ import { sequelize } from "../../config/database"
 // ColegioAnterior — historial de instituciones previas
 // Relación 1:N con estudiantes.
 
-
-
 interface ColegioAnteriorAttributes {
   colegio_ant_id: number
   estudiante_id: number
