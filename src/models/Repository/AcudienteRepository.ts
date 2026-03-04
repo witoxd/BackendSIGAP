@@ -1,30 +1,22 @@
 import { query } from "../../config/database"
 import { AcudienteCreationAttributes } from "../sequelize/Acudiente"
 import { AcudienteEstudianteCreationAttributes } from "../sequelize/AcudienteEstudiante"
+import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 
+const ACUDIENTE_FIELDS_JSON = `
+  json_build_object(
+    'acudiente_id', a.acudiente_id,
+    'parentesco', a.parentesco
+  ) AS acudiente
+`
 
 export class AcudienteRepository {
+
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
       `SELECT
-      json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'acudiente_id', a.acudiente_id,
-         'parentesco', a.parentesco
-       ) AS acudiente
+      ${PERSONA_FIELDS_JSON},
+       ${ACUDIENTE_FIELDS_JSON}
        FROM acudientes a
        INNER JOIN personas p ON a.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -34,7 +26,7 @@ export class AcudienteRepository {
     return result.rows
   }
 
-    static async SearchIndex(index: string, limit = 50) {
+  static async SearchIndex(index: string, limit = 50) {
     const normalizedIndex = index.trim().replace(/\s+/g, " ")
     if (!normalizedIndex) return []
 
@@ -45,24 +37,8 @@ export class AcudienteRepository {
          SELECT $1::text AS q, $2::boolean AS is_documento
        )
        SELECT
-      json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'acudiente_id', a.acudiente_id,
-         'parentesco', a.parentesco
-       ) AS acudiente
+       ${PERSONA_FIELDS_JSON},
+       ${ACUDIENTE_FIELDS_JSON}
          CASE
            WHEN input.is_documento THEN
              CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END
@@ -110,24 +86,8 @@ export class AcudienteRepository {
   static async findById(id: number) {
     const result = await query(
       `SELECT 
-          json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'acudiente_id', a.acudiente_id,
-         'parentesco', a.parentesco
-       ) AS acudiente
+       ${PERSONA_FIELDS_JSON},
+       ${ACUDIENTE_FIELDS_JSON}
        FROM acudientes a
        INNER JOIN personas p ON a.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -139,24 +99,8 @@ export class AcudienteRepository {
 
   static async findByPersonaId(personaId: number) {
     const result = await query(`SELECT 
-      json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'acudiente_id', a.acudiente_id,
-         'parentesco', a.parentesco
-       ) AS acudiente
+       ${PERSONA_FIELDS_JSON},
+       ${ACUDIENTE_FIELDS_JSON}
       FROM acudientes a
       INNER JOIN personas p ON a.persona_id = p.persona_id
       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -167,24 +111,8 @@ export class AcudienteRepository {
   static async findByEstudiante(estudianteId: number) {
     const result = await query(
       `SELECT 
-            json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'acudiente_id', a.acudiente_id,
-         'parentesco', a.parentesco
-       ) AS acudiente
+       ${PERSONA_FIELDS_JSON},
+       ${ACUDIENTE_FIELDS_JSON}
        FROM acudientes a
        INNER JOIN acudiente_estudiante ae ON a.acudiente_id = ae.acudiente_id
        INNER JOIN personas p ON a.persona_id = p.persona_id

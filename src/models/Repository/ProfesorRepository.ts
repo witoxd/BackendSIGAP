@@ -1,30 +1,20 @@
 import { query } from "../../config/database"
 import { ProfesorCreationAttributes } from "../sequelize/Profesor"
+import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 
-
+const PROFESOR_FIELDS_JSON = `
+        json_build_object(
+          'profesor_id', pr.profesor_id,
+          'fecha_contratacion', pr.fecha_contratacion,
+          'estado', pr.estado
+        ) AS profesor
+`
 export class ProfesorRepository  {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
       `SELECT
-       json_build_object(
-        'persona_id', pr.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'profesor_id', pr.profesor_id,
-         'fecha_contratacion', pr.fecha_contratacion,
-         'estado', pr.estado
-       ) AS profesor
+      ${PERSONA_FIELDS_JSON},
+      ${PROFESOR_FIELDS_JSON}
        FROM profesores pr
        INNER JOIN personas p ON pr.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -37,25 +27,8 @@ export class ProfesorRepository  {
   static async findById(id: number) {
     const result = await query(
       `SELECT
-       json_build_object(
-        'persona_id', pr.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'profesor_id', pr.profesor_id,
-         'fecha_contratacion', pr.fecha_contratacion,
-         'estado', pr.estado
-       ) AS profesor
+       ${PERSONA_FIELDS_JSON},
+       ${PROFESOR_FIELDS_JSON}
        FROM profesores pr
        INNER JOIN personas p ON pr.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -68,25 +41,8 @@ export class ProfesorRepository  {
   static async findByPersonaId(personaId: number) {
     const result = await query(
       `SELECT
-         json_build_object(
-        'persona_id', pr.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'profesor_id', pr.profesor_id,
-         'fecha_contratacion', pr.fecha_contratacion,
-         'estado', pr.estado
-       ) AS profesor
+       ${PERSONA_FIELDS_JSON},
+       ${PROFESOR_FIELDS_JSON}
        FROM profesores pr
        INNER JOIN personas p ON pr.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
@@ -94,6 +50,8 @@ export class ProfesorRepository  {
       [personaId])
     return result.rows[0]
   }
+
+  
 
   static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, client?: any) {
     const result = await query(
@@ -140,25 +98,8 @@ export class ProfesorRepository  {
          SELECT $1::text AS q, $2::boolean AS is_documento
        )
        SELECT
-       json_build_object(
-        'persona_id', pr.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento
-        )
-      ) AS persona,
-       json_build_object(
-         'profesor_id', pr.profesor_id,
-         'fecha_contratacion', pr.fecha_contratacion,
-         'estado', pr.estado
-       ) AS profesor,
+      ${PERSONA_FIELDS_JSON},
+      ${PROFESOR_FIELDS_JSON},
          CASE
            WHEN input.is_documento THEN
              CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END

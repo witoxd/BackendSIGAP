@@ -1,24 +1,11 @@
 import { query } from "../../config/database"
 import { EgresadoCreationAttributes } from "../sequelize/Egresado"
-
+import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 export class EgresadoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
       `SELECT 
-      json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
-      ) AS persona,
+      ${PERSONA_FIELDS_JSON},
        json_build_object(
           'egresado_id', eg.egresado_id,
           'fecha_grado', eg.fecha_grado,
@@ -41,20 +28,7 @@ export class EgresadoRepository {
   static async findById(id: number) {
     const result = await query(
       `SELECT 
-         json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
-      ) AS persona,
+       ${PERSONA_FIELDS_JSON},
        json_build_object(
           'egresado_id', eg.egresado_id,
           'fecha_grado', eg.fecha_grado,
@@ -77,20 +51,7 @@ export class EgresadoRepository {
   static async findByEstudianteId(estudianteId: number) {
     const result = await query(
       `SELECT 
-         json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
-      ) AS persona,
+      ${PERSONA_FIELDS_JSON},
        json_build_object(
           'egresado_id', eg.egresado_id,
           'fecha_grado', eg.fecha_grado,
@@ -111,20 +72,7 @@ export class EgresadoRepository {
   static async findByYear(year: number) {
     const result = await query(
       `SELECT
-          json_build_object(
-        'persona_id', a.persona_id,
-        'nombres', p.nombres,
-        'apellido_paterno', p.apellido_paterno,
-        'apellido_materno', p.apellido_materno,
-        'tipo_sangre', p.tipo_sangre,
-        'fecha_nacimiento', p.fecha_nacimiento,
-        'genero', p.genero,
-        'numero_documento', p.numero_documento,
-        'tipo_documento', json_build_object(
-          'tipo_documento_id', td.tipo_documento_id,
-          'tipo_documento', td.tipo_documento,
-        ),
-      ) AS persona,
+       ${PERSONA_FIELDS_JSON},
        json_build_object(
           'egresado_id', eg.egresado_id,
           'fecha_grado', eg.fecha_grado,
