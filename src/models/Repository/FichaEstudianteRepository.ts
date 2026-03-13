@@ -23,7 +23,7 @@ export class FichaEstudianteRepository {
     centro_atencion_medica,
     medio_transporte,
     transporte_propio,
-    observaciones,
+    observaciones
        FROM ficha_estudiante f WHERE f.estudiante_id = $1`,
       [estudianteId]
     )

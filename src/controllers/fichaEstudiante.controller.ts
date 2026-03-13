@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express"
 import { FichaEstudianteRepository } from "../models/Repository/FichaEstudianteRepository"
 import { ColegioAnteriorRepository } from "../models/Repository/ColegioAnteriorRepository"
-import { ViviendaEstudianteRepository } from "../models/Repository/Viviendaestudianterepository"
+import { ViviendaEstudianteRepository } from "../models/Repository/ViviendaEstudianteRepository"
 import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
 import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
