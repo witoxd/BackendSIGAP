@@ -11,7 +11,7 @@ interface PersonaAttributes {
   fecha_nacimiento: Date
   genero: "Masculino" | "Femenino" | "Otro"
   grupo_sanguineo?: string        
-  grupo_etnico?: string            
+  grupo_etnico?: string
   credo_religioso?: string         
   lugar_nacimiento?: string        
   serial_registro_civil?: string   

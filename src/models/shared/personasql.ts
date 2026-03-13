@@ -42,6 +42,7 @@ export const PERSONA_FIELDS_JSON = `
         'credo_religioso', p.credo_religioso,
         'lugar_nacimiento', p.lugar_nacimiento,
         'serial_registro_civil', p.serial_registro_civil,
+        'expedida_en', p.expedida_en,
         'tipo_documento', json_build_object(
           'tipo_documento_id', td.tipo_documento_id,
           'tipo_documento', td.tipo_documento

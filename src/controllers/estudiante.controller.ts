@@ -138,21 +138,21 @@ export class EstudianteController {
       throw new AppError("Estudiante no encontrado", 404)
     }
 
-    const { persona, estudiante: estudianteData } = req.body
+    const { persona: personaData, estudiante: estudianteData } = req.body
 
 
     const updatedEstudiante = await transaction(async (client) => {
       // Si llega persona, actualizar persona
-      if (persona) {
+      if (personaData) {
         // Validar documento único
-        if (persona.numero_documento) {
-          const personaConflicto = await PersonaRepository.findByDocumento(persona.numero_documento)
+        if (personaData.numero_documento) {
+          const personaConflicto = await PersonaRepository.findByDocumento(personaData.numero_documento)
 
           if (personaConflicto && personaConflicto.persona_id !== existing.persona_id) {
             throw new AppError("Ya existe otra persona con ese documento", 409)
           }
         }
-        await PersonaRepository.update(existing.persona_id, persona, client)
+        await PersonaRepository.update(existing.persona.persona_id, personaData, client)
       }
 
       // Si llegan datos del estudiante, actualizarlos
@@ -168,7 +168,7 @@ export class EstudianteController {
     })
 
     // Obtener persona actualizada
-    const updatedPersona = await PersonaRepository.findById(existing.persona_id)
+    const updatedPersona = await PersonaRepository.findById(existing.persona.persona_id)
 
     // Respuesta final unificada
     return res.status(200).json({

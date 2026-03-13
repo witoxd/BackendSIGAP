@@ -105,7 +105,7 @@ export const testConnection = async () => {
     // Test Sequelize
     await sequelize.authenticate()
     //Advertencia no tocar sync en producción, puede causar pérdida de datos.
-    await sequelize.sync({ force: false })
+    await sequelize.sync({ force: false }) // Solo para desarrollo, recrea tablas según modelos
     console.log("Sequelize conectado exitosamente - Sequelize connected successfully")
 
     return true
