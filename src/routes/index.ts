@@ -15,6 +15,7 @@ import permisoRoutes from "./permiso.routes"
 import egresadoRoutes from "./egresado.routes"
 import acudienteRoutes from "./acudiente.routes"
 import tipoArchivoRoutes from "./tipoArchivo.routes"
+import fichaEstudianteRoutes from "./fichaEstudiante.routes"
 import auditoriaRoutes from "./auditoria.routes"
 
 const router = Router()
@@ -35,6 +36,7 @@ router.use("/permisos", permisoRoutes) //No crear rutas, PELIGRO
 router.use("/egresados", egresadoRoutes) //listo
 router.use("/acudientes", acudienteRoutes) //listo
 router.use("/tipos-archivos", tipoArchivoRoutes) // listo
+router.use("/ficha", fichaEstudianteRoutes) //listo
 //router.use("/auditoria", auditoriaRoutes)
 
 export default router

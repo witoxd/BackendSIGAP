@@ -86,8 +86,8 @@ ViviendaEstudiante.init(
     },
     updated_at: {
       type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
+      allowNull: true,
+      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
     },
   },
   {
