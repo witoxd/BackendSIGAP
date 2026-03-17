@@ -179,4 +179,23 @@ export class AcudienteRepository {
     )
     return result.rows[0]
   }
+
+  // Obtener acudientes asignados a un estudiante
+  static async getAcudientesByEstudiante(estudianteId: number) {
+    const result = await query(
+      `SELECT
+       ${PERSONA_FIELDS_JSON},
+       ${ACUDIENTE_FIELDS_JSON},
+       ae.tipo_relacion,
+       ae.es_principal
+       FROM acudiente_estudiante ae
+       INNER JOIN acudientes a ON ae.acudiente_id = a.acudiente_id
+       INNER JOIN personas p ON a.persona_id = p.persona_id
+       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+       WHERE ae.estudiante_id = $1
+       ORDER BY ae.es_principal DESC, p.apellido_paterno`,
+      [estudianteId],
+    )
+    return result.rows
+  }
 }

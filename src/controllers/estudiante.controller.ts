@@ -200,4 +200,15 @@ export class EstudianteController {
       message: "Estudiante eliminado exitosamente",
     })
   }
+
+  async getEstudiantesByAcudiente(req: Request, res: Response) {
+    const acudienteId = Number(req.params.acudienteId)
+
+    const estudiantes = await EstudianteRepository.getEstudiantesByAcudiente(acudienteId)
+
+    res.status(200).json({
+      success: true,
+      data: estudiantes,
+    })  
+  }
 }

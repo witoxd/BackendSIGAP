@@ -175,6 +175,24 @@ export class EstudianteRepository {
     return result.rows[0]
   } 
 
+  //Obtener estudiantes asignados a un acudiente
+  static async getEstudiantesByAcudiente(acudienteId: number) {
+    const result = await query(
+      `SELECT
+       ${PERSONA_FIELDS_JSON},
+      ${ESTUDIANTE_FIELDS_JSON}
+       FROM acudiente_estudiante ae
+       INNER JOIN estudiantes e ON ae.estudiante_id = e.estudiante_id
+       INNER JOIN personas p ON e.persona_id = p.persona_id
+       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+       WHERE ae.acudiente_id = $1
+       ORDER BY p.apellido_paterno, p.apellido_materno, p.nombres`,
+      [acudienteId],
+    )
+    return result.rows
+
+}
+
   static async delete(id: number) {
     const result = await query("DELETE FROM estudiantes WHERE estudiante_id = $1 RETURNING *", [id])
     return result.rows[0]

@@ -52,10 +52,10 @@ export class AcudienteController {
     }
   }
 
-  async getByEstudiante(req: Request, res: Response, next: NextFunction) {
+  async getAcudientesByEstudiante(req: Request, res: Response, next: NextFunction) {
     try {
       const estudianteId = Number(req.params.id)
-      const acudientes = await AcudienteRepository.findByEstudiante(estudianteId)
+      const acudientes = await AcudienteRepository.getAcudientesByEstudiante(estudianteId)
 
       res.status(200).json({
         success: true,
@@ -236,6 +236,20 @@ export class AcudienteController {
       res.status(200).json({
         success: true,
         message: "Acudiente removido del estudiante exitosamente",
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async getEstudiantesByAcudiente(req: Request, res: Response, next: NextFunction) {
+    try {
+      const estudianteId = Number(req.params.id)
+      const estudiantes = await AcudienteRepository.getAcudientesByEstudiante(estudianteId)
+
+      res.status(200).json({
+        success: true,
+        data: estudiantes,
       })
     } catch (error) {
       next(error)

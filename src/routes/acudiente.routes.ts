@@ -39,6 +39,14 @@ router.get(
   acudienteController.SearchIndex.bind(acudienteController)
 )
 
+router.get(
+  "/:id/estudiantes",
+  param("id").isInt({ min: 1 }).withMessage("ID de estudiante invalido"),
+  validate,
+  checkPermission(Recurso.ESTUDIANTES, Accion.READ),
+  acudienteController.getAcudientesByEstudiante.bind(acudienteController),
+)
+
 router.post(
   "/create",
   createAcudienteHttpValidator,

@@ -8,7 +8,7 @@ export class ContactoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
       `SELECT 
-      constacto_id,
+      contacto_id,
       persona_id,
       tipo_contacto,
       valor,
@@ -27,13 +27,13 @@ export class ContactoRepository {
   static async findById(id: number) {
     const result = await query(
       `SELECT 
-      constacto_id,
+      contacto_id,
       persona_id,
       tipo_contacto,
       valor,
       es_principal
        FROM contactos c
-       WHERE c.contacto_id = $1 AND WHERE activo = true`,
+       WHERE c.contacto_id = $1 AND activo = true`,
       [id]
     )
     return result.rows[0]
@@ -45,7 +45,7 @@ export class ContactoRepository {
   static async findByPersonaId(personaId: number) {
     const result = await query(
       `SELECT 
-      constacto_id,
+      contacto_id,
       persona_id,
       tipo_contacto,
       valor,
