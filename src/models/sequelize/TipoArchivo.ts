@@ -7,6 +7,7 @@ interface TipoArchivoAttributes {
   descripcion?: string
   extensiones_permitidas?: string[]
   activo: boolean
+  aplica_a?: string[]
 }
 
 export interface TipoArchivoCreationAttributes 
@@ -20,6 +21,7 @@ export class TipoArchivo
   public descripcion?: string
   public extensiones_permitidas?: string[]
   public activo!: boolean
+  public aplica_a?: string[] 
 }
 
 TipoArchivo.init(
@@ -50,6 +52,11 @@ TipoArchivo.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
+    },
+    aplica_a: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      allowNull: true,
+      comment: "Array de aplicaciones: ['estudiante', 'acudiente']",
     },
   },
   {

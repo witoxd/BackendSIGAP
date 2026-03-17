@@ -127,6 +127,21 @@ export class TipoArchivoRepository {
   }
 
   /**
+   * SoftDelete un tipo de archivo
+   */
+
+  static async softDelete(id: number, client?: any) {
+    const result = await query(
+      `UPDATE tipos_archivo SET activo = false 
+       WHERE tipo_archivo_id = $1 
+       RETURNING *`,
+      [id],
+      client
+    )
+    return result.rows[0]
+  }
+
+  /**
    * Contar tipos de archivo
    */
   static async count() {
@@ -158,4 +173,15 @@ export class TipoArchivoRepository {
     // Verificar si la extensión está en la lista
     return extensionesPermitidas.includes(extension.toLowerCase())
   }
+
+  static async findByRol(rol: string) {
+  const result = await query(
+    `SELECT * FROM tipos_archivo 
+     WHERE activo = true 
+     AND (aplica_a IS NULL OR $1 = ANY(aplica_a))
+     ORDER BY nombre`,
+    [rol]
+  )
+  return result.rows
+}
 }

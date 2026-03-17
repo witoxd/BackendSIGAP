@@ -173,6 +173,13 @@ export class ArchivoController {
         throw new AppError("Tipo de archivo no encontrado", 404)
       }
 
+      // Verificar que la persona tiene permiso para subir este tipo de archivo
+      const personaPuedeSubirArchivo = await PersonaRepository.personaPuedeSubirArchivo(Number(persona_id), Number(tipo_archivo_id))
+      if (!personaPuedeSubirArchivo) {
+        await deleteFile(req.file.path)
+        throw new AppError("La persona no tiene permiso para subir este tipo de archivo", 403)
+      }
+
       // Verificar que la extensión está permitida
       const ext = path.extname(req.file.originalname).toLowerCase()
       const isAllowed = await TipoArchivoRepository.isExtensionAllowed(Number(tipo_archivo_id), ext)
@@ -286,6 +293,13 @@ export class ArchivoController {
         if (!tipoArchivo) {
           await Promise.all(files.map(f => deleteFile(f.path)))
           throw new AppError(`Tipo de archivo con ID ${meta.tipo_archivo_id} no encontrado`, 404)
+        }
+
+        // Verificar que la persona tiene permiso para subir este tipo de archivo
+        const personaPuedeSubirArchivo = await PersonaRepository.personaPuedeSubirArchivo(Number(persona_id), Number(meta.tipo_archivo_id))
+        if (!personaPuedeSubirArchivo) {
+          await Promise.all(files.map(f => deleteFile(f.path)))
+          throw new AppError(`La persona no tiene permiso para subir este tipo de archivo: ${meta.tipo_archivo_id}`, 403)
         }
 
         // Verificar extensión permitida

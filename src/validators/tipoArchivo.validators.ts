@@ -66,6 +66,15 @@ export const tipoArchivoIdValidator: ValidationChain[] = [
   param("id").isInt({ min: 1 }).withMessage("ID inválido"),
 ]
 
+export const tipoArchivoRolValidator: ValidationChain[] = [
+  param("rol")
+    .isString()
+    .notEmpty()
+    .withMessage("El rol es requerido")
+    .isIn(["estudiante", "acudiente", "profesor", "administrativo", "matricula", null])
+    .withMessage("Rol inválido"),
+]
+
 export const tipoArchivoNombreValidator: ValidationChain[] = [
   param("nombre")
     .isString()

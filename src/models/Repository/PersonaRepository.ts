@@ -174,6 +174,54 @@ export class PersonaRepository {
     return await PersonaRepository.create(personaData, client)
   }
 
+  static async tieneRol(personaId: number, rol: string): Promise<boolean> {
+  const queries: Record<string, string> = {
+    estudiante:      "SELECT 1 FROM estudiantes      WHERE persona_id = $1 LIMIT 1",
+    profesor:        "SELECT 1 FROM profesores        WHERE persona_id = $1 LIMIT 1",
+    acudiente:       "SELECT 1 FROM acudientes        WHERE persona_id = $1 LIMIT 1",
+    administrativo:  "SELECT 1 FROM administrativos   WHERE persona_id = $1 LIMIT 1",
+  }
+
+  const sql = queries[rol]
+  if (!sql) return false
+
+  const result = await query(sql, [personaId])
+  return result.rows.length > 0
+}
+
+// También útil: obtener TODOS los roles activos de una persona
+static async getRoles(personaId: number): Promise<string[]> {
+  const result = await query(
+    `SELECT 'estudiante'     AS rol FROM estudiantes     WHERE persona_id = $1
+     UNION ALL
+     SELECT 'profesor'       AS rol FROM profesores       WHERE persona_id = $1
+     UNION ALL
+     SELECT 'acudiente'      AS rol FROM acudientes       WHERE persona_id = $1
+     UNION ALL
+     SELECT 'administrativo' AS rol FROM administrativos  WHERE persona_id = $1`,
+    [personaId]
+  )
+  return result.rows.map((r: { rol: any }) => r.rol)
+}
+
+static async personaPuedeSubirArchivo(
+  personaId: number, 
+  tipoArchivoId: number
+): Promise<boolean> {
+  const result = await query(
+    `SELECT 1 FROM tipos_archivo ta
+     WHERE ta.tipo_archivo_id = $1
+     AND (
+       ta.aplica_a IS NULL  -- aplica a todos
+       OR EXISTS (SELECT 1 FROM estudiantes     WHERE persona_id = $2) AND 'estudiante'     = ANY(ta.aplica_a)
+       OR EXISTS (SELECT 1 FROM profesores       WHERE persona_id = $2) AND 'profesor'       = ANY(ta.aplica_a)
+       OR EXISTS (SELECT 1 FROM acudientes       WHERE persona_id = $2) AND 'acudiente'      = ANY(ta.aplica_a)
+       OR EXISTS (SELECT 1 FROM administrativos  WHERE persona_id = $2) AND 'administrativo' = ANY(ta.aplica_a)
+     )`,
+    [tipoArchivoId, personaId]
+  )
+  return result.rows.length > 0
+}
 
 }
 

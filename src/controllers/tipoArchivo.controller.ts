@@ -25,6 +25,28 @@ export class TipoArchivoController {
   }
 
   /**
+   * Obtener tipo de archivo por rol de perosna
+   */
+
+  async getRolByTipoArchivo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const rol = req.params.rol as string
+      const tipoArchivo = await TipoArchivoRepository.findByRol(rol)
+
+      if (!tipoArchivo) {
+        throw new AppError("Tipo de archivo no encontrado", 404)
+      }
+
+      res.status(200).json({
+        success: true,
+        data: tipoArchivo.aplica_a || [],
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
    * Obtener tipo de archivo por ID
    */
   async getById(req: Request, res: Response, next: NextFunction) {
@@ -145,16 +167,8 @@ export class TipoArchivoController {
     try {
       const id = Number(req.params.id)
 
-      // Verificar si hay archivos usando este tipo
-      const count = await TipoArchivoRepository.countByTipo(id)
-      if (count > 0) {
-        throw new AppError(
-          `No se puede eliminar el tipo de archivo porque tiene ${count} archivo(s) asociado(s)`,
-          400
-        )
-      }
 
-      const tipoArchivo = await TipoArchivoRepository.delete(id)
+      const tipoArchivo = await TipoArchivoRepository.softDelete(id)
 
       if (!tipoArchivo) {
         throw new AppError("Tipo de archivo no encontrado", 404)

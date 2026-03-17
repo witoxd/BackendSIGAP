@@ -7,6 +7,7 @@ import {
   updateTipoArchivoHttpValidator,
   tipoArchivoIdValidator,
   tipoArchivoNombreValidator,
+  tipoArchivoRolValidator,
   checkExtensionValidator,
 } from "../validators/tipoArchivo.validators"
 import {
@@ -15,6 +16,7 @@ import {
 } from "../validators/domain/tipoArchivo.domain"
 import { validate } from "../middleware/validate"
 import { Recurso, Accion } from "../types"
+import { param } from "express-validator"
 
 const router = Router()
 const tipoArchivoController = new TipoArchivoController()
@@ -35,6 +37,15 @@ router.get(
   validate,
   checkPermission(Recurso.DOCUMENTOS, Accion.READ),
   tipoArchivoController.getById.bind(tipoArchivoController)
+)
+
+// Obtener tipo de archivo por rol de persona
+router.get(
+  "/getByRol/:rol",
+  tipoArchivoRolValidator,
+  validate,
+  checkPermission(Recurso.DOCUMENTOS, Accion.READ),
+  tipoArchivoController.getRolByTipoArchivo.bind(tipoArchivoController)
 )
 
 // Obtener tipo de archivo por nombre
