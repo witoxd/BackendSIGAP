@@ -97,7 +97,7 @@ export class AuthController {
 
   async ResetPassword(req: Request, res: Response, next: NextFunction){
     try {
-       const personaId = Number(req.params.personaId)
+       const personaId = Number(req.params.id)
 
        const result = await authService.resetPasswordByDefaultDocument(personaId)
 

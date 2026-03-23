@@ -6,6 +6,7 @@ import { authenticate, isAdmin } from "../middleware/auth"
 import { authRateLimiter } from "../middleware/rateLimiter"
 import { canCreateUser, checkPermission } from "../middleware/acl"
 import { Accion, Recurso } from "../types"
+import { param } from "express-validator"
 
 const router = Router()
 const authController = new AuthController()
@@ -59,7 +60,9 @@ router.post(
 )
 
 router.post(
-  "/resetPasswordByDefault/:id",
+  "/resetPassword/:id",
+  param("id").isInt({min: 1}).withMessage("ID de persona ivalido"),
+  validate,
   authenticate,
   isAdmin,
   checkPermission(Recurso.USUARIOS, Accion.UPDATE),
