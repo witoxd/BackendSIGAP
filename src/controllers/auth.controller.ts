@@ -95,7 +95,7 @@ export class AuthController {
     }
   }
 
-  async ResetPassword(req: Request, res: Response, next: NextFunction){
+  async resetPassword(req: Request, res: Response, next: NextFunction){
     try {
        const personaId = Number(req.params.id)
 
