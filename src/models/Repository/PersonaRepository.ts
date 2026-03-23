@@ -21,11 +21,11 @@ export class PersonaRepository {
     return result.rows[0]
   }
 
-  static async findByDocumento(numero_documento: string) {
+  static async findByDocumento(numero_documento: string, client?: any) {
     const result = await query(
       `SELECT 
       ${PERSONA_FIELDS_JSON}
-      FROM personas p INNER JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id WHERE numero_documento = $1`, [numero_documento])
+      FROM personas p INNER JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id WHERE numero_documento = $1`, [numero_documento], client)
     return result.rows[0]
   }
 

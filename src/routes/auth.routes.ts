@@ -2,7 +2,7 @@ import { Router } from "express"
 import { AuthController } from "../controllers/auth.controller"
 import { registerValidator, loginValidator, changePasswordValidator } from "../utils/validators"
 import { validate } from "../middleware/validate"
-import { authenticate } from "../middleware/auth"
+import { authenticate, isAdmin } from "../middleware/auth"
 import { authRateLimiter } from "../middleware/rateLimiter"
 import { canCreateUser, checkPermission } from "../middleware/acl"
 import { Accion, Recurso } from "../types"
@@ -39,5 +39,32 @@ router.post(
   validate,
   authController.changePassword.bind(authController),
 )
+
+router.post(
+  "/create-user",
+  authenticate,
+  isAdmin,
+  validate,
+  canCreateUser,
+  authController.createUser.bind(authController)
+)
+
+router.post(
+  "/create-user-persona",
+  authenticate,
+  isAdmin,
+  validate,
+  canCreateUser,
+  authController.createUserWithPersona.bind(authController)
+)
+
+router.post(
+  "/resetPasswordByDefault/:id",
+  authenticate,
+  isAdmin,
+  checkPermission(Recurso.USUARIOS, Accion.UPDATE),
+  authController.ResetPassword.bind(authController)
+)
+
 
 export default router

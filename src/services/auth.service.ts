@@ -3,9 +3,83 @@ import jwt from "jsonwebtoken"
 import { query, transaction } from "../config/database"
 import { type JwtPayload, RoleType } from "../types"
 import { ConflictError, UnauthorizedError, NotFoundError, DatabaseError } from "../utils/AppError"
-
+import { UsuarioCreationAttributes } from "../models/sequelize/Usuario"
+import { PersonaCreationAttributes } from "../models/sequelize/Persona"
+import { PersonaRepository } from "../models/Repository/PersonaRepository"
+import { UserRepository } from "../models/Repository/UserRepository"
+import { PermisoRepository } from "../models/Repository/PermisoRepository"
 export class AuthService {
   // Registrar un nuevo usuario
+
+  async personaExisting(personaID: number) {
+
+    const run = async (txClient: any) => {
+      const [personaResult] = await Promise.all([
+        query("SELECT persona_id FROM personas WHERE persona_id = $1", [personaID], txClient),
+      ])
+
+      if (personaResult.rows.length === 0) {
+        throw new NotFoundError(`Persona con ID '${personaID}' no encontrada`)
+      }
+
+      const existingUserByPersona = await query("SELECT usuario_id FROM usuarios WHERE persona_id = $1", [personaID], txClient)
+
+      if (existingUserByPersona.rows.length > 0) {
+        throw new ConflictError("La persona ya tiene un usuario asignado")
+      }
+
+    }
+  }
+
+  async checkEmailAndUsername(email: string, username: string) {
+    const run = async (txClient: any) => {
+      const [emailCheck, usernameCheck] = await Promise.all([
+        query("SELECT usuario_id FROM usuarios WHERE email = $1", [email], txClient),
+        query("SELECT usuario_id FROM usuarios WHERE username = $1", [username], txClient),
+      ])
+
+      if (emailCheck.rows.length > 0) {
+        throw new ConflictError("El email ya está registrado")
+      }
+
+      if (usernameCheck.rows.length > 0) {
+        throw new ConflictError("El username ya está en uso")
+      }
+    }
+
+    try {
+      await transaction(run)
+    } catch (error: any) {
+      if (error instanceof ConflictError) {
+        throw error
+      }
+      console.error("Error verificando email y username:", error)
+      throw new DatabaseError("Error al verificar email y username")
+    }
+  }
+
+  async checkRoleExists(roleName: string) {
+    const run = async (txClient: any) => {
+      const roleResult = await query("SELECT role_id FROM roles WHERE nombre = $1", [roleName], txClient)
+
+      if (roleResult.rows.length === 0) {
+        throw new NotFoundError(`Rol '${roleName}' no encontrado`)
+      }
+
+      return roleResult.rows[0].role_id
+    }
+
+    try {
+      return await transaction(run)
+    } catch (error: any) {
+      if (error instanceof NotFoundError) {
+        throw error
+      }
+      console.error("Error verificando rol:", error)
+      throw new DatabaseError("Error al verificar rol")
+    }
+  }
+
   async register(userData: {
     email: string
     username: string
@@ -20,19 +94,9 @@ export class AuthService {
     role: string
   }) {
     try {
-      // Verificar si el email ya existe
-      const emailCheck = await query("SELECT usuario_id FROM usuarios WHERE email = $1", [userData.email])
 
-      if (emailCheck.rows.length > 0) {
-        throw new ConflictError("El email ya está registrado")
-      }
-
-      // Verificar si el username ya existe
-      const usernameCheck = await query("SELECT usuario_id FROM usuarios WHERE username = $1", [userData.username])
-
-      if (usernameCheck.rows.length > 0) {
-        throw new ConflictError("El username ya está en uso")
-      }
+      this.checkEmailAndUsername(userData.email, userData.username)
+      const roleId = await this.checkRoleExists(userData.role)
 
       // Hash de la contraseña
       const hashedPassword = await bcrypt.hash(userData.contraseña, 12)
@@ -112,8 +176,8 @@ export class AuthService {
 
     try {
 
-          await client.query("INSERT INTO administrativos (persona_id, cargo) VALUES ($1, 'gestor')", [personaId])
-      
+      await client.query("INSERT INTO administrativos (persona_id, cargo) VALUES ($1, 'gestor')", [personaId])
+
     } catch (error) {
       console.error("Error creando registro específico de rol:", error)
       throw error
@@ -227,6 +291,114 @@ export class AuthService {
       }
       console.error("Error al cambiar contraseña:", error)
       throw new DatabaseError("Error al cambiar contraseña")
+    }
+  }
+
+  // Crear usuario sin persona (para casos especiales, como administradores del sistema)
+  /*
+  la funcion creareUser metodo para crear un usurio usando el ID de una personsa ya existente
+  se le puede pasar un cleint para usarlo dentro de una transaccion, para la creacion de usuario y persona en una trnsacion
+  */
+  async createUser(user: UsuarioCreationAttributes, personaID: number, role: RoleType, client?: any) {
+
+    try {
+      if (client === undefined) {
+        this.personaExisting(personaID)
+      }
+
+      // Validaciones previas a la creacion de usuario, chekeo de email, username y rol
+      this.checkEmailAndUsername(user.email, user.username)
+      const roleResult = await this.checkRoleExists(role)
+
+      // Hash de contraseña
+      const hashedPassword = await bcrypt.hash(user.contraseña, 12)
+
+      // Creacion de usuario
+      const usuarioResult = await UserRepository.create({ ...user, contraseña: hashedPassword }, client)
+      
+      const roleId = roleResult.rows[0].role_id
+
+      // Si usuario se creo, entonces se le asigna un rol (si no se creo, no se asigna rol y se devuelve error)
+      // En este punto, si no se creo el usuario y se le intenta dar un rol, se lanzara un error pero esto ya seria un error de estructura
+      // Nota: arreglar la manera de client, si se pasa client, se asume que ya se hizo validacion de persona
+      if (usuarioResult) {
+        await UserRepository.assignRole(usuarioResult.usuario_id, roleId, client)
+      }
+
+      return {
+        message: "Usuario creado exitosamente",
+        data: {
+          userId: usuarioResult.usuario_id,
+          personaId: usuarioResult.persona_id,
+          role: role
+        },
+      }
+    } catch (error: any) {
+      if (error instanceof ConflictError || error instanceof NotFoundError) {
+        throw error
+      }
+      console.error("Error creando usuario:", error)
+      throw new DatabaseError("Error al crear usuario")
+    }
+  }
+
+  // Crear usuario con persona en una sola transacción
+  async createUserWithPersona(user: UsuarioCreationAttributes, persona: PersonaCreationAttributes, role: RoleType) {
+    try {
+
+      // se inicia una transaccion para crear la persona y usuario mas al rol
+      const result = await transaction(async (client) => {
+        const existingPersona = await PersonaRepository.findByDocumento(persona.numero_documento, client)
+
+        if (existingPersona.rows.length > 0) {
+          throw new ConflictError("Ya existe una persona con ese documento")
+        }
+
+        const personaResult = await PersonaRepository.create(persona, client)
+        const usuarioResult = await this.createUser(user, personaResult.persona_id, role, client)
+
+        return {
+          usuario: usuarioResult,
+        }
+      })
+
+      return {
+        message: "Usuario con persona creado exitosamente",
+        data: result.usuario,
+      }
+    } catch (error: any) {
+      if (error instanceof ConflictError || error instanceof NotFoundError) {
+        throw error
+      }
+      console.error("Error creando usuario con persona:", error)
+      throw new DatabaseError("Error al crear usuario con persona")
+    }
+  }
+
+  // Restablecer contraseña al número de documento (para casos de olvido de contraseña)
+  async resetPasswordByDefaultDocument(personaId: number){
+    try {
+      const persona = await PersonaRepository.findById(personaId)
+      if (!persona) {
+        throw new NotFoundError("Persona no encontrada")
+      }
+
+      const defaultPassword = persona.numero_documento
+      const hashedPassword = await bcrypt.hash(defaultPassword, 12)
+
+      const result = await query("UPDATE usuarios SET contraseña = $1 WHERE persona_id = $2 RETURNING *", [hashedPassword, personaId])
+
+      if (result.rows.length === 0) {
+        throw new NotFoundError("Usuario asociado a la persona no encontrado")
+      }
+
+      return { message: "Contraseña restablecida al número de documento exitosamente" }
+    } catch (error: any) {
+      if (error instanceof NotFoundError) {
+        throw error
+      }
+      console.error("Error al restablecer contraseña:", error)
+      throw new DatabaseError("Error al restablecer contraseña")
     }
   }
 }

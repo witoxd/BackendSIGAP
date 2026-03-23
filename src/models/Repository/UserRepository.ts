@@ -41,12 +41,13 @@ export class UserRepository {
     return result.rows[0]
   }
 
-  static async create(data: Omit<UsuarioCreationAttributes, "usuario_id" | "fecha_creacion" | "activo">) {
+  static async create(data: Omit<UsuarioCreationAttributes, "usuario_id" | "fecha_creacion" | "activo">, client?: any) {
     const hashedPassword = await bcrypt.hash(data.contraseña, 10)
     const result = await query(
       `INSERT INTO usuarios (persona_id, username, email, contraseña, activo)
        VALUES ($1, $2, $3, $4, true) RETURNING *`,
       [data.persona_id, data.username, data.email, hashedPassword],
+      client
     )
     return result.rows[0]
   }
@@ -79,11 +80,12 @@ export class UserRepository {
   //   return result.rows.map((row) => row.nombre)
   // }
 
-  static async assignRole(userId: number, roleId: number) {
+  static async assignRole(userId: number, roleId: number, client?: any) {
     const result = await query(
       `INSERT INTO usuarios_role (usuario_id, role_id)
        VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *`,
       [userId, roleId],
+      client
     )
     return result.rows[0]
   }

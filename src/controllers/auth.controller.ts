@@ -53,10 +53,62 @@ export class AuthController {
     try {
       res.status(200).json({
         success: true,
+        message: "Contraseña restablecida exitosamente",
         data: req.user,
       })
     } catch (error) {
       next(error)
+    }
+  }
+
+  async createUserWithPersona(req: Request, res: Response, next: NextFunction) {
+    try {
+
+      const { user: userData, persona: personaData, role } = req.body
+      const result = await authService.createUserWithPersona(userData, personaData, role)
+
+      res.status(201).json({
+        success: true,
+        message: "Usuario y persona creados exitosamente",
+        data: result,
+      })
+
+    } catch (error){
+      next(error)
+    }
+  }
+
+    async createUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const personaId = Number(req.params.personaId)
+      const { user: userData, role } = req.body
+      const result = await authService.createUser(userData, personaId, role)
+
+      res.status(201).json({
+        success: true,
+        message: "Usuario creado exitosamente",
+        data: result,
+      })
+
+    } catch (error){
+      next(error)
+    }
+  }
+
+  async ResetPassword(req: Request, res: Response, next: NextFunction){
+    try {
+       const personaId = Number(req.params.personaId)
+
+       const result = await authService.resetPasswordByDefaultDocument(personaId)
+
+       res.status(200).json({
+         success: true,
+         message: "Contraseña restablecida exitosamente",
+         data: result,
+       })
+
+    } catch (error) {
+         next(error)
     }
   }
 }

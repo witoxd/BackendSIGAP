@@ -43,6 +43,18 @@ export class PermisoRepository {
     return result.rows[0]
   }
 
+  static async assingnRoleToUser(usuarioId: number, permisoId: number, client?: any) {
+    const result = await query(
+      `INSERT INTO user_permisos (usuario_id, permiso_id)
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING
+       RETURNING *`,
+      [usuarioId, permisoId],
+      client
+    )
+    return result.rows[0]
+  }
+
   static async removeFromRole(roleId: number, permisoId: number) {
     const result = await query(
       `DELETE FROM role_permisos
