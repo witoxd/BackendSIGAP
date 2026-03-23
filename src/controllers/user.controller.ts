@@ -80,7 +80,7 @@ export class UserController {
   async toggleStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = Number(req.params.id)
-      const { activo } = req.body
+      const  activo  = req.params.activo === "true" // Convertir a booleano
 
       const result = await userService.toggleUserStatus(userId, activo)
 

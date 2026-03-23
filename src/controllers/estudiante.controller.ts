@@ -202,8 +202,7 @@ export class EstudianteController {
   }
 
   async getEstudiantesByAcudiente(req: Request, res: Response) {
-    const acudienteId = Number(req.params.acudienteId)
-
+    const acudienteId = Number(req.params.id)
     const estudiantes = await EstudianteRepository.getEstudiantesByAcudiente(acudienteId)
 
     res.status(200).json({

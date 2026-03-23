@@ -66,11 +66,11 @@ export class EstudianteRepository {
        INNER JOIN personas p ON e.persona_id = p.persona_id
        LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
        WHERE e.persona_id = $1`,
-        [personaId])
+      [personaId])
     return result.rows[0]
   }
 
- static async SearchIndex(index: string, limit = 50) {
+  static async SearchIndex(index: string, limit = 50) {
     const normalizedIndex = index.trim().replace(/\s+/g, " ")
     if (!normalizedIndex) return []
 
@@ -136,7 +136,7 @@ export class EstudianteRepository {
     )
     return result.rows[0]
   }
-                    
+
   static async update(id: number, data: Partial<EstudianteCreationAttributes>, client?: any) {
     const fields: string[] = []
     const values = []
@@ -173,14 +173,26 @@ export class EstudianteRepository {
       [numero_documento],
     )
     return result.rows[0]
-  } 
+  }
 
   //Obtener estudiantes asignados a un acudiente
   static async getEstudiantesByAcudiente(acudienteId: number) {
     const result = await query(
       `SELECT
-       ${PERSONA_FIELDS_JSON},
-      ${ESTUDIANTE_FIELDS_JSON}
+      json_build_object(
+        'acudiente_estudiante_id', ae.acudiente_estudiante_id,
+        'acudiente_id', ae.acudiente_id,
+        'tipo_relacion', ae.tipo_relacion,
+        'es_principal', ae.es_principal
+    ) AS relacion,
+        json_build_object(
+        'persona_id', e.persona_id,
+        'estudiante_id', e.estudiante_id,
+        'nombres', p.nombres,
+        'apellido_paterno', p.apellido_paterno,
+        'apellido_materno', p.apellido_materno,
+        'numero_documento', p.numero_documento
+       ) AS estudiante
        FROM acudiente_estudiante ae
        INNER JOIN estudiantes e ON ae.estudiante_id = e.estudiante_id
        INNER JOIN personas p ON e.persona_id = p.persona_id
@@ -191,7 +203,7 @@ export class EstudianteRepository {
     )
     return result.rows
 
-}
+  }
 
   static async delete(id: number) {
     const result = await query("DELETE FROM estudiantes WHERE estudiante_id = $1 RETURNING *", [id])

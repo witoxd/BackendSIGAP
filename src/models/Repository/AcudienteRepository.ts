@@ -6,7 +6,9 @@ import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 const ACUDIENTE_FIELDS_JSON = `
   json_build_object(
     'acudiente_id', a.acudiente_id,
-    'parentesco', a.parentesco
+    'parentesco', a.parentesco,
+    'ocupacion', a.ocupacion,
+    'nivel_estudio', a.nivel_estudio
   ) AS acudiente
 `
 
@@ -38,7 +40,7 @@ export class AcudienteRepository {
        )
        SELECT
        ${PERSONA_FIELDS_JSON},
-       ${ACUDIENTE_FIELDS_JSON}
+       ${ACUDIENTE_FIELDS_JSON},
          CASE
            WHEN input.is_documento THEN
              CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END

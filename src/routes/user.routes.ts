@@ -3,7 +3,7 @@ import { UserController } from "../controllers/user.controller"
 import { authenticate, isAdmin, isSelfOrAdmin } from "../middleware/auth"
 import { searchValidator, idValidator } from "../utils/validators"
 import { validate } from "../middleware/validate"
-import { body } from "express-validator"
+import { body, param } from "express-validator"
 
 const router = Router()
 const userController = new UserController()
@@ -25,11 +25,11 @@ router.get("/getById/:id",
   userController.getUser.bind(userController))
 
 // Asignar rol de administrador (solo admin)
-router.post("/:id/assign-admin",
-  isAdmin,
-  idValidator,
-  validate,
-  userController.assignAdmin.bind(userController))
+// router.post("/:id/assign-admin",
+//   isAdmin,
+//   idValidator,
+//   validate,
+//   userController.assignAdmin.bind(userController))
 
 // Transferir rol de administrador (solo admin)
 router.post(
@@ -42,10 +42,10 @@ router.post(
 
 // Activar/desactivar usuario (solo admin)
 router.patch(
-  "/:id/status",
+  "/:id/status/:activo",
   isAdmin,
   idValidator,
-  body("activo").isBoolean().withMessage("Estado debe ser booleano"),
+  param("activo").isBoolean().withMessage("activo debe ser booleano"),
   validate,
   userController.toggleStatus.bind(userController),
 )

@@ -273,4 +273,16 @@ export class UserService {
       throw new DatabaseError("Error al actualizar estado del usuario")
     }
   }
+
+  async createUser() {
+    // Implementación de creación de usuario (si es necesario)
+  }
+
+  async resetPasswordUser() {
+    // Implementación de reseteo de contraseña (si es necesario)
+  }
+
+  async createUserWithPersona() {
+    // Implementación de creación de usuario junto con persona (si es necesario)
+  }
 }
