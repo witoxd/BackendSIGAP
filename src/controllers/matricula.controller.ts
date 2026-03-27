@@ -3,6 +3,7 @@ import { MatriculaRepository } from "../models/Repository/MatriculaRepository"
 import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { CreateMatriculaDTO, UpdateMatriculaDTO } from "../types"
+import { PeriodoMatriculaRepository } from "../models/Repository/PeriodoMatriculaRepository"
 
 type CreateMatriculaStaticRequest = Request<never, unknown, CreateMatriculaDTO>
 
@@ -41,7 +42,7 @@ export class MatriculaController {
   }
 
   async getByEstudiante(req: Request, res: Response) {
-    const  estudiante_id  = Number(req.params)
+    const estudiante_id = Number(req.params)
     const matriculas = await MatriculaRepository.findByEstudiante(estudiante_id)
 
     res.status(200).json({
@@ -51,7 +52,7 @@ export class MatriculaController {
   }
 
   async getByCurso(req: Request, res: Response) {
-    const  curso_id  = Number(req.params)
+    const curso_id = Number(req.params)
     const matriculas = await MatriculaRepository.findByCurso(curso_id)
 
     res.status(200).json({
@@ -68,22 +69,31 @@ export class MatriculaController {
       throw new AppError("Errores de validación", 400, errors.array())
     }
 
-    const  {matricula: matriculaData}  = req.body
+    const { matricula: matriculaData } = req.body
 
-    const existingMatricula = await MatriculaRepository.findByEstudianteAndCurso(matriculaData.estudiante_id, matriculaData.curso_id, matriculaData.anio_egreso)
-
-    if (existingMatricula) {
-      throw new AppError("El estudiante ya está matriculado en este curso", 409)
+    // 1. Resolver período activo automáticamente
+    const periodoActivo = await PeriodoMatriculaRepository.findActivo()
+    if (!periodoActivo) {
+      throw new AppError("No hay período de matrícula activo", 400)
     }
 
-    const existingEstudianteMatricula = await MatriculaRepository.findEstuidanteAndYear(matriculaData.estudiante_id, matriculaData.anio_egreso)
-
-    if(existingEstudianteMatricula){
-        throw new AppError("El estudiante ya está matriculado en algun curso en el presente año", 409)
+    // 2. El UNIQUE(estudiante_id, periodo_id) en la BD ya previene duplicados,
+    //    pero puedes dar un mensaje más amigable verificando antes:
+    const existente = await MatriculaRepository.findByEstudianteAndPeriodo(
+      matriculaData.estudiante_id,
+      periodoActivo.periodo_id
+    )
+    if (existente) {
+      throw new AppError("El estudiante ya tiene matrícula en el período activo", 409)
     }
 
-    const matricula = await MatriculaRepository.create(matriculaData)
+    // 3. Crear con periodo_id resuelto
+    const matricula = await MatriculaRepository.create({
+      ...matriculaData,
+      periodo_id: periodoActivo.periodo_id
+    })
 
+  
     res.status(201).json({
       success: true,
       data: matricula,
@@ -91,15 +101,15 @@ export class MatriculaController {
     })
   }
 
-  async update(req: Request<{id: string}, unknown, UpdateMatriculaDTO>, res: Response) {
+  async update(req: Request<{ id: string }, unknown, UpdateMatriculaDTO>, res: Response) {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
     }
 
-    const id  = Number(req.params.id)
+    const id = Number(req.params.id)
 
-    const {matricula: matriculaData} = req.body
+    const { matricula: matriculaData } = req.body
     const matricula = await MatriculaRepository.update(id, matriculaData)
 
     if (!matricula) {

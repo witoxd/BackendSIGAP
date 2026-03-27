@@ -19,11 +19,13 @@ import { Egresado } from "./Egresado"
 import { Acudiente } from "./Acudiente"
 import { AcudienteEstudiante } from "./AcudienteEstudiante"
 import { Auditoria } from "./Auditoria"
-
-// Modelos nuevos
+import { PeriodoMatricula } from "./PeriodoMatricula"
+import { MatriculaArchivo } from "./MatriculaArchivo"
 import { FichaEstudiante } from "./FichaEstudiante"
 import { ColegioAnterior } from "./ColegioAnterior"
 import { ViviendaEstudiante } from "./ViviendaEstudiante"
+import { HasMany } from "sequelize"
+import { TipoArchivo } from "./TipoArchivo"
 
 export const setupAssociations = () => {
 
@@ -157,9 +159,29 @@ export const setupAssociations = () => {
   Jornada.hasMany(Matricula, { foreignKey: "jornada_id", as: "matriculas" })
   Matricula.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
 
-  Profesor.hasMany(Matricula, { foreignKey: "profesor_id", as: "matriculas" })
-  Matricula.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor" })
+  // Profesor.hasMany(Matricula, { foreignKey: "profesor_id", as: "matriculas" })
+  // Matricula.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor" })
 
+  PeriodoMatricula.hasMany(Matricula, {foreignKey: "periodo_id", as: "matriculas"})
+  Matricula.belongsTo(PeriodoMatricula, {foreignKey: "periodo_id", as: "periodo"})
+
+
+  // ----------------------------------------------------------
+  // Archivos
+  // ----------------------------------------------------------
+
+    Archivos.belongsToMany(Matricula, {
+    through: MatriculaArchivo,
+    foreignKey: "matricula_id",
+    otherKey: "archivo_id",
+    as: "matricula_archivo",
+  })
+
+  TipoArchivo.hasMany(Archivos, {foreignKey: "tipo_archivo_id", as: "tipoArchivo"})
+  Archivos.belongsTo(TipoArchivo, {foreignKey: "tipo_archivo_id", as: "archivos"})
+
+
+  
   // ----------------------------------------------------------
   // Auditoría
   // ----------------------------------------------------------

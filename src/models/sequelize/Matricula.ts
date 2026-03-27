@@ -4,12 +4,11 @@ import { sequelize } from "../../config/database"
 interface MatriculaAttributes {
   matricula_id: number
   estudiante_id: number
-  profesor_id: number
   curso_id: number
   jornada_id: number
+  periodo_id: number
   fecha_matricula: Date
   estado: "activa" | "finalizada" | "retirada"
-  anio_egreso: number
   fecha_retiro?: Date
   motivo_retiro?: string
 
@@ -39,18 +38,16 @@ export class Matricula
   public matricula_id!: number
   public estudiante_id!: number
 
-  // Esta referencia de profesor puede ser quitada a futuro
-  // Dependiendo de como se maneje el proceso de matricula
-  public profesor_id!: number
+
   public curso_id!: number
   public jornada_id!: number
   public fecha_matricula!: Date
-
+  public periodo_id!: number
+  
   // Estado de la amtricula
   // Recordatorio, hay que aclarar sobre los distintos tipos de estados de una matricula,
   // al final no sabemos que pasara a futuro
   public estado!: "activa" | "finalizada" | "retirada"
-  public anio_egreso!: number
 
   // Retiro
   public fecha_retiro?: Date
@@ -85,12 +82,12 @@ Matricula.init(
         key: "jornada_id",
       },
     },
-    profesor_id: {
+    periodo_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "profesores",
-        key: "profesor_id",
+        model: "periodos_matricula",
+        key: "periodo_id",
       },
     },
     curso_id: {
@@ -101,6 +98,7 @@ Matricula.init(
         key: "curso_id",
       },
     },
+
     fecha_matricula: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -110,11 +108,6 @@ Matricula.init(
       type: DataTypes.ENUM("activa", "finalizada", "retirada"),
       allowNull: false,
       defaultValue: "activa",
-    },
-    anio_egreso: {
-      type: DataTypes.SMALLINT,
-      allowNull: false,
-      defaultValue: sequelize.literal("EXTRACT(YEAR FROM CURRENT_DATE)"),
     },
 
     // --- Retiro ---

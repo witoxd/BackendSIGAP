@@ -62,25 +62,28 @@ export class MatriculaRepository {
     return result.rows
   }
 
+  static async findByEstudianteAndPeriodo( estudianteId: number, periodoId: number){
+    const result = await query(
+      `SELECT m.*
+      FROM matriculas m
+      WHERE m.estudiante_id = $1 AND periodo_id = $2
+      `,
+    [estudianteId, periodoId]
+    )
+    return result.row
+  }
+
   static async create(data: Omit<MatriculaCreationAttributes, "matricula_id">, client?: any) {
     const result = await query(
-      `INSERT INTO matriculas (estudiante_id, curso_id, profesor_id, jornada_id, anio_egreso, estado)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [data.estudiante_id, data.curso_id, data.profesor_id, data.jornada_id, data.anio_egreso, data.estado || "activa"],
+      `INSERT INTO matriculas (estudiante_id, curso_id, jornada_id, periodo_id, estado)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [data.estudiante_id, data.curso_id, data.jornada_id, data.periodo_id, data.estado || "activa"],
       client
     )
     return result.rows[0]
   }
 
-  static async findByEstudianteAndCurso(estudiante_id: number, curso_id: number, anio_egreso: number){
-    const result = await query("SELECT * FROM matriculas WHERE estudiante_id = $1 AND curso_id = $2 AND anio_egreso = $3", [estudiante_id, curso_id, anio_egreso])
-    return result.rows[0] ?? null
-  }
 
-  static async findEstuidanteAndYear(estudiante_id: number, anio_egreso: number){
-    const result = await query("SELECT * FROM matriculas WHERE estudiante_id = $1 AND anio_egreso = $2", [estudiante_id, anio_egreso])
-    return result.rows[0] ?? null
-  }
 
   static async update(id: number, Data: Partial<MatriculaCreationAttributes>, client?: any) {
  const fields: string[] = []
