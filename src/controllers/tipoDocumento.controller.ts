@@ -2,26 +2,22 @@ import type { Request, Response, NextFunction } from "express"
 import { TipoDocumentoRepository } from "../models/Repository/TipoDocumentoRepository"
 import { AppError } from "../utils/AppError"
 import { CreateTipoDocumentoDTO, UpdateTipoDocumentoDTO } from "../types"
+import { asyncHandler } from "../utils/asyncHandler"
 
-
-type CreateTipoDocumentoStaticRequest = Request<never, unknown, CreateTipoDocumentoDTO>
 
 export class TipoDocumentoController {
-  async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
+
+   getAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const tiposDocumento = await TipoDocumentoRepository.findAll()
 
       res.status(200).json({
         success: true,
         data: tiposDocumento,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
+   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction)  => {
+
       const id = Number(req.params.id)
       const tipoDocumento = await TipoDocumentoRepository.findById(id)
 
@@ -33,16 +29,13 @@ export class TipoDocumentoController {
         success: true,
         data: tipoDocumento,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
 
 
-  async create(req: CreateTipoDocumentoStaticRequest, res: Response, next: NextFunction) {
+   create = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
 
-    const {tipo_documento: TipoDocumentoData} = req.body
+    const {tipo_documento: TipoDocumentoData} = req.body as CreateTipoDocumentoDTO
 
     const existingTipoDocumento = await TipoDocumentoRepository.findByName(TipoDocumentoData.tipo_documento)
 
@@ -50,7 +43,6 @@ export class TipoDocumentoController {
       throw new AppError("Ya existe un tipo documento con este nombre", 404)
     }
 
-    try {
       const tipoDocumento = await TipoDocumentoRepository.create(TipoDocumentoData)
 
       res.status(201).json({
@@ -58,15 +50,12 @@ export class TipoDocumentoController {
         message: "Tipo de documento creado exitosamente",
         data: tipoDocumento,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async update(req: Request<{id: string}, unknown, UpdateTipoDocumentoDTO>, res: Response, next: NextFunction) {
-    try {
+   update = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
-      const {tipo_documento: TipoDocumentoData} = req.body
+      const {tipo_documento: TipoDocumentoData} = req.body as UpdateTipoDocumentoDTO
       const tipoDocumento = await TipoDocumentoRepository.update(id, TipoDocumentoData)
 
       if (!tipoDocumento) {
@@ -78,13 +67,9 @@ export class TipoDocumentoController {
         message: "Tipo de documento actualizado exitosamente",
         data: tipoDocumento,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
+   delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const id = Number(req.params.id)
       const tipoDocumento = await TipoDocumentoRepository.delete(id)
 
@@ -96,8 +81,6 @@ export class TipoDocumentoController {
         success: true,
         message: "Tipo de documento eliminado exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
+
 }

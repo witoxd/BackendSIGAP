@@ -3,6 +3,7 @@ import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepositor
 import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import type { CreateTipoArchivoDTO, UpdateTipoArchivoDTO } from "../types"
+import { asyncHandler } from "../utils/asyncHandler"
 
 type CreateTipoArchivoStaticRequest = Request<never, unknown, CreateTipoArchivoDTO>
 type UpdateTipoArchivoStaticRequest = Request<{ id: string }, unknown, UpdateTipoArchivoDTO>
@@ -11,25 +12,23 @@ export class TipoArchivoController {
   /**
    * Obtener todos los tipos de archivo
    */
-  async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
+   getAll = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+  
       const tiposArchivo = await TipoArchivoRepository.findAll()
 
       res.status(200).json({
         success: true,
         data: tiposArchivo,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+
+  })
 
   /**
    * Obtener tipo de archivo por rol de perosna
    */
 
-  async getRolByTipoArchivo(req: Request, res: Response, next: NextFunction) {
-    try {
+   getRolByTipoArchivo = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const rol = req.params.rol as string
       const tipoArchivo = await TipoArchivoRepository.findByRol(rol)
 
@@ -41,16 +40,13 @@ export class TipoArchivoController {
         success: true,
         data: tipoArchivo.aplica_a || [],
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Obtener tipo de archivo por ID
    */
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
+   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  
       const id = Number(req.params.id)
       const tipoArchivo = await TipoArchivoRepository.findById(id)
 
@@ -62,16 +58,13 @@ export class TipoArchivoController {
         success: true,
         data: tipoArchivo,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Buscar tipo de archivo por nombre
    */
-  async getByNombre(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByNombre = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+
       const { nombre } = req.params
       const tipoArchivo = await TipoArchivoRepository.findByNombre(nombre as string)
 
@@ -83,22 +76,18 @@ export class TipoArchivoController {
         success: true,
         data: tipoArchivo,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Crear un nuevo tipo de archivo
    */
-  async create(req: CreateTipoArchivoStaticRequest, res: Response, next: NextFunction) {
-    try {
+   create = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
         throw new AppError("Errores de validación", 400, errors.array())
       }
 
-      const { tipo_archivo: TipoArchivoData } = req.body
+      const { tipo_archivo: TipoArchivoData } = req.body as CreateTipoArchivoDTO
 
       // Verificar que no exista un tipo con el mismo nombre
       const existingTipo = await TipoArchivoRepository.findByNombre(TipoArchivoData.nombre)
@@ -113,23 +102,20 @@ export class TipoArchivoController {
         message: "Tipo de archivo creado exitosamente",
         data: tipoArchivo,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Actualizar un tipo de archivo
    */
-  async update(req: UpdateTipoArchivoStaticRequest, res: Response, next: NextFunction) {
-    try {
+   update = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+ 
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
         throw new AppError("Errores de validación", 400, errors.array())
       }
 
       const id = Number(req.params.id)
-      const { tipo_archivo: TipoArchivoData } = req.body
+      const { tipo_archivo: TipoArchivoData } = req.body as UpdateTipoArchivoDTO
 
       const existingTipo = await TipoArchivoRepository.findById(id)
       if (!existingTipo) {
@@ -155,19 +141,14 @@ export class TipoArchivoController {
         message: "Tipo de archivo actualizado exitosamente",
         data: tipoArchivo,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Eliminar un tipo de archivo (soft delete)
    */
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
+   delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
-
-
       const tipoArchivo = await TipoArchivoRepository.softDelete(id)
 
       if (!tipoArchivo) {
@@ -178,16 +159,12 @@ export class TipoArchivoController {
         success: true,
         message: "Tipo de archivo eliminado exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Verificar si una extensión es permitida
    */
-  async checkExtension(req: Request, res: Response, next: NextFunction) {
-    try {
+   checkExtension = asyncHandler(async(req: Request, res: Response, next: NextFunction)  => {
       const id = Number(req.params.id)
       const { extension } = req.query
 
@@ -208,8 +185,6 @@ export class TipoArchivoController {
           permitida: isAllowed,
         },
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  }) 
+
 }

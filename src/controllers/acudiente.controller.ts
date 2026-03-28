@@ -8,6 +8,7 @@ import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { validationResult } from "express-validator"
 import { assignToEstudiante } from "../types"
 import { PersonaService } from "../services/persona.service"
+import { asyncHandler } from "../utils/asyncHandler"
 
 
 type CreateAcudienteAsingEstudiante = Request<never, unknown, assignToEstudiante>
@@ -16,7 +17,7 @@ type CreateAcudienteStaticRequest = Request<never, unknown, CreateAcudianteDTO>
 
 export class AcudienteController {
 
-  async getAll(req: Request, res: Response, next: NextFunction) {
+  getAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
@@ -30,83 +31,73 @@ export class AcudienteController {
     } catch (error) {
       next(error)
     }
-  }
+  })
 
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const id = Number(req.params.id)
-      const acudiente = await AcudienteRepository.findById(id)
+  getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
 
-      if (!acudiente) {
-        throw new AppError("Acudiente no encontrado", 404)
-      }
+    const id = Number(req.params.id)
+    const acudiente = await AcudienteRepository.findById(id)
 
-
-      res.status(200).json({
-        success: true,
-        data:
-          acudiente
-      })
-    } catch (error) {
-      next(error)
+    if (!acudiente) {
+      throw new AppError("Acudiente no encontrado", 404)
     }
-  }
 
-  async getAcudientesByEstudiante(req: Request, res: Response, next: NextFunction) {
-    try {
-      const estudianteId = Number(req.params.id)
-      const acudientes = await AcudienteRepository.getAcudientesByEstudiante(estudianteId)
+    res.status(200).json({
+      success: true,
+      data:
+        acudiente
+    })
+  })
 
-      res.status(200).json({
-        success: true,
-        data: acudientes,
-      })
-    } catch (error) {
-      next(error)
+  getAcudientesByEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
+    const estudianteId = Number(req.params.id)
+    const acudientes = await AcudienteRepository.getAcudientesByEstudiante(estudianteId)
+
+    res.status(200).json({
+      success: true,
+      data: acudientes,
+    })
+  })
+
+   SearchIndex = asyncHandler( async  (req: Request, res: Response) => {
+    const limit = Number.parseInt(req.query.limit as string) || 50
+    const index = req.params.index as string
+
+    if (!index) {
+      throw new AppError("Parámetro index requerido", 400)
     }
-  }
 
-   async SearchIndex(req: Request, res: Response) {
-        const limit = Number.parseInt(req.query.limit as string) || 50
-        const index = req.params.index as string
-    
-        if (!index) {
-          throw new AppError("Parámetro index requerido", 400)
-        }
-    
-        const acudiente = await AcudienteRepository.SearchIndex(index, limit)
-    
-        if (!acudiente || acudiente.length === 0) {
-          throw new AppError("Acudiente no encontrado", 404)
-        }
-    
-        res.status(200).json({
-          success: true,
-          data: acudiente,
-          pagination: {
-            total: acudiente.length,
-            limit,
-            pages: Math.ceil(acudiente.length / limit),
-          },
-        })
-      }
+    const acudiente = await AcudienteRepository.SearchIndex(index, limit)
 
-  async create(req: CreateAcudienteStaticRequest, res: Response, next: NextFunction) {
+    if (!acudiente || acudiente.length === 0) {
+      throw new AppError("Acudiente no encontrado", 404)
+    }
+
+    res.status(200).json({
+      success: true,
+      data: acudiente,
+      pagination: {
+        total: acudiente.length,
+        limit,
+        pages: Math.ceil(acudiente.length / limit),
+      },
+    })
+  })
+
+   create = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
     }
-
-    const { acudiente: AcudienteData, persona: PersonaData } = req.body
-    try {
-
+    const { acudiente: AcudienteData, persona: PersonaData } = req.body as CreateAcudianteDTO
       const { NewAcudiente, NewPersona } = await transaction(async (client) => {
 
         const NewPersona = await PersonaService.validateOrCreatePersona(PersonaData, client)
 
         const existingAcudiente = await AcudienteRepository.findByPersonaId(NewPersona.persona_id)
 
-        if(existingAcudiente){
+        if (existingAcudiente) {
           throw new AppError("La persona ya tiene rol de acudiente", 409)
         }
         console.log(AcudienteData)
@@ -125,20 +116,15 @@ export class AcudienteController {
           persona: NewPersona
         },
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
 
-  async update(req: Request<{ id: string }, unknown, UpdateAcudianteDTO>, res: Response, next: NextFunction) {
+   update = asyncHandler( async (req: Request, res: Response, next: NextFunction)  => {
 
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
     }
-
-    try {
       const AcudienteId = Number(req.params.id)
       const { acudiente: AcudienteData, persona: PersonaData } = req.body
       const existingAcudiente = await AcudienteRepository.findById(AcudienteId)
@@ -179,13 +165,10 @@ export class AcudienteController {
           persona: updatePersona
         },
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
+   delete = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
       const acudiente = await AcudienteRepository.delete(id)
 
@@ -199,15 +182,11 @@ export class AcudienteController {
         success: true,
         message: "Acudiente eliminado exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async assignToEstudiante(req: CreateAcudienteAsingEstudiante, res: Response, next: NextFunction) {
+   assignToEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
 
-    const { assignToEstudiante: AcudienteAssingEstudiante } = req.body
-    try {
+    const { assignToEstudiante: AcudienteAssingEstudiante } = req.body as assignToEstudiante
       const result = await AcudienteRepository.assignToEstudiante(AcudienteAssingEstudiante)
 
       res.status(200).json({
@@ -215,13 +194,9 @@ export class AcudienteController {
         message: "Acudiente asignado al estudiante exitosamente",
         data: result,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async removeFromEstudiante(req: Request<{ estudianteId: string, acudienteId: string }>, res: Response, next: NextFunction) {
-    try {
+   removeFromEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) =>{
       const estudianteId = Number(req.params.estudianteId)
       const acudienteId = Number(req.params.acudienteId)
       const result = await AcudienteRepository.removeFromEstudiante(
@@ -237,13 +212,10 @@ export class AcudienteController {
         success: true,
         message: "Acudiente removido del estudiante exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getEstudiantesByAcudiente(req: Request, res: Response, next: NextFunction) {
-    try {
+   getEstudiantesByAcudiente = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const estudianteId = Number(req.params.id)
       const estudiantes = await AcudienteRepository.getAcudientesByEstudiante(estudianteId)
 
@@ -251,8 +223,5 @@ export class AcudienteController {
         success: true,
         data: estudiantes,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 }

@@ -4,6 +4,7 @@ import { AppError } from "../utils/AppError"
 import { getPagination } from "../utils/validators"
 import { CreateEgresadoDTO, UpdateEgresadoDTO } from "../types"
 import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
+import { asyncHandler } from "../utils/asyncHandler"
 
 
 type CreateEgresadoStaticRequest = Request<never, unknown, CreateEgresadoDTO>
@@ -12,8 +13,7 @@ type UpdateEgresadosStaticRequest = Request<{id: string}, unknown, UpdateEgresad
 
 export class EgresadoController {
 
-  async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
+   getAll = asyncHandler (async (req: Request, res: Response, next: NextFunction) => {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -30,13 +30,10 @@ export class EgresadoController {
           pages: Math.ceil(total / pLimit),
         },
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
+   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
       const egresado = await EgresadoRepository.findById(id)
 
@@ -48,13 +45,9 @@ export class EgresadoController {
         success: true,
         data: egresado,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getByEstudianteId(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByEstudianteId = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
       const estudianteId = Number(req.params.estudianteId)
       const egresado = await EgresadoRepository.findByEstudianteId(estudianteId)
 
@@ -66,13 +59,9 @@ export class EgresadoController {
         success: true,
         data: egresado,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getByYear(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByYear = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const year = Number(req.params.year)
       const egresados = await EgresadoRepository.findByYear(year)
 
@@ -80,22 +69,17 @@ export class EgresadoController {
         success: true,
         data: egresados,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async create(req: CreateEgresadoStaticRequest, res: Response, next: NextFunction) {
+   create = asyncHandler(async (req: Request, res: Response, next: NextFunction) =>{
 
-    const { egresado: EgresadoData } = req.body
+    const { egresado: EgresadoData } = req.body as CreateEgresadoDTO
 
     const existingEstudiante = await EstudianteRepository.findById(EgresadoData.estudiante_id)
 
     if (!existingEstudiante) {
       throw new AppError("Error al intentar egresar al estudiante", 404)
     }
-
-    try {
 
       const existingEgresado = await EgresadoRepository.findByEstudianteId(EgresadoData.estudiante_id)
 
@@ -109,16 +93,13 @@ export class EgresadoController {
         message: "Egresado creado exitosamente",
         data: egresado,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async update(req: UpdateEgresadosStaticRequest, res: Response, next: NextFunction) {
-    try {
+   update = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+  
       const id = Number(req.params.id)
 
-      const {egresado: EgresadoData} = req.body
+      const {egresado: EgresadoData} = req.body as UpdateEgresadoDTO
 
       const egresado = await EgresadoRepository.update(id, EgresadoData)
 
@@ -131,13 +112,10 @@ export class EgresadoController {
         message: "Egresado actualizado exitosamente",
         data: egresado,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
+   delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
       const egresado = await EgresadoRepository.delete(id)
 
@@ -149,8 +127,6 @@ export class EgresadoController {
         success: true,
         message: "Egresado eliminado exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+
+  })
 }

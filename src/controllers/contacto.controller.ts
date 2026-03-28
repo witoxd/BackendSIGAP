@@ -5,6 +5,7 @@ import { AppError } from "../utils/AppError"
 import { getPagination } from "../utils/validators"
 import { validationResult } from "express-validator"
 import type { CreateContactoDTO, UpdateContactoDTO } from "../types"
+import { asyncHandler } from "../utils/asyncHandler"
 
 type CreateContactoStaticRequest = Request<never, unknown, CreateContactoDTO>
 type UpdateContactoStaticRequest = Request<{ id: string }, unknown, UpdateContactoDTO>
@@ -13,8 +14,7 @@ export class ContactoController {
   /**
    * Obtener todos los contactos
    */
-  async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
+   getAll = asyncHandler( async (req: Request, res: Response, next: NextFunction) =>  {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -31,16 +31,12 @@ export class ContactoController {
           pages: Math.ceil(total / pLimit),
         },
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Obtener contacto por ID
    */
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
+   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const id = Number(req.params.id)
       const contacto = await ContactoRepository.findById(id)
 
@@ -52,16 +48,12 @@ export class ContactoController {
         success: true,
         data: contacto,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Obtener contactos por persona
    */
-  async getByPersonaId(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByPersonaId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const personaId = Number(req.params.personaId)
       const contactos = await ContactoRepository.findByPersonaId(personaId)
 
@@ -69,16 +61,13 @@ export class ContactoController {
         success: true,
         data: contactos,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Obtener contactos por tipo
    */
-  async getByTipo(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByTipo = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const personaId = Number(req.params.personaId)
       const { tipo } = req.query
 
@@ -92,22 +81,19 @@ export class ContactoController {
         success: true,
         data: contactos,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Crear un nuevo contacto
    */
-  async create(req: CreateContactoStaticRequest, res: Response, next: NextFunction) {
-    try {
+   create = asyncHandler ( async (req: Request, res: Response, next: NextFunction) => {
+  
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
         throw new AppError("Errores de validación", 400, errors.array())
       }
 
-      const { contacto: ContactoData } = req.body
+      const { contacto: ContactoData } = req.body as CreateContactoDTO
 
       // Verificar que la persona existe
       const existingPersona = await PersonaRepository.findById(ContactoData.persona_id)
@@ -134,16 +120,13 @@ export class ContactoController {
           data: contacto,
         })
       }
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Crear múltiples contactos
    */
-  async bulkCreate(req: Request, res: Response, next: NextFunction) {
-    try {
+   bulkCreate = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
         throw new AppError("Errores de validación", 400, errors.array())
@@ -172,23 +155,20 @@ export class ContactoController {
         total: nuevosContactos.length,
         data: nuevosContactos,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Actualizar un contacto
    */
-  async update(req: UpdateContactoStaticRequest, res: Response, next: NextFunction) {
-    try {
+   update = asyncHandler (async (req: Request, res: Response, next: NextFunction) => {
+  
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
         throw new AppError("Errores de validación", 400, errors.array())
       }
 
       const id = Number(req.params.id)
-      const { contacto: ContactoData } = req.body
+      const { contacto: ContactoData } = req.body as UpdateContactoDTO
 
       const existingContacto = await ContactoRepository.findById(id)
       if (!existingContacto) {
@@ -211,16 +191,12 @@ export class ContactoController {
         message: "Contacto actualizado exitosamente",
         data: contacto,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Eliminar un contacto (soft delete)
    */
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
+   delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const id = Number(req.params.id)
       const contacto = await ContactoRepository.delete(id)
 
@@ -232,16 +208,13 @@ export class ContactoController {
         success: true,
         message: "Contacto eliminado exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Establecer contacto como principal
    */
-  async setPrincipal(req: Request, res: Response, next: NextFunction) {
-    try {
+   setPrincipal = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  
       const id = Number(req.params.id)
 
       const existingContacto = await ContactoRepository.findById(id)
@@ -256,8 +229,5 @@ export class ContactoController {
         message: "Contacto establecido como principal",
         data: contacto,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 }

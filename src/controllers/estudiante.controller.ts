@@ -5,6 +5,7 @@ import { validationResult } from "express-validator"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { CreateEstudianteDTO, UpdateEstudianteDTO } from "../types"
 import { transaction } from "../config/database"
+import { asyncHandler } from "../utils/asyncHandler"
 
 type CreateEstudianteStaticRequest = Request<never, unknown, CreateEstudianteDTO>
 
@@ -12,7 +13,7 @@ type UpdateEstudianteStaticRequest = Request<{ id: string }, unknown, UpdateEstu
 
 export class EstudianteController {
 
-  async getAll(req: Request, res: Response) {
+   getAll = asyncHandler(async (req: Request, res: Response) => {
     const limit = Number.parseInt(req.query.limit as string) || 50
     const offset = Number.parseInt(req.query.offset as string) || 0
 
@@ -29,9 +30,9 @@ export class EstudianteController {
         pages: Math.ceil(total / limit),
       },
     })
-  }
+  })
 
-  async getById(req: Request, res: Response) {
+   getById = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id)
     const estudiante = await EstudianteRepository.findById(id)
 
@@ -43,9 +44,9 @@ export class EstudianteController {
       success: true,
       data: estudiante,
     })
-  }
+  })
 
-  async getByDocumento(req: Request, res: Response) {
+   getByDocumento = asyncHandler(async (req: Request, res: Response) => {
     const { numero_documento } = req.params
 
     const estudiante = await EstudianteRepository.findByDocumento(numero_documento as string)
@@ -59,9 +60,9 @@ export class EstudianteController {
       success: true,
       data: estudiante,
     })
-  }
+  })
 
-  async SearchIndex(req: Request, res: Response) {
+   SearchIndex = asyncHandler( async (req: Request, res: Response) => {
     const limit = Number.parseInt(req.query.limit as string) || 50
     const index = req.params.index as string
 
@@ -81,15 +82,15 @@ export class EstudianteController {
         pages: Math.ceil(estudiantes.length / limit),
       },
     })
-  }
+  })
 
-  async create(req: CreateEstudianteStaticRequest, res: Response) {
+   create = asyncHandler( async (req: Request, res: Response)  =>{
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
     }
 
-    const { persona: PersonaData, estudiante: estudianteData } = req.body
+    const { persona: PersonaData, estudiante: estudianteData } = req.body as CreateEstudianteDTO
 
     // Validar que no exista documento
     const existingPersona = await PersonaRepository.findByDocumento(PersonaData.numero_documento)
@@ -120,10 +121,10 @@ export class EstudianteController {
         estudiante: newEstudiante,
       },
     })
-  }
+  })
 
 
-  async update(req: UpdateEstudianteStaticRequest, res: Response) {
+   update = asyncHandler( async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -138,7 +139,7 @@ export class EstudianteController {
       throw new AppError("Estudiante no encontrado", 404)
     }
 
-    const { persona: personaData, estudiante: estudianteData } = req.body
+    const { persona: personaData, estudiante: estudianteData } = req.body as UpdateEstudianteDTO
 
 
     const updatedEstudiante = await transaction(async (client) => {
@@ -179,9 +180,9 @@ export class EstudianteController {
         estudiante: updatedEstudiante,
       },
     })
-  }
+  })
 
-  async delete(req: Request, res: Response) {
+   delete = asyncHandler( async (req: Request, res: Response) => {
     const id = Number(req.params.id)
     const estudiante = await EstudianteRepository.delete(id)
 
@@ -199,9 +200,9 @@ export class EstudianteController {
       },
       message: "Estudiante eliminado exitosamente",
     })
-  }
+  })
 
-  async getEstudiantesByAcudiente(req: Request, res: Response) {
+   getEstudiantesByAcudiente = asyncHandler(async (req: Request, res: Response) => {
     const acudienteId = Number(req.params.id)
     const estudiantes = await EstudianteRepository.getEstudiantesByAcudiente(acudienteId)
 
@@ -209,5 +210,6 @@ export class EstudianteController {
       success: true,
       data: estudiantes,
     })  
-  }
+  })
+  
 }

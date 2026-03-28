@@ -1,11 +1,11 @@
 import type { Request, Response, NextFunction } from "express"
 import { UserService } from "../services/user.service"
+import { asyncHandler } from "../utils/asyncHandler"
 
 const userService = new UserService()
 
 export class UserController {
-  async getUser(req: Request, res: Response, next: NextFunction) {
-    try {
+   getUser = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
       const userId = Number(req.params.id)
       const user = await userService.getUserById(userId)
 
@@ -13,13 +13,10 @@ export class UserController {
         success: true,
         data: user,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async searchUsers(req: Request, res: Response, next: NextFunction) {
-    try {
+   searchUsers = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const { query, nombres, numero_documento, role, page = 1, limit = 10, sortBy, sortOrder } = req.query
 
       const result = await userService.searchUsers({
@@ -40,13 +37,10 @@ export class UserController {
         data: result.data,
         pagination: result.pagination,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async assignAdmin(req: Request, res: Response, next: NextFunction) {
-    try {
+   assignAdmin = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+
       const targetUserId = Number(req.params.id)
       const adminUserId = req.user!.userId
 
@@ -56,13 +50,10 @@ export class UserController {
         success: true,
         message: result.message,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async transferAdmin(req: Request, res: Response, next: NextFunction) {
-    try {
+   transferAdmin = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const fromUserId = req.user!.userId
       const toUserId = Number.parseInt(req.body.toUserId)
 
@@ -72,13 +63,10 @@ export class UserController {
         success: true,
         message: result.message,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async toggleStatus(req: Request, res: Response, next: NextFunction) {
-    try {
+   toggleStatus = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+
       const userId = Number(req.params.id)
       const  activo  = req.params.activo === "true" // Convertir a booleano
 
@@ -88,8 +76,6 @@ export class UserController {
         success: true,
         message: result.message,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
+  
 }

@@ -8,10 +8,10 @@ import { validationResult } from "express-validator"
 import { deleteFile, getFileUrl } from "../config/multer"
 import path from "path"
 import fs from "fs"
+import { asyncHandler } from "../utils/asyncHandler"
 
 export class ArchivoController {
-  async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
+   getAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -28,13 +28,10 @@ export class ArchivoController {
           pages: Math.ceil(total / pLimit),
         },
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
+   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
       const archivo = await ArchivoRepository.findById(id)
 
@@ -46,13 +43,10 @@ export class ArchivoController {
         success: true,
         data: archivo,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getByPersonaId(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByPersonaId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const personaId = Number(req.params.personaId)
       const archivos = await ArchivoRepository.findByPersonaId(personaId)
 
@@ -60,13 +54,10 @@ export class ArchivoController {
         success: true,
         data: archivos,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getByTipo(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByTipo = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const { tipo_archivo_id, page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -80,13 +71,10 @@ export class ArchivoController {
         success: true,
         data: archivos,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getByTipoAndPersona(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByTipoAndPersona = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const { tipo_archivo_id, persona_id, page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -100,13 +88,11 @@ export class ArchivoController {
         success: true,
         data: archivos,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
 
-  async getPhotoByPersonaId(req: Request, res: Response, next: NextFunction) {
-    try {
+  })
+
+   getPhotoByPersonaId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const personaId = Number(req.params.personaId)
       const archivo = await ArchivoRepository.findPhotoByPersonaId(personaId)
 
@@ -135,10 +121,7 @@ export class ArchivoController {
       res.setHeader("Content-Type", contentType)
       res.setHeader("Content-Disposition", `inline; filename="${archivo.nombre}"`)
       res.sendFile(filePath)
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
   /**
    * Crear un nuevo archivo con subida física
@@ -287,8 +270,6 @@ export class ArchivoController {
         const meta = metadataArray[i]
 
         // Verificar tipo de archivo
-
-        console.log("Contenido del meta: ", meta)
         const tipoArchivo = await TipoArchivoRepository.findById(Number(meta.tipo_archivo_id))
         if (!tipoArchivo) {
           await Promise.all(files.map(f => deleteFile(f.path)))
@@ -455,8 +436,8 @@ export class ArchivoController {
   /**
    * Eliminar archivo (registro y archivo físico)
    */
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
+   delete = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
 
       const archivo = await ArchivoRepository.findById(id)
@@ -479,16 +460,14 @@ export class ArchivoController {
         success: true,
         message: "Archivo eliminado exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+
+  })
 
   /**
    * Descargar archivo
    */
-  async download(req: Request, res: Response, next: NextFunction) {
-    try {
+   download = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
 
       const archivo = await ArchivoRepository.findById(id)
@@ -505,15 +484,13 @@ export class ArchivoController {
       res.setHeader("Content-Disposition", `attachment; filename="${archivo.nombre}"`)
       res.setHeader("Content-Type", "application/octet-stream")
       res.sendFile(filePath)
-    } catch (error) {
-      next(error)
-    }
-  }
+
+  })
 
   /**
    * Ver archivo en navegador
    */
-  async view(req: Request, res: Response, next: NextFunction) {
+   view = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = Number(req.params.id)
 
@@ -546,5 +523,6 @@ export class ArchivoController {
     } catch (error) {
       next(error)
     }
-  }
+  })
+
 }

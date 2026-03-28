@@ -1,11 +1,11 @@
 import type { Request, Response, NextFunction } from "express"
 import { AuthService } from "../services/auth.service"
+import { asyncHandler } from "../utils/asyncHandler"
 
 const authService = new AuthService()
 
 export class AuthController {
-  async register(req: Request, res: Response, next: NextFunction) {
-    try {
+   register = asyncHandler(async (req: Request, res: Response, next: NextFunction)  => {
       const result = await authService.register(req.body)
 
       res.status(201).json({
@@ -13,13 +13,9 @@ export class AuthController {
         message: "Usuario registrado exitosamente",
         data: result,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async login(req: Request, res: Response, next: NextFunction) {
-    try {
+   login = asyncHandler( async (req: Request, res: Response, next: NextFunction)  =>{
       const { email, contraseña } = req.body
       const result = await authService.login(email, contraseña)
 
@@ -28,13 +24,10 @@ export class AuthController {
         message: "Inicio de sesión exitoso",
         data: result,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async changePassword(req: Request, res: Response, next: NextFunction) {
-    try {
+   changePassword = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+  
       const userId = req.user!.userId
       const { currentPassword, newPassword } = req.body
 
@@ -44,26 +37,18 @@ export class AuthController {
         success: true,
         message: result.message,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async me(req: Request, res: Response, next: NextFunction) {
-    try {
+   me = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       res.status(200).json({
         success: true,
         message: "Contraseña restablecida exitosamente",
         data: req.user,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async createUserWithPersona(req: Request, res: Response, next: NextFunction) {
-    try {
-
+   createUserWithPersona = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const { user: userData, persona: personaData, role } = req.body
       const result = await authService.createUserWithPersona(userData, personaData, role)
 
@@ -72,14 +57,10 @@ export class AuthController {
         message: "Usuario y persona creados exitosamente",
         data: result,
       })
+  })
 
-    } catch (error){
-      next(error)
-    }
-  }
+     createUser  = asyncHandler (async (req: Request, res: Response, next: NextFunction) => {
 
-    async createUser(req: Request, res: Response, next: NextFunction) {
-    try {
       const personaId = Number(req.params.personaId)
       const { user: userData, role } = req.body
       const result = await authService.createUser(userData, personaId, role)
@@ -89,14 +70,9 @@ export class AuthController {
         message: "Usuario creado exitosamente",
         data: result,
       })
+})
 
-    } catch (error){
-      next(error)
-    }
-  }
-
-  async resetPassword(req: Request, res: Response, next: NextFunction){
-    try {
+   resetPassword = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
        const personaId = Number(req.params.id)
 
        const result = await authService.resetPasswordByDefaultDocument(personaId)
@@ -106,9 +82,6 @@ export class AuthController {
          message: "Contraseña restablecida exitosamente",
          data: result,
        })
+  })
 
-    } catch (error) {
-         next(error)
-    }
-  }
 }

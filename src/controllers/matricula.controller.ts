@@ -4,11 +4,12 @@ import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { CreateMatriculaDTO, UpdateMatriculaDTO } from "../types"
 import { PeriodoMatriculaRepository } from "../models/Repository/PeriodoMatriculaRepository"
+import { asyncHandler } from "../utils/asyncHandler"
 
-type CreateMatriculaStaticRequest = Request<never, unknown, CreateMatriculaDTO>
 
 export class MatriculaController {
-  async getAll(req: Request, res: Response) {
+
+   getAll = asyncHandler( async (req: Request, res: Response) => {
     const limit = Number.parseInt(req.query.limit as string) || 50
     const offset = Number.parseInt(req.query.offset as string) || 0
 
@@ -25,9 +26,9 @@ export class MatriculaController {
         pages: Math.ceil(total / limit),
       },
     })
-  }
+  })
 
-  async getById(req: Request, res: Response) {
+   getById = asyncHandler( async (req: Request, res: Response) => {
     const { id } = req.params
     const matricula = await MatriculaRepository.findById(Number(id))
 
@@ -39,9 +40,9 @@ export class MatriculaController {
       success: true,
       data: matricula,
     })
-  }
+  })
 
-  async getByEstudiante(req: Request, res: Response) {
+   getByEstudiante = asyncHandler ( async (req: Request, res: Response) => {
     const estudiante_id = Number(req.params)
     const matriculas = await MatriculaRepository.findByEstudiante(estudiante_id)
 
@@ -49,9 +50,9 @@ export class MatriculaController {
       success: true,
       data: matriculas,
     })
-  }
+  })
 
-  async getByCurso(req: Request, res: Response) {
+   getByCurso = asyncHandler( async (req: Request, res: Response) => {
     const curso_id = Number(req.params)
     const matriculas = await MatriculaRepository.findByCurso(curso_id)
 
@@ -59,17 +60,16 @@ export class MatriculaController {
       success: true,
       data: matriculas,
     })
-  }
+  })
 
-  async create(req: CreateMatriculaStaticRequest, res: Response) {
-
+   create = asyncHandler ( async (req: Request, res: Response) => {
 
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
     }
 
-    const { matricula: matriculaData } = req.body
+    const { matricula: matriculaData } = req.body as CreateMatriculaDTO
 
     // 1. Resolver período activo automáticamente
     const periodoActivo = await PeriodoMatriculaRepository.findActivo()
@@ -99,9 +99,9 @@ export class MatriculaController {
       data: matricula,
       message: "Matrícula creada exitosamente",
     })
-  }
+  })
 
-  async update(req: Request<{ id: string }, unknown, UpdateMatriculaDTO>, res: Response) {
+   update = asyncHandler( async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -109,7 +109,7 @@ export class MatriculaController {
 
     const id = Number(req.params.id)
 
-    const { matricula: matriculaData } = req.body
+    const { matricula: matriculaData } = req.body as UpdateMatriculaDTO
     const matricula = await MatriculaRepository.update(id, matriculaData)
 
     if (!matricula) {
@@ -121,9 +121,9 @@ export class MatriculaController {
       data: matricula,
       message: "Matrícula actualizada exitosamente",
     })
-  }
+  })
 
-  async delete(req: Request, res: Response) {
+   delete = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params
     const matricula = await MatriculaRepository.delete(Number(id))
 
@@ -136,5 +136,5 @@ export class MatriculaController {
       data: matricula,
       message: "Matrícula eliminada exitosamente",
     })
-  }
+  })
 }

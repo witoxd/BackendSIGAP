@@ -3,12 +3,13 @@ import { CursoRepository } from "../models/Repository/CursoRepository"
 import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { CreateCursoDTO, updateCursoDTO } from "../types"
+import { asyncHandler } from "../utils/asyncHandler"
 
 type CreateCursoStaticrequest = Request<never, unknown, CreateCursoDTO>
 
 export class CursoController{
 
- async getAll (req: Request, res: Response) {
+  getAll = asyncHandler(async (req: Request, res: Response) => {
   const limit = Number.parseInt(req.query.limit as string) || 50
   const offset = Number.parseInt(req.query.offset as string) || 0
 
@@ -25,9 +26,9 @@ export class CursoController{
       pages: Math.ceil(total / limit),
     },
   })
-}
+})
 
- async getById (req: Request, res: Response) {
+  getById = asyncHandler (async (req: Request, res: Response) => {
   const  id  = Number(req.params.id)
   const curso = await CursoRepository.findById(id)
 
@@ -39,27 +40,26 @@ export class CursoController{
     success: true,
     data: curso,
   })
-}
+})
 
- async getByProfesor (req: Request, res: Response) {
-  const profesor_id = Number(req.params.id)
-  const cursos = await CursoRepository.findByProfesor(profesor_id)
+//  async getByProfesor (req: Request, res: Response) {
+//   const profesor_id = Number(req.params.id)
+//   const cursos = await CursoRepository.findByProfesor(profesor_id)
 
-  res.status(200).json({
-    success: true,
-    data: cursos,
-  })
-}
+//   res.status(200).json({
+//     success: true,
+//     data: cursos,
+//   })
+// }
 
- async create (req: CreateCursoStaticrequest, res: Response) {
-
+  create = asyncHandler(async (req: Request, res: Response)  => {
 
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     throw new AppError("Errores de validación", 400, errors.array())
   }
 
-  const  {curso: CursoData}  = req.body
+  const  {curso: CursoData}  = req.body as CreateCursoDTO
 
   const curso = await CursoRepository.create(CursoData)
 
@@ -68,9 +68,9 @@ export class CursoController{
     data: curso,
     message: "Curso creado exitosamente",
   })
-}
+})
 
- async update (req: Request<{id: string}, unknown, updateCursoDTO>, res: Response) {
+  update = asyncHandler (async (req: Request, res: Response) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     throw new AppError("Errores de validación", 400, errors.array())
@@ -78,7 +78,7 @@ export class CursoController{
 
   const  id  = Number(req.params.id)
 
-  const {curso: CursoData} = req.body
+  const {curso: CursoData} = req.body as updateCursoDTO
 
   const curso = await CursoRepository.update(id, CursoData)
 
@@ -91,9 +91,9 @@ export class CursoController{
     data: curso,
     message: "Curso actualizado exitosamente",
   })
-}
+})
 
- async delete(req: Request, res: Response) {
+  delete = asyncHandler( async (req: Request, res: Response)  => {
   const id = Number(req.params.id)
   const curso = await CursoRepository.delete(id)
 
@@ -106,5 +106,6 @@ export class CursoController{
     data: curso,
     message: "Curso eliminado exitosamente",
   })
-}
+})
+
 }

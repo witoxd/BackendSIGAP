@@ -5,12 +5,13 @@ import { Request, Response } from "express";
 import { validationResult } from "express-validator"
 import { PersonaCreationAttributes } from "../models/sequelize/Persona";
 import { CreatePersonaDTO, UpdatePersonaDTO } from "../types";
+import { asyncHandler } from "../utils/asyncHandler";
 
 type CreationPersonaStaticRequest = Request<never, unknown, CreatePersonaDTO>
 
 export class PersonaController {
 
-  async getAll(req: Request, res: Response) {
+   getAll = asyncHandler(async (req: Request, res: Response) => {
     const limit = Number.parseInt(req.query.limit as string) || 50
     const offset = Number.parseInt(req.query.offset as string) || 0
 
@@ -27,9 +28,9 @@ export class PersonaController {
         pages: Math.ceil(total / limit),
       },
     })
-  }
+  })
 
-  async getById(req: Request, res: Response) {
+   getById = asyncHandler( async (req: Request, res: Response) => {
     const { id } = req.params
     const persona = await PersonaRepository.findById(Number(id))
 
@@ -41,9 +42,9 @@ export class PersonaController {
       success: true,
       data: persona,
     })
-  }
+  })
 
-  async getByDocumento(req: Request, res: Response) {
+   getByDocumento = asyncHandler( async (req: Request, res: Response)  => {
     const { numero_documento } = req.params
     const persona = await PersonaRepository.findByDocumento(numero_documento as string)
 
@@ -55,9 +56,9 @@ export class PersonaController {
       success: true,
       data: persona,
     })
-  }
+  })
 
-  async searchByDocumento (req: Request, res: Response){
+ searchByDocumento = asyncHandler( async (req: Request, res: Response) => {
     const {numero_documento} = req.params
   
         const persona = await PersonaRepository.findByDocumento(numero_documento as string)
@@ -70,9 +71,9 @@ export class PersonaController {
       success: true,
       data: persona,
     })
-  }
+  })
 
-  async SearchIndex(req: Request, res: Response){
+ SearchIndex = asyncHandler( async (req: Request, res: Response) => {
     const  index  = req.params.index as string
 
       if (!index) {
@@ -89,27 +90,27 @@ export class PersonaController {
       success: true,
       data: persona,
     })
-  }
+  })
 
-  static async createPersona(data: Omit<PersonaCreationAttributes, "persona_id">) {
-    const existingPersona = await PersonaRepository.findByDocumento(data.numero_documento)
-    if (existingPersona) {
-      throw new AppError("Ya existe una persona con ese número de documento", 409)
-    }
+  //   createPersona = asyncHandler(async (data: Omit<PersonaCreationAttributes, "persona_id">) => {
+  //   const existingPersona = await PersonaRepository.findByDocumento(data.numero_documento)
+  //   if (existingPersona) {
+  //     throw new AppError("Ya existe una persona con ese número de documento", 409)
+  //   }
 
-    const persona = await PersonaRepository.create(data)
-    return persona
-  }
+  //   const persona = await PersonaRepository.create(data)
+  //   return persona
+  // })
 
 
 
-  async create(req: CreationPersonaStaticRequest, res: Response) {
+   create = asyncHandler( async(req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
     }
 
-    const {persona: PersonaData} = req.body
+    const {persona: PersonaData} = req.body as CreatePersonaDTO
 
     const existingPersona = await PersonaRepository.findByDocumento(PersonaData.numero_documento)
     if (existingPersona) {
@@ -123,9 +124,9 @@ export class PersonaController {
       data: persona,
       message: "Persona creada exitosamente",
     })
-  }
+  })
 
- async update(req: Request<{id: string}, unknown, UpdatePersonaDTO>, res: Response) {
+  update = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -133,7 +134,7 @@ export class PersonaController {
 
     const  id  = Number(req.params.id)
 
-    const {persona: PersonaData} = req.body
+    const {persona: PersonaData} = req.body as UpdatePersonaDTO
 
     if (PersonaData.numero_documento) {
       const existingPersona = await PersonaRepository.findByDocumento(PersonaData.numero_documento)
@@ -153,9 +154,9 @@ export class PersonaController {
       data: persona,
       message: "Persona actualizada exitosamente",
     })
-  }
+  })
 
-  async delete(req: Request, res: Response) {
+   delete = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params
     const persona = await PersonaRepository.delete(Number(id))
 
@@ -168,5 +169,6 @@ export class PersonaController {
       data: persona,
       message: "Persona eliminada exitosamente",
     })
-  }
+  })
+
 }

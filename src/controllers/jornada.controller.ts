@@ -2,27 +2,26 @@ import type { Request, Response, NextFunction } from "express"
 import { JornadaRepository } from "../models/Repository/JornadaRepository"
 import { AppError } from "../utils/AppError"
 import { CreateJornadaDTO, UpdateJornadDTO } from "../types"
+import { asyncHandler } from "../utils/asyncHandler"
 
 
 type CreateJornadaStaticRequest = Request<never, unknown, CreateJornadaDTO>
 
 export class JornadaController {
 
-  async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
+   getAll = asyncHandler( async (req: Request, res: Response, next: NextFunction)  => {
+
       const jornadas = await JornadaRepository.findAll()
 
       res.status(200).json({
         success: true,
         data: jornadas,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
 
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
+  })
+
+   getById = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
       const jornada = await JornadaRepository.findById(id)
 
@@ -34,15 +33,13 @@ export class JornadaController {
         success: true,
         data: jornada,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
 
-  async create(req: CreateJornadaStaticRequest, res: Response, next: NextFunction) {
+  })
 
-    const {jornada: Jornada} = req.body
-    try {
+   create = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
+    const {jornada: Jornada} = req.body as CreateJornadaDTO
+
       const jornada = await JornadaRepository.create(Jornada)
 
       res.status(201).json({
@@ -50,16 +47,14 @@ export class JornadaController {
         message: "Jornada creada exitosamente",
         data: jornada,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
 
-  async update(req: Request<{id: string}, unknown, UpdateJornadDTO>, res: Response, next: NextFunction) {
-    try {
+  })
+
+   update = (async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
 
-      const {jornada: updateJornada} = req.body
+      const {jornada: updateJornada} = req.body as UpdateJornadDTO
       
       const jornada = await JornadaRepository.update(id, updateJornada)
 
@@ -72,13 +67,10 @@ export class JornadaController {
         message: "Jornada actualizada exitosamente",
         data: jornada,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
+   delete = ( async (req: Request, res: Response, next: NextFunction) => {
+
       const id = Number(req.params.id)
       const jornada = await JornadaRepository.delete(id)
 
@@ -90,8 +82,6 @@ export class JornadaController {
         success: true,
         message: "Jornada eliminada exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
+  
 }

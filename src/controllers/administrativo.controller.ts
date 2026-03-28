@@ -6,6 +6,7 @@ import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { CreateAdministrativoDTO, UpdateAdministrativoDTO } from "../types"
 import { PersonaService } from "../services/persona.service"
 import { transaction } from "../config/database"
+import { asyncHandler } from "../utils/asyncHandler"
 
 
 type CreateAdministrativoStaticRequest = Request<never, unknown, CreateAdministrativoDTO>
@@ -14,7 +15,7 @@ type UpdateAdministrativoStaticRequest = Request<{ id: string }, unknown, Update
 
 export class AdministrativoController {
 
-  async getAll(req: Request, res: Response) {
+   getAll = asyncHandler( async (req: Request, res: Response) => {
     const limit = Number.parseInt(req.query.limit as string) || 50
     const offset = Number.parseInt(req.query.offset as string) || 0
 
@@ -31,11 +32,11 @@ export class AdministrativoController {
         pages: Math.ceil(total / limit),
       },
     })
-  }
+  })
 
 
 
-  async getById(req: Request, res: Response) {
+   getById = asyncHandler( async (req: Request, res: Response) => {
 
     const id = Number(req.params.id)
     const administrativo = await AdministrativoRepository.findById(id)
@@ -48,9 +49,9 @@ export class AdministrativoController {
       success: true,
       data: administrativo,
     })
-  }
+  })
 
-  async SearchIndex(req: Request, res: Response) {
+   SearchIndex = asyncHandler(async (req: Request, res: Response) => {
       const limit = Number.parseInt(req.query.limit as string) || 50
       const index = req.params.index as string
   
@@ -73,18 +74,16 @@ export class AdministrativoController {
           pages: Math.ceil(administrativo.length / limit),
         },
       })
-    }
+    })
 
 
-  async create(req: CreateAdministrativoStaticRequest, res: Response, next: NextFunction) {
+   create= asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
     }
 
-    const { persona: PersonaData, administrativo: AdministrativoData } = req.body
-
-    try {
+    const { persona: PersonaData, administrativo: AdministrativoData } = req.body as CreateAdministrativoDTO
 
       const { newPersona, NewAdministrativo } = await transaction(async (client) => {
 
@@ -111,13 +110,10 @@ export class AdministrativoController {
         },
         message: "Administrativo creado exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
 
-  async update(req: UpdateAdministrativoStaticRequest, res: Response, next: NextFunction) {
+   update = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -130,10 +126,8 @@ export class AdministrativoController {
       throw new AppError("Administrador no encontrado", 404)
     }
 
-    const { persona: PersonaData, administrativo: AdministradorData } = req.body
+    const { persona: PersonaData, administrativo: AdministradorData } = req.body as UpdateAdministrativoDTO
 
-
-    try {
       const updateAdministrador = await transaction(async (client) => {
 
         // Si llega persona, actualizar persona
@@ -173,13 +167,9 @@ export class AdministrativoController {
         },
         message: "Administrativo actualizado exitosamente",
       })
+  })
 
-    } catch (error) {
-      next(error)
-    }
-  }
-
-  async delete(req: Request, res: Response) {
+   delete = asyncHandler( async (req: Request, res: Response) => {
     const id = Number(req.params.id)
     const administrativo = await AdministrativoRepository.delete(id)
 
@@ -197,5 +187,5 @@ export class AdministrativoController {
       },
       message: "Administrativo eliminado exitosamente",
     })
-  }
+  })
 }

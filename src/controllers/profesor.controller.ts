@@ -6,12 +6,13 @@ import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { CreateProfesorDTO, UpdateProfesorDTO, CreateAssingProfesorDTO } from "../types"
 import { transaction } from "../config/database"
 import { PersonaService } from "../services/persona.service"
+import { asyncHandler } from "../utils/asyncHandler"
 
 
 type CreateProfesorStaticRequest = Request<never, unknown, CreateProfesorDTO>
 
 export class ProfesorController {
-  async getAll(req: Request, res: Response) {
+   getAll = asyncHandler(async (req: Request, res: Response) => {
     const limit = Number.parseInt(req.query.limit as string) || 50
     const offset = Number.parseInt(req.query.offset as string) || 0
 
@@ -28,9 +29,9 @@ export class ProfesorController {
         pages: Math.ceil(total / limit),
       },
     })
-  }
+  })
 
-  async getById(req: Request, res: Response) {
+   getById = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params
     const profesor = await ProfesorRepository.findById(Number(id))
 
@@ -42,9 +43,9 @@ export class ProfesorController {
       success: true,
       data: profesor,
     })
-  }
+  })
 
-  async SearchIndex(req: Request, res: Response) {
+   SearchIndex = asyncHandler(async (req: Request, res: Response) => {
     const limit = Number.parseInt(req.query.limit as string) || 50
     const index = req.params.index as string
 
@@ -67,19 +68,17 @@ export class ProfesorController {
         pages: Math.ceil(profesores.length / limit),
       },
     })
-  }
+  })
 
 
 
-  async create(req: CreateProfesorStaticRequest, res: Response) {
+   create = asyncHandler(async (req: Request, res: Response)  => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
     }
 
-    const { persona: PersonaData, profesor: ProfesorData } = req.body
-
-
+    const { persona: PersonaData, profesor: ProfesorData } = req.body as CreateProfesorDTO
 
     const { newPersona, newProfesor } = await transaction(async (client) => {
 
@@ -103,11 +102,10 @@ export class ProfesorController {
       },
       message: "Profesor creado exitosamente",
     })
-  }
+  })
 
 
-  async update(req: Request<{ id: string }, unknown, UpdateProfesorDTO>,
-    res: Response) {
+   update = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -121,7 +119,7 @@ export class ProfesorController {
       throw new AppError("No existe este profesor", 404)
     }
 
-    const { persona: PersonaData, profesor: profesorData } = req.body
+    const { persona: PersonaData, profesor: profesorData } = req.body as UpdateProfesorDTO
 
     const  updateProfesor  = await transaction(async (client) => {
 
@@ -158,9 +156,9 @@ export class ProfesorController {
       },
       message: "Profesor actualizado exitosamente",
     })
-  }
+  })
 
-  async delete(req: Request, res: Response) {
+   delete = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id)
     const profesor = await ProfesorRepository.delete(id)
 
@@ -173,5 +171,6 @@ export class ProfesorController {
       data: profesor,
       message: "Profesor eliminado exitosamente",
     })
-  }
+  })
+  
 }

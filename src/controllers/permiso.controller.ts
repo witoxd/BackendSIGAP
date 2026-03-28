@@ -2,11 +2,11 @@ import type { Request, Response, NextFunction } from "express"
 import { PermisoRepository } from "../models/Repository/PermisoRepository"
 import { AppError } from "../utils/AppError"
 import { getPagination } from "../utils/validators"
+import { asyncHandler } from "../utils/asyncHandler"
 
 export class PermisoController {
   
-  async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
+   getAll = asyncHandler( async (req: Request, res: Response, next: NextFunction)  => {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -16,13 +16,9 @@ export class PermisoController {
         success: true,
         data: permisos,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
+   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const id = Number(req.params.id)
       const permiso = await PermisoRepository.findById(id)
 
@@ -34,13 +30,10 @@ export class PermisoController {
         success: true,
         data: permiso,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async getByRole(req: Request, res: Response, next: NextFunction) {
-    try {
+   getByRole = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
       const roleId = Number(req.params.roleId)
       const permisos = await PermisoRepository.findByRole(roleId)
 
@@ -48,15 +41,11 @@ export class PermisoController {
         success: true,
         data: permisos,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
 
 
-  async assignToRole(req: Request, res: Response, next: NextFunction) {
-    try {
+   assignToRole =asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const { role_id, permiso_id } = req.body
       const result = await PermisoRepository.assignToRole(role_id, permiso_id)
 
@@ -65,13 +54,9 @@ export class PermisoController {
         message: "Permiso asignado al rol exitosamente",
         data: result,
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async removeFromRole(req: Request, res: Response, next: NextFunction) {
-    try {
+ removeFromRole = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const { roleId, permisoId } = req.params
       const result = await PermisoRepository.removeFromRole(Number(roleId), Number(permisoId))
 
@@ -83,13 +68,9 @@ export class PermisoController {
         success: true,
         message: "Permiso removido del rol exitosamente",
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
 
-  async checkPermission(req: Request, res: Response, next: NextFunction) {
-    try {
+   checkPermission = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const { roleId } = req.params
       const { recurso, accion } = req.query
 
@@ -107,8 +88,6 @@ export class PermisoController {
         success: true,
         data: { tienePermiso },
       })
-    } catch (error) {
-      next(error)
-    }
-  }
+  })
+  
 }
