@@ -368,6 +368,19 @@ export interface ACLEntry {
   acciones: string[]
 }
 
+// ============================================================================
+//  PERIODO MATRICULA TYPES
+// ============================================================================
+ 
+import { PeriodoMatriculaCreationAttributes } from "../models/sequelize/PeriodoMatricula"
+ 
+export interface CreatePeriodoMatriculaDTO {
+  periodo: Omit<PeriodoMatriculaCreationAttributes, "periodo_id" | "activo" | "created_by" | "created_at">
+}
+ 
+export interface UpdatePeriodoMatriculaDTO {
+  periodo: Partial<Omit<PeriodoMatriculaCreationAttributes, "periodo_id" | "activo" | "created_by" | "created_at">>
+}
 
 // ============================================================================
 //  ACCIONES Y REUCURSOS

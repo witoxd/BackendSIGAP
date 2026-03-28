@@ -61,17 +61,14 @@ export class MatriculaRepository {
     )
     return result.rows
   }
-
-  static async findByEstudianteAndPeriodo( estudianteId: number, periodoId: number){
-    const result = await query(
-      `SELECT m.*
-      FROM matriculas m
-      WHERE m.estudiante_id = $1 AND periodo_id = $2
-      `,
+  
+static async findByEstudianteAndPeriodo(estudianteId: number, periodoId: number) {
+  const result = await query(
+    "SELECT * FROM matriculas WHERE estudiante_id = $1 AND periodo_id = $2",
     [estudianteId, periodoId]
-    )
-    return result.row
-  }
+  )
+  return result.rows[0] ?? null
+}
 
   static async create(data: Omit<MatriculaCreationAttributes, "matricula_id">, client?: any) {
     const result = await query(
