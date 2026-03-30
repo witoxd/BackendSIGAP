@@ -12,6 +12,7 @@ import { rateLimiter } from "./middleware/rateLimiter"
 import { testConnection, closeConnections } from "./config/database"
 import routes from "./routes"
 import { initializeModels } from "./models/sequelize/sequelize-models"
+import { FORCE_DATABASE_SYNC } from "./config/database"
 
 dotenv.config()
 
@@ -98,6 +99,7 @@ const startServer = async () => {
       console.log(chalk.blueBright.bold(` Corriendo Server en http://${HOST}:${PORT}`))
       console.log(chalk.blueBright.bold(` Entorno: ${process.env.NODE_ENV || "development"}`))
       console.log(` API Routes: http://${HOST}:${PORT}/api`)
+      console.log("Sincronizacion forzada con la DB: ", FORCE_DATABASE_SYNC)
     })
   } catch (error) {
     console.error("Failed to start server:", error)

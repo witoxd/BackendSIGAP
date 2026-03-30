@@ -1,5 +1,6 @@
 import { query } from "../../config/database"
 import type { TipoArchivoCreationAttributes } from "../sequelize/TipoArchivo"
+import type { ContextoArchivo } from "../sequelize/TipoArchivo"
 
 export class TipoArchivoRepository {
   /**
@@ -11,6 +12,7 @@ export class TipoArchivoRepository {
     )
     return result.rows
   }
+
 
   static async countByTipo(id: number){
 
@@ -43,60 +45,112 @@ export class TipoArchivoRepository {
     return result.rows[0]
   }
 
-  /**
-   * Crear un nuevo tipo de archivo
-   */
-  static async create(
-    data: Omit<TipoArchivoCreationAttributes, "tipo_archivo_id">,
-    client?: any
-  ) {
-    const result = await query(
-      `INSERT INTO tipos_archivo (nombre, descripcion, extensiones_permitidas, activo)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [
-        data.nombre,
-        data.descripcion || null,
-        data.extensiones_permitidas || null,
-        data.activo ?? true,
-      ],
-      client
-    )
-    return result.rows[0]
-  }
 
-  /**
-   * Actualizar un tipo de archivo
-   */
-  static async update(
-    id: number,
-    data: Partial<TipoArchivoCreationAttributes>,
-    client?: any
-  ) {
-    const fields: string[] = []
-    const values: any[] = []
-    let paramCount = 1
+// ----------------------------------------------------------
+// create — ahora incluye requerido_en además de aplica_a.
+//
+// Usamos ::contexto_archivo[] para castear explícitamente —
+// pg no castea TEXT[] a un ENUM[] automáticamente en el INSERT,
+// pero sí con el cast explícito.
+// ----------------------------------------------------------
+static async create(
+  data: Omit<TipoArchivoCreationAttributes, "tipo_archivo_id">,
+  client?: any
+) {
+  const result = await query(
+    `INSERT INTO tipos_archivo
+       (nombre, descripcion, extensiones_permitidas, activo, aplica_a, requerido_en)
+     VALUES ($1, $2, $3, $4, $5::contexto_archivo[], $6::contexto_archivo[])
+     RETURNING *`,
+    [
+      data.nombre,
+      data.descripcion          ?? null,
+      data.extensiones_permitidas ?? null,
+      data.activo               ?? true,
+      data.aplica_a             ?? null,
+      data.requerido_en         ?? null,
+    ],
+    client
+  )
+  return result.rows[0]
+}
+ 
+// ----------------------------------------------------------
+// update — igual que create, el cast es necesario para
+// los arrays de ENUM.
+// ----------------------------------------------------------
+static async update(
+  id: number,
+  data: Partial<TipoArchivoCreationAttributes>,
+  client?: any
+) {
+  const fields: string[] = []
+  const values: any[]   = []
+  let paramCount = 1
+ 
+  Object.entries(data).forEach(([key, value]) => {
+    if (key === "tipo_archivo_id" || value === undefined) return
+ 
+    // Los campos ENUM[] necesitan cast explícito
+    if (key === "aplica_a" || key === "requerido_en") {
+      fields.push(`${key} = $${paramCount}::contexto_archivo[]`)
+    } else {
+      fields.push(`${key} = $${paramCount}`)
+    }
+ 
+    values.push(value)
+    paramCount++
+  })
+ 
+  if (fields.length === 0) return null
+ 
+  values.push(id)
+  const result = await query(
+    `UPDATE tipos_archivo
+     SET ${fields.join(", ")}
+     WHERE tipo_archivo_id = $${paramCount}
+     RETURNING *`,
+    values,
+    client
+  )
+  return result.rows[0]
+}
+ 
+// ----------------------------------------------------------
+// findByRol — reemplaza el método existente.
+// Ahora filtra por aplica_a (campo ENUM[]) en lugar de string[].
+// La query es idéntica pero el tipo en BD es más seguro.
+// ----------------------------------------------------------
+static async findByRol(rol: ContextoArchivo) {
+  const result = await query(
+    `SELECT * FROM tipos_archivo
+     WHERE activo = true
+       AND ($1::contexto_archivo = ANY(aplica_a) OR aplica_a IS NULL)
+     ORDER BY nombre`,
+    [rol]
+  )
+  return result.rows
+}
+ 
+// ----------------------------------------------------------
+// findRequeridosPor — nuevo método, devuelve solo los tipos
+// que son OBLIGATORIOS en un contexto específico.
+// Usado por MatriculaArchivoRepository.findArchivosRequeridos
+// y por el checklist del frontend.
+// ----------------------------------------------------------
+static async findRequeridosPor(contexto: ContextoArchivo) {
+  const result = await query(
+    `SELECT * FROM tipos_archivo
+     WHERE activo = true
+       AND $1::contexto_archivo = ANY(requerido_en)
+     ORDER BY nombre`,
+    [contexto]
+  )
+  return result.rows
+}
 
-    Object.entries(data).forEach(([key, value]) => {
-      if (key !== "tipo_archivo_id" && value !== undefined) {
-        fields.push(`${key} = $${paramCount}`)
-        values.push(value)
-        paramCount++
-      }
-    })
 
-    if (fields.length === 0) return null
 
-    values.push(id)
-    const result = await query(
-      `UPDATE tipos_archivo 
-       SET ${fields.join(", ")} 
-       WHERE tipo_archivo_id = $${paramCount} 
-       RETURNING *`,
-      values,
-      client
-    )
-    return result.rows[0]
-  }
 
   /**
    * Eliminar (soft delete) un tipo de archivo
@@ -174,14 +228,4 @@ export class TipoArchivoRepository {
     return extensionesPermitidas.includes(extension.toLowerCase())
   }
 
-  static async findByRol(rol: string) {
-  const result = await query(
-    `SELECT * FROM tipos_archivo 
-     WHERE activo = true 
-     AND (aplica_a IS NULL OR $1 = ANY(aplica_a))
-     ORDER BY nombre`,
-    [rol]
-  )
-  return result.rows
-}
 }

@@ -53,6 +53,10 @@ export interface UpdateTipoArchivoDTO {
   tipo_archivo: Partial<TipoArchivoCreationAttributes>
 }
 
+export interface ContextoArchivo {
+
+}
+
 // ============================================================================
 // NOTA: Los tipos de Archivo ya existen en el archivo original,
 // solo necesitan actualizarse para usar tipo_archivo_id

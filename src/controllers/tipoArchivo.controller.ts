@@ -4,9 +4,7 @@ import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import type { CreateTipoArchivoDTO, UpdateTipoArchivoDTO } from "../types"
 import { asyncHandler } from "../utils/asyncHandler"
-
-type CreateTipoArchivoStaticRequest = Request<never, unknown, CreateTipoArchivoDTO>
-type UpdateTipoArchivoStaticRequest = Request<{ id: string }, unknown, UpdateTipoArchivoDTO>
+import { ContextoArchivo } from "../models/sequelize/TipoArchivo"
 
 export class TipoArchivoController {
   /**
@@ -29,16 +27,16 @@ export class TipoArchivoController {
 
    getRolByTipoArchivo = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
 
-      const rol = req.params.rol as string
-      const tipoArchivo = await TipoArchivoRepository.findByRol(rol)
+      const rol = req.params.rol as ContextoArchivo
+      const tiposArchivo = await TipoArchivoRepository.findByRol(rol)
 
-      if (!tipoArchivo) {
-        throw new AppError("Tipo de archivo no encontrado", 404)
+      if (!tiposArchivo.length) {
+        throw new AppError("No se encontraron tipos de archivo para el rol indicado", 404)
       }
 
       res.status(200).json({
         success: true,
-        data: tipoArchivo.aplica_a || [],
+        data: tiposArchivo,
       })
   })
 
