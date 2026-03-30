@@ -1,9 +1,12 @@
 import { Pool, type PoolConfig } from "pg"
 import { Sequelize } from "sequelize"
 import dotenv from "dotenv"
+import { initializeDatabase } from "./dbInit"
 
 
 dotenv.config()
+
+export const FORCE_DATABASE_SYNC = process.env.FORCE_DATABASE_SYNC === "true"
 
 const poolConfig: PoolConfig = {
   host: process.env.DB_HOST || "localhost",
@@ -105,8 +108,14 @@ export const testConnection = async () => {
     // Test Sequelize
     await sequelize.authenticate()
     //Advertencia no tocar sync en producción, puede causar pérdida de datos.
-    await sequelize.sync({ force: false }) // Solo para desarrollo, recrea tablas según modelos
+    await sequelize.sync({ force: FORCE_DATABASE_SYNC }) // Solo para desarrollo, recrea tablas según modelos
     console.log("Sequelize conectado exitosamente - Sequelize connected successfully")
+
+    if(FORCE_DATABASE_SYNC){
+      console.warn("ADVERTENCIA: FORCE_DATABASE_SYNC esta activo, eliminando y recreando base de datos")
+      await initializeDatabase()
+      console.log("Base de datos inicializada")
+    }
 
     return true
   } catch (error) {
