@@ -9,6 +9,7 @@ import { deleteFile, getFileUrl } from "../config/multer"
 import path from "path"
 import fs from "fs"
 import { asyncHandler } from "../utils/asyncHandler"
+import { archivoService } from "../services/archivos.services"
 
 export class ArchivoController {
    getAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -222,8 +223,8 @@ export class ArchivoController {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
         if (req.files) {
-          await Promise.all((req.files as Express.Multer.File[]).map(file => deleteFile(file.path)))
-        }
+          await archivoService.deleteFileArray(req.files as Express.Multer.File[])
+         }
         throw new AppError("Errores de validación", 400, errors.array())
       }
 
@@ -239,7 +240,7 @@ export class ArchivoController {
       // Verificar que la persona existe
       const persona = await PersonaRepository.findById(Number(persona_id))
       if (!persona) {
-        await Promise.all(files.map(file => deleteFile(file.path)))
+        await archivoService.deleteFileArray(files)
         throw new AppError("Persona no encontrada", 404)
       }
 
@@ -249,14 +250,14 @@ export class ArchivoController {
         try {
           metadataArray = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
         } catch (e) {
-          await Promise.all(files.map(file => deleteFile(file.path)))
+          await archivoService.deleteFileArray(files)
           throw new AppError("El formato de metadata no es válido", 400)
         }
       }
 
       // Validar que haya metadata para cada archivo
       if (metadataArray.length !== files.length) {
-        await Promise.all(files.map(file => deleteFile(file.path)))
+          await archivoService.deleteFileArray(files)
         throw new AppError(
           `Se requiere metadata para cada archivo. Archivos: ${files.length}, Metadata: ${metadataArray.length}`,
           400
@@ -272,14 +273,14 @@ export class ArchivoController {
         // Verificar tipo de archivo
         const tipoArchivo = await TipoArchivoRepository.findById(Number(meta.tipo_archivo_id))
         if (!tipoArchivo) {
-          await Promise.all(files.map(f => deleteFile(f.path)))
+          await archivoService.deleteFileArray(files)
           throw new AppError(`Tipo de archivo con ID ${meta.tipo_archivo_id} no encontrado`, 404)
         }
 
         // Verificar que la persona tiene permiso para subir este tipo de archivo
         const personaPuedeSubirArchivo = await PersonaRepository.personaPuedeSubirArchivo(Number(persona_id), Number(meta.tipo_archivo_id))
         if (!personaPuedeSubirArchivo) {
-          await Promise.all(files.map(f => deleteFile(f.path)))
+          await archivoService.deleteFileArray(files)
           throw new AppError(`La persona no tiene permiso para subir este tipo de archivo: ${meta.tipo_archivo_id}`, 403)
         }
 
@@ -287,7 +288,6 @@ export class ArchivoController {
         const ext = path.extname(file.originalname).toLowerCase()
         const isAllowed = await TipoArchivoRepository.isExtensionAllowed(Number(meta.tipo_archivo_id), ext)
         if (!isAllowed) {
-          await Promise.all(files.map(f => deleteFile(f.path)))
           throw new AppError(
             `La extensión ${ext} no está permitida para ${tipoArchivo.nombre} (archivo: ${file.originalname})`,
             400
@@ -324,7 +324,7 @@ export class ArchivoController {
       // Rollback: eliminar archivos físicos en caso de error
       if (req.files) {
         try {
-          await Promise.all((req.files as Express.Multer.File[]).map(file => deleteFile(file.path)))
+         await archivoService.deleteFileArray(req.files as Express.Multer.File[])
         } catch (deleteError) {
           console.error("Error limpiando archivos:", deleteError)
         }
@@ -445,7 +445,7 @@ export class ArchivoController {
         throw new AppError("Archivo no encontrado", 404)
       }
 
-      await ArchivoRepository.delete(id)
+      await ArchivoRepository.softDelete(id)
 
       if (archivo.url_archivo) {
         try {

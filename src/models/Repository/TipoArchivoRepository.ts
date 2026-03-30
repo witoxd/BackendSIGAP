@@ -132,6 +132,16 @@ static async findByRol(rol: ContextoArchivo) {
   return result.rows
 }
  
+static async findByContexto(contexto: ContextoArchivo): Promise<TipoArchivoCreationAttributes[]>{
+  const result = await query(
+    `SELECT * FROM tipo_archivos
+    WHERE activo = true
+    AND ($1::contexto_archivo = ANY(aplica_a) OR aplica_a IS NULL)
+    ORDER BY nombre`,
+    [contexto]
+  )
+  return result.rows
+}
 // ----------------------------------------------------------
 // findRequeridosPor — nuevo método, devuelve solo los tipos
 // que son OBLIGATORIOS en un contexto específico.
@@ -150,21 +160,6 @@ static async findRequeridosPor(contexto: ContextoArchivo) {
 }
 
 
-
-
-  /**
-   * Eliminar (soft delete) un tipo de archivo
-   */
-  static async delete(id: number, client?: any) {
-    const result = await query(
-      `UPDATE tipos_archivo SET activo = false 
-       WHERE tipo_archivo_id = $1 
-       RETURNING *`,
-      [id],
-      client
-    )
-    return result.rows[0]
-  }
 
   /**
    * Eliminar permanentemente un tipo de archivo

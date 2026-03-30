@@ -14,8 +14,7 @@ export class ArchivoRepository {
         a.asignado_por,
         a.fecha_carga,
         a.activo,
-       FROM archivos a
-       LEFT JOIN personas p ON a.persona_id = p.persona_id
+       FROM archivos a WHERE a.activo = true
        ORDER BY a.fecha_carga DESC LIMIT $1 OFFSET $2`,
       [limit, offset],
     )
@@ -34,8 +33,7 @@ export class ArchivoRepository {
         a.asignado_por,
         a.fecha_carga,
         a.activo,
-       FROM archivos a
-       LEFT JOIN personas p ON a.persona_id = p.persona_id
+       FROM archivos a WHERE a.activo = true
        WHERE a.archivo_id = $1`,
       [id],
     )
@@ -52,7 +50,7 @@ export class ArchivoRepository {
         a.descripcion,
         a.asignado_por,
         a.fecha_carga,
-        a.activo, FROM archivos WHERE persona_id = $1
+        a.activo, FROM archivos WHERE persona_id = $1 AND activo = true
        ORDER BY fecha_carga DESC`, [personaId])
     return result.rows
   }
@@ -71,7 +69,7 @@ export class ArchivoRepository {
         a.activo,
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
-       WHERE a.tipo_archivo_id = $1
+       WHERE a.tipo_archivo_id = $1 AND a.activo = true
        ORDER BY a.fecha_carga DESC LIMIT $2 OFFSET $3`,
       [tipoarchivos, limit, offset],
     )
@@ -92,7 +90,7 @@ export class ArchivoRepository {
         a.activo,
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
-       WHERE a.tipo_archivo_id = $1 AND a.persona_id = $2
+       WHERE a.tipo_archivo_id = $1 AND a.persona_id = $2 AND a.activo = true
        ORDER BY a.fecha_carga DESC LIMIT $3 OFFSET $4`,
       [tipoarchivos, persona_id, limit, offset],
     )
@@ -104,7 +102,7 @@ export class ArchivoRepository {
       `SELECT a.*
        FROM archivos a INNER JOIN tipos_archivo ta ON a.tipo_archivo_id = ta.tipo_archivo_id
        LEFT JOIN personas p ON a.persona_id = p.persona_id
-       WHERE a.persona_id = $1 AND ta.nombre = 'photo'
+       WHERE a.persona_id = $1 AND ta.nombre = 'photo' AND a.activo = true
        ORDER BY a.fecha_carga DESC LIMIT 1`,
       [personaId]
     )
@@ -188,6 +186,13 @@ export class ArchivoRepository {
     return result.rows[0]
   }
 
+  static async softDelete(id: number){
+    const result = await query(
+      `UPDATE archivos SET activo = false WHETE archivo_id = $1 RETURNING *`,
+      [id]
+    )
+    
+  }
   static async delete(id: number) {
     const result = await query("DELETE FROM archivos WHERE archivo_id = $1 RETURNING *", [id])
     return result.rows[0]

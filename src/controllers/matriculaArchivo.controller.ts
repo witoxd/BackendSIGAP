@@ -59,7 +59,7 @@ export class MatriculaArchivoController {
     if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
 
     const matriculaId = Number(req.params.matriculaId)
-    const { archivo_id } = req.body
+    const  archivo_id  = Number(req.params.archivoId)
 
     const matricula = await MatriculaRepository.findById(matriculaId)
     if (!matricula) throw new AppError("Matrícula no encontrada", 404)
