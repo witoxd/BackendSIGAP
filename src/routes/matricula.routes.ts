@@ -13,6 +13,7 @@ import {
 import { validate } from "../middleware/validate"
 import { param } from "express-validator"
 import { Recurso, Accion } from "../types"
+import { upload } from "../config/multer"
 
 const router = Router()
 const matriculaController = new MatriculaController()
@@ -33,9 +34,10 @@ router.post(
   "/create",
   createMatriculaHttpValidator,
   validate,
+  upload.array("archivos"),
   validateCreateMatriculaDomain,
   checkPermission(Recurso.MATRICULAS, Accion.CREATE),
-  matriculaController.create.bind(matriculaController),
+  matriculaController.ProcessMatricula.bind(matriculaController),
 )
 
 router.put(

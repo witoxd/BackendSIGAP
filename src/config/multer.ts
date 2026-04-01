@@ -262,7 +262,7 @@ export const upload = multer({
   fileFilter,
   limits: {
     fileSize: MAX_FILE_SIZE,
-    files: 5, // Solo 5 archivos por request (cambiar si se requiere)
+    files: 10, // Solo 10 archivos por request (cambiar si se requiere)
   },
 }
 )
