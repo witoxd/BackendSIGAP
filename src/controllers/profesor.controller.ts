@@ -84,11 +84,14 @@ export class ProfesorController {
 
       const newPersona = await PersonaService.validateOrCreatePersona(PersonaData, client)
 
+      console.log("persona valida o creada: ", newPersona)
       const existingProfesor = await ProfesorRepository.findByPersonaId(newPersona.persona_id)
   
       if(existingProfesor){
         throw new AppError("Ya la persona es profesor", 404)
       }
+
+      console.log("datos de la persona: ", newPersona)
 
       const newProfesor = await ProfesorRepository.create({ ...ProfesorData, persona_id: newPersona.persona_id }, client)
 

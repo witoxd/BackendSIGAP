@@ -1,5 +1,5 @@
 
-import { Persona, type PersonaCreationAttributes } from "../models/sequelize/Persona"
+import { Persona, type PersonaCreationAttributes, PersonaAttributes } from "../models/sequelize/Persona"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { ValidationError } from "sequelize"
 import { AppError } from "../utils/AppError"
@@ -8,9 +8,9 @@ export class PersonaService {
   static async validateOrCreatePersona(
     personaData: PersonaCreationAttributes,
     client?: any
-  ) {
+  ): Promise<PersonaAttributes> {
     try {
-      const existingPersona = await PersonaRepository.findByDocumento(
+      const existingPersona = await PersonaRepository.existingPersonaByDocumento(
         personaData.numero_documento
       )
 

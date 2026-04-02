@@ -5,10 +5,11 @@ import { ArchivoController } from "../controllers/archivo.controller"
 import {
   createArchivoHttpValidator,
   updateArchivoHttpValidator,
+  bulkCreateArchivoHttpValidator
 } from "../validators/archivo.validators"
 import {
   validateCreateArchivoDomain,
-  validateUpdateArchivoDomain,
+  validateUpdateArchivoDomain
 } from "../validators/domain"
 import { validate } from "../middleware/validate"
 import { param, query } from "express-validator"
@@ -98,7 +99,7 @@ router.post(
   checkPermission(Recurso.DOCUMENTOS, Accion.CREATE),
   upload.array("archivos"), // Middleware de multer para uno o varios archivos
   handleMulterError, // Manejo de errores de multer
-  createArchivoHttpValidator,
+  bulkCreateArchivoHttpValidator,
   validate,
   validateCreateArchivoDomain,
   archivoController.bulkCreate.bind(archivoController)

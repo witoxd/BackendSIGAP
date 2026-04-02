@@ -53,8 +53,11 @@ export interface UpdateTipoArchivoDTO {
   tipo_archivo: Partial<TipoArchivoCreationAttributes>
 }
 
-export interface ContextoArchivo {
-
+export enum ContextoArchivo  {
+estudiante = "estudiante",
+profesor = "profesor",
+administrativo = "administrativo",
+acudiente = "acudiente"
 }
 
 // ============================================================================

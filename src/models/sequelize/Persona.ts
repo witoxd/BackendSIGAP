@@ -1,7 +1,7 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
-interface PersonaAttributes {
+export interface PersonaAttributes {
   persona_id: number
   nombres: string
   apellido_paterno: string

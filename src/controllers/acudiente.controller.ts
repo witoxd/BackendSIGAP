@@ -18,6 +18,7 @@ type CreateAcudienteStaticRequest = Request<never, unknown, CreateAcudianteDTO>
 export class AcudienteController {
 
   getAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    
     try {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)

@@ -11,7 +11,7 @@
 // PERSONA_FIELDS — columnas que se traen de personas + tipo_documento
 // Siempre con alias de tabla "p" para personas y "td" para tipo_documento
 // ----------------------------------------------------------
-export const PERSONA_FIELDS = `
+export const PERSONA_FIELDS_SQL = `
   p.nombres,
   p.apellido_paterno,
   p.apellido_materno,

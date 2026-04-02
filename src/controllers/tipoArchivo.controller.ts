@@ -4,7 +4,7 @@ import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import type { CreateTipoArchivoDTO, UpdateTipoArchivoDTO } from "../types"
 import { asyncHandler } from "../utils/asyncHandler"
-import { ContextoArchivo } from "../models/sequelize/TipoArchivo"
+import { ContextoArchivo as ContextoArchivoEnum} from "../types"
 
 export class TipoArchivoController {
   /**
@@ -27,7 +27,12 @@ export class TipoArchivoController {
 
    getRolByTipoArchivo = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
 
-      const rol = req.params.rol as ContextoArchivo
+      const rol = req.params.rol as ContextoArchivoEnum
+
+      if(!Object.values(ContextoArchivoEnum).includes(rol)) {
+        throw new AppError("Rol de persona no válido", 400)
+      }
+
       const tiposArchivo = await TipoArchivoRepository.findByRol(rol)
 
       if (!tiposArchivo.length) {

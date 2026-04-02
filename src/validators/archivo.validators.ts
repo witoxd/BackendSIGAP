@@ -37,6 +37,32 @@ export const createArchivoHttpValidator: ValidationChain[] = [
     .withMessage("Tipo de archivo invalido)"),
 ]
 
+export const bulkCreateArchivoHttpValidator: ValidationChain[] = [
+    body("persona_id")
+    .notEmpty()
+    .withMessage("El ID de persona es requerido")
+    .isInt({ min: 1 })
+    .withMessage("El ID de persona debe ser un entero positivo"),
+
+  body("nombre")
+    .optional()
+    .isString()
+    .withMessage("El nombre debe ser texto")
+    .isLength({ max: 200 })
+    .withMessage("El nombre no puede exceder 200 caracteres"),
+
+  body("metadata.*.descripcion")
+    .optional()
+    .isString()
+    .withMessage("La descripcion debe ser texto"),
+
+  body("metadata.*.tipo_archivo_id")
+    .optional()
+    // .withMessage("El tipo de archivo es requerido")
+    .isInt({ min: 1 })
+    .withMessage("Tipo de archivo invalido)"),
+]
+
 /**
  * Validador HTTP para actualizar archivo
  * Todos los campos son opcionales en actualizacion

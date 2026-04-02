@@ -1,7 +1,8 @@
 import { query } from "../../config/database"
-import type { PersonaCreationAttributes } from "../../models/sequelize/Persona"
+import type { PersonaCreationAttributes, PersonaAttributes } from "../../models/sequelize/Persona"
 import { AppError } from "@/src/utils/AppError"
-import { PERSONA_FIELDS_JSON } from "../shared/personasql"
+import { PERSONA_FIELDS_JSON, PERSONA_FIELDS_SQL } from "../shared/personasql"
+import { CreatePersonaDTO } from "@/dist/types"
 export class PersonaRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
@@ -21,11 +22,16 @@ export class PersonaRepository {
     return result.rows[0]
   }
 
-  static async findByDocumento(numero_documento: string, client?: any) {
+  static async findByDocumento(numero_documento: string, client?: any){
     const result = await query(
       `SELECT 
       ${PERSONA_FIELDS_JSON}
       FROM personas p INNER JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id WHERE numero_documento = $1`, [numero_documento], client)
+    return result.rows[0]
+  }
+
+  static async existingPersonaByDocumento(numero_documento: string, client?: any): Promise<PersonaAttributes>{
+    const result = await query ( `SELECT * FROM personas WHERE numero_documento = $1`, [numero_documento], client)
     return result.rows[0]
   }
 
@@ -90,7 +96,7 @@ export class PersonaRepository {
     return result.rows
   }
 
-  static async create(data: Omit<PersonaCreationAttributes, "persona_id">, client?: any) {
+  static async create(data: Omit<PersonaCreationAttributes, "persona_id">, client?: any): Promise<PersonaAttributes> {
     const result = await query(
       `INSERT INTO personas (
       nombres,
