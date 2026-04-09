@@ -9,8 +9,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Auditoria = exports.AcudienteEstudiante = exports.Acudiente = exports.Egresado = exports.RolePermiso = exports.Permiso = exports.Archivos = exports.TipoDocumento = exports.Jornada = exports.Matricula = exports.Curso = exports.Administrativo = exports.Profesor = exports.Estudiante = exports.UsuarioRole = exports.Role = exports.Usuario = exports.Persona = exports.syncModels = exports.initializeModels = exports.setupAssociations = void 0;
+exports.ViviendaEstudiante = exports.ColegioAnterior = exports.FichaEstudiante = exports.Auditoria = exports.AcudienteEstudiante = exports.Acudiente = exports.Egresado = exports.RolePermiso = exports.Permiso = exports.Archivos = exports.TipoDocumento = exports.Jornada = exports.Matricula = exports.Curso = exports.Administrativo = exports.Profesor = exports.Estudiante = exports.UsuarioRole = exports.Role = exports.Usuario = exports.Persona = exports.syncModels = exports.initializeModels = exports.setupAssociations = void 0;
 const database_1 = require("../../config/database");
+// Modelos existentes
 const Persona_1 = require("./Persona");
 Object.defineProperty(exports, "Persona", { enumerable: true, get: function () { return Persona_1.Persona; } });
 const Usuario_1 = require("./Usuario");
@@ -47,12 +48,39 @@ const AcudienteEstudiante_1 = require("./AcudienteEstudiante");
 Object.defineProperty(exports, "AcudienteEstudiante", { enumerable: true, get: function () { return AcudienteEstudiante_1.AcudienteEstudiante; } });
 const Auditoria_1 = require("./Auditoria");
 Object.defineProperty(exports, "Auditoria", { enumerable: true, get: function () { return Auditoria_1.Auditoria; } });
-// Definir relaciones entre modelos
+const PeriodoMatricula_1 = require("./PeriodoMatricula");
+const MatriculaArchivo_1 = require("./MatriculaArchivo");
+const FichaEstudiante_1 = require("./FichaEstudiante");
+Object.defineProperty(exports, "FichaEstudiante", { enumerable: true, get: function () { return FichaEstudiante_1.FichaEstudiante; } });
+const ColegioAnterior_1 = require("./ColegioAnterior");
+Object.defineProperty(exports, "ColegioAnterior", { enumerable: true, get: function () { return ColegioAnterior_1.ColegioAnterior; } });
+const ViviendaEstudiante_1 = require("./ViviendaEstudiante");
+Object.defineProperty(exports, "ViviendaEstudiante", { enumerable: true, get: function () { return ViviendaEstudiante_1.ViviendaEstudiante; } });
+const TipoArchivo_1 = require("./TipoArchivo");
 const setupAssociations = () => {
-    // Persona - Usuario (1:1)
+    // ----------------------------------------------------------
+    // Persona
+    // ----------------------------------------------------------
     Persona_1.Persona.hasOne(Usuario_1.Usuario, { foreignKey: "persona_id", as: "usuario" });
     Usuario_1.Usuario.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
-    // Usuario - Roles (N:M)
+    Persona_1.Persona.hasOne(Estudiante_1.Estudiante, { foreignKey: "persona_id", as: "estudiante" });
+    Estudiante_1.Estudiante.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
+    Persona_1.Persona.hasOne(Profesor_1.Profesor, { foreignKey: "persona_id", as: "profesor" });
+    Profesor_1.Profesor.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
+    Persona_1.Persona.hasOne(Administrativo_1.Administrativo, { foreignKey: "persona_id", as: "administrativo" });
+    Administrativo_1.Administrativo.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
+    Persona_1.Persona.hasOne(Acudiente_1.Acudiente, { foreignKey: "persona_id", as: "acudiente" });
+    Acudiente_1.Acudiente.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
+    Persona_1.Persona.hasMany(Archivo_1.Archivos, { foreignKey: "persona_id", as: "archivos" });
+    Archivo_1.Archivos.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
+    // ----------------------------------------------------------
+    // TipoDocumento
+    // ----------------------------------------------------------
+    TipoDocumento_1.TipoDocumento.hasMany(Persona_1.Persona, { foreignKey: "tipo_documento_id", as: "personas" });
+    Persona_1.Persona.belongsTo(TipoDocumento_1.TipoDocumento, { foreignKey: "tipo_documento_id", as: "tipo_documento" });
+    // ----------------------------------------------------------
+    // Roles y permisos
+    // ----------------------------------------------------------
     Usuario_1.Usuario.belongsToMany(Role_1.Role, {
         through: UsuarioRole_1.UsuarioRole,
         foreignKey: "usuario_id",
@@ -77,24 +105,16 @@ const setupAssociations = () => {
         otherKey: "role_id",
         as: "roles",
     });
-    Persona_1.Persona.hasOne(TipoDocumento_1.TipoDocumento, { foreignKey: "tipo_documento_id", as: "tipo_documento" });
-    TipoDocumento_1.TipoDocumento.belongsTo(Persona_1.Persona, { foreignKey: "tipo_documento_id", as: "personas" });
-    // Persona - Estudiante/Profesor/Administrativo (1:1)
-    Persona_1.Persona.hasOne(Estudiante_1.Estudiante, { foreignKey: "persona_id", as: "estudiante" });
-    Estudiante_1.Estudiante.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
-    Persona_1.Persona.hasOne(Profesor_1.Profesor, { foreignKey: "persona_id", as: "profesor" });
-    Profesor_1.Profesor.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
-    Persona_1.Persona.hasOne(Administrativo_1.Administrativo, { foreignKey: "persona_id", as: "administrativo" });
-    Administrativo_1.Administrativo.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
-    Persona_1.Persona.hasOne(Acudiente_1.Acudiente, { foreignKey: "persona_id", as: "acudiente" });
-    Acudiente_1.Acudiente.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
-    Jornada_1.Jornada.hasMany(Matricula_1.Matricula, { foreignKey: "jornada_id", as: "matriculas" });
-    Matricula_1.Matricula.belongsTo(Jornada_1.Jornada, { foreignKey: "jornada_id", as: "jornada" });
-    // Estudiante - Matricula (1:N)
+    // ----------------------------------------------------------
+    // Estudiante — núcleo del expediente
+    // ----------------------------------------------------------
+    // Matrícula (1:N) — un estudiante puede tener una matrícula por año
     Estudiante_1.Estudiante.hasMany(Matricula_1.Matricula, { foreignKey: "estudiante_id", as: "matriculas" });
     Matricula_1.Matricula.belongsTo(Estudiante_1.Estudiante, { foreignKey: "estudiante_id", as: "estudiante" });
+    // Egresado (1:1)
     Estudiante_1.Estudiante.hasOne(Egresado_1.Egresado, { foreignKey: "estudiante_id", as: "egresado" });
     Egresado_1.Egresado.belongsTo(Estudiante_1.Estudiante, { foreignKey: "estudiante_id", as: "estudiante" });
+    // Acudientes (N:M a través de AcudienteEstudiante)
     Estudiante_1.Estudiante.belongsToMany(Acudiente_1.Acudiente, {
         through: AcudienteEstudiante_1.AcudienteEstudiante,
         foreignKey: "estudiante_id",
@@ -107,26 +127,71 @@ const setupAssociations = () => {
         otherKey: "estudiante_id",
         as: "estudiantes",
     });
-    // Curso - Matricula (1:N)
+    // FichaEstudiante (1:1) — expediente de caracterización
+    // ON DELETE CASCADE: si se elimina el estudiante, la ficha también
+    Estudiante_1.Estudiante.hasOne(FichaEstudiante_1.FichaEstudiante, {
+        foreignKey: "estudiante_id",
+        as: "ficha",
+        onDelete: "CASCADE",
+    });
+    FichaEstudiante_1.FichaEstudiante.belongsTo(Estudiante_1.Estudiante, {
+        foreignKey: "estudiante_id",
+        as: "estudiante",
+    });
+    // ColegiosAnteriores (1:N) — historial de instituciones previas
+    Estudiante_1.Estudiante.hasMany(ColegioAnterior_1.ColegioAnterior, {
+        foreignKey: "estudiante_id",
+        as: "colegios_anteriores",
+        onDelete: "CASCADE",
+    });
+    ColegioAnterior_1.ColegioAnterior.belongsTo(Estudiante_1.Estudiante, {
+        foreignKey: "estudiante_id",
+        as: "estudiante",
+    });
+    // ViviendaEstudiante (1:1) — datos socioeconómicos del hogar
+    Estudiante_1.Estudiante.hasOne(ViviendaEstudiante_1.ViviendaEstudiante, {
+        foreignKey: "estudiante_id",
+        as: "vivienda",
+        onDelete: "CASCADE",
+    });
+    ViviendaEstudiante_1.ViviendaEstudiante.belongsTo(Estudiante_1.Estudiante, {
+        foreignKey: "estudiante_id",
+        as: "estudiante",
+    });
+    // ----------------------------------------------------------
+    // Matrícula
+    // ----------------------------------------------------------
     Curso_1.Curso.hasMany(Matricula_1.Matricula, { foreignKey: "curso_id", as: "matriculas" });
     Matricula_1.Matricula.belongsTo(Curso_1.Curso, { foreignKey: "curso_id", as: "curso" });
-    // Profesor - Curso (1:N)
-    Profesor_1.Profesor.hasMany(Matricula_1.Matricula, { foreignKey: "profesor_id", as: "matriculas" });
-    Matricula_1.Matricula.belongsTo(Profesor_1.Profesor, { foreignKey: "profesor_id", as: "profesor" });
-    // Persona - DocumentoPersona (1:N)
-    Persona_1.Persona.hasMany(Archivo_1.Archivos, { foreignKey: "persona_id", as: "Archivos" });
-    Archivo_1.Archivos.belongsTo(Persona_1.Persona, { foreignKey: "persona_id", as: "persona" });
+    Jornada_1.Jornada.hasMany(Matricula_1.Matricula, { foreignKey: "jornada_id", as: "matriculas" });
+    Matricula_1.Matricula.belongsTo(Jornada_1.Jornada, { foreignKey: "jornada_id", as: "jornada" });
+    // Profesor.hasMany(Matricula, { foreignKey: "profesor_id", as: "matriculas" })
+    // Matricula.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor" })
+    PeriodoMatricula_1.PeriodoMatricula.hasMany(Matricula_1.Matricula, { foreignKey: "periodo_id", as: "matriculas" });
+    Matricula_1.Matricula.belongsTo(PeriodoMatricula_1.PeriodoMatricula, { foreignKey: "periodo_id", as: "periodo" });
+    // ----------------------------------------------------------
+    // Archivos
+    // ----------------------------------------------------------
+    Archivo_1.Archivos.belongsToMany(Matricula_1.Matricula, {
+        through: MatriculaArchivo_1.MatriculaArchivo,
+        foreignKey: "matricula_id",
+        otherKey: "archivo_id",
+        as: "matricula_archivo",
+    });
+    TipoArchivo_1.TipoArchivo.hasMany(Archivo_1.Archivos, { foreignKey: "tipo_archivo_id", as: "tipoArchivo" });
+    Archivo_1.Archivos.belongsTo(TipoArchivo_1.TipoArchivo, { foreignKey: "tipo_archivo_id", as: "archivos" });
+    // ----------------------------------------------------------
+    // Auditoría
+    // ----------------------------------------------------------
     Usuario_1.Usuario.hasMany(Auditoria_1.Auditoria, { foreignKey: "usuario_id", as: "auditorias" });
     Auditoria_1.Auditoria.belongsTo(Usuario_1.Usuario, { foreignKey: "usuario_id", as: "usuario" });
 };
 exports.setupAssociations = setupAssociations;
-// Inicializar todos los modelos
 const initializeModels = () => {
     (0, exports.setupAssociations)();
     console.log("✅ Sequelize models initialized with associations");
 };
 exports.initializeModels = initializeModels;
-// Sincronizar modelos con la base de datos (solo en desarrollo)
 const syncModels = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (force = false) {
     try {
         yield database_1.sequelize.sync({ force, alter: !force });

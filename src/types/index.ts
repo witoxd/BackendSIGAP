@@ -57,7 +57,8 @@ export enum ContextoArchivo  {
 estudiante = "estudiante",
 profesor = "profesor",
 administrativo = "administrativo",
-acudiente = "acudiente"
+acudiente = "acudiente",
+matricula = "matricula"
 }
 
 // ============================================================================

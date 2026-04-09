@@ -12,4 +12,5 @@ export * from "./permiso.domain";
 export * from "./persona.domain";
 export * from "./usuario.domain";
 export * from "./role.domain";
+export * from "./auth.domain";
 //# sourceMappingURL=index.d.ts.map

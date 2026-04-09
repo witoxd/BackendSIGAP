@@ -110,7 +110,7 @@ router.put(
   "/update/:id",
   param("id").isInt({ min: 1 }).withMessage("ID invalido"),
   checkPermission(Recurso.DOCUMENTOS, Accion.UPDATE),
-  upload.single("archivo"), // Middleware de multer (opcional)
+  upload.single("archivos"), // Middleware de multer (opcional)
   handleMulterError,
   updateArchivoHttpValidator,
   validate,
@@ -118,7 +118,7 @@ router.put(
   archivoController.update.bind(archivoController)
 )
 
-// Eliminar archivo
+// Eliminar archivo (soft delete)
 router.delete(
   "/delete/:id",
   param("id").isInt({ min: 1 }).withMessage("ID invalido"),

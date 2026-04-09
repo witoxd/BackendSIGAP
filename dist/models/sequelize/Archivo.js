@@ -7,7 +7,7 @@ class Archivos extends sequelize_1.Model {
 }
 exports.Archivos = Archivos;
 Archivos.init({
-    Archivo_id: {
+    archivo_id: {
         type: sequelize_1.DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -18,6 +18,14 @@ Archivos.init({
         references: {
             model: "personas",
             key: "persona_id",
+        },
+    },
+    tipo_archivo_id: {
+        type: sequelize_1.DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: "tipos_archivo",
+            key: "tipo_archivo_id",
         },
     },
     nombre: {
@@ -31,10 +39,6 @@ Archivos.init({
         type: sequelize_1.DataTypes.TEXT,
         allowNull: true,
     },
-    tipo_archivo: {
-        type: sequelize_1.DataTypes.ENUM("certificado", "diploma", "constancia", "carta", "photo", "otro"),
-        allowNull: false,
-    },
     url_archivo: {
         type: sequelize_1.DataTypes.STRING(500),
         allowNull: false,
@@ -45,7 +49,7 @@ Archivos.init({
     fecha_carga: {
         type: sequelize_1.DataTypes.DATE,
         allowNull: false,
-        defaultValue: sequelize_1.DataTypes.NOW,
+        defaultValue: database_1.sequelize.literal("CURRENT_TIMESTAMP"),
     },
     asignado_por: {
         type: sequelize_1.DataTypes.INTEGER,

@@ -35,7 +35,7 @@ router.post(
   createMatriculaHttpValidator,
   validate,
   upload.array("archivos"),
-  validateCreateMatriculaDomain,
+  //validateCreateMatriculaDomain,
   checkPermission(Recurso.MATRICULAS, Accion.CREATE),
   matriculaController.ProcessMatricula.bind(matriculaController),
 )

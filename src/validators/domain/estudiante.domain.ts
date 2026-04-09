@@ -13,7 +13,7 @@ export const validateCreateEstudianteDomain = async (
 
     // Validacion dominio con Sequelize (NO DB)
     await Estudiante.build(estudiante).validate({ skip: ["persona_id"] })
-    await Persona.build(persona).validate()
+    await Persona.build(persona).validate({ skip: ["apellido_paterno", "apellido_materno"] })
 
     next()
   } catch (error) {

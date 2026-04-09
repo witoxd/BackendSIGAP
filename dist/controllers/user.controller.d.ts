@@ -1,9 +1,8 @@
-import type { Request, Response, NextFunction } from "express";
 export declare class UserController {
-    getUser(req: Request, res: Response, next: NextFunction): Promise<void>;
-    searchUsers(req: Request, res: Response, next: NextFunction): Promise<void>;
-    assignAdmin(req: Request, res: Response, next: NextFunction): Promise<void>;
-    transferAdmin(req: Request, res: Response, next: NextFunction): Promise<void>;
-    toggleStatus(req: Request, res: Response, next: NextFunction): Promise<void>;
+    getUser: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    searchUsers: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    assignAdmin: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    transferAdmin: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    toggleStatus: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 }
 //# sourceMappingURL=user.controller.d.ts.map

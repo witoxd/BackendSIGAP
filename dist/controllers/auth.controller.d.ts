@@ -1,8 +1,10 @@
-import type { Request, Response, NextFunction } from "express";
 export declare class AuthController {
-    register(req: Request, res: Response, next: NextFunction): Promise<void>;
-    login(req: Request, res: Response, next: NextFunction): Promise<void>;
-    changePassword(req: Request, res: Response, next: NextFunction): Promise<void>;
-    me(req: Request, res: Response, next: NextFunction): Promise<void>;
+    register: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    login: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    changePassword: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    me: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    createUserWithPersona: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    createUser: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    resetPassword: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 }
 //# sourceMappingURL=auth.controller.d.ts.map

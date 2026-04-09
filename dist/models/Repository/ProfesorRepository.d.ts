@@ -5,6 +5,7 @@ export declare class ProfesorRepository {
     static findByPersonaId(personaId: number): Promise<any>;
     static create(data: Omit<ProfesorCreationAttributes, "profesor_id">, client?: any): Promise<any>;
     static update(id: number, data: Partial<ProfesorCreationAttributes>, client?: any): Promise<any>;
+    static SearchIndex(index: string, limit?: number): Promise<any>;
     static delete(id: number): Promise<any>;
     static count(): Promise<number>;
 }

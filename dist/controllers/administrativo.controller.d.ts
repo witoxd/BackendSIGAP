@@ -1,15 +1,9 @@
-import type { NextFunction, Request, Response } from "express";
-import { CreateAdministrativoDTO, UpdateAdministrativoDTO } from "../types";
-type CreateAdministrativoStaticRequest = Request<never, unknown, CreateAdministrativoDTO>;
-type UpdateAdministrativoStaticRequest = Request<{
-    id: string;
-}, unknown, UpdateAdministrativoDTO>;
 export declare class AdministrativoController {
-    getAll(req: Request, res: Response): Promise<void>;
-    getById(req: Request, res: Response): Promise<void>;
-    create(req: CreateAdministrativoStaticRequest, res: Response, next: NextFunction): Promise<void>;
-    update(req: UpdateAdministrativoStaticRequest, res: Response, next: NextFunction): Promise<void>;
-    delete(req: Request, res: Response): Promise<void>;
+    getAll: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getById: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    SearchIndex: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    create: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    update: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    delete: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 }
-export {};
 //# sourceMappingURL=administrativo.controller.d.ts.map

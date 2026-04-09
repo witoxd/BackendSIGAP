@@ -12,11 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.closeConnections = exports.testConnection = exports.transaction = exports.query = exports.sequelize = exports.pool = void 0;
+exports.closeConnections = exports.testConnection = exports.transaction = exports.query = exports.sequelize = exports.pool = exports.FORCE_DATABASE_SYNC = void 0;
 const pg_1 = require("pg");
 const sequelize_1 = require("sequelize");
 const dotenv_1 = __importDefault(require("dotenv"));
+const dbInit_1 = require("./dbInit");
 dotenv_1.default.config();
+exports.FORCE_DATABASE_SYNC = process.env.FORCE_DATABASE_SYNC === "true";
 const poolConfig = {
     host: process.env.DB_HOST || "localhost",
     port: Number.parseInt(process.env.DB_PORT || "5432"),
@@ -107,8 +109,13 @@ const testConnection = () => __awaiter(void 0, void 0, void 0, function* () {
         // Test Sequelize
         yield exports.sequelize.authenticate();
         //Advertencia no tocar sync en producción, puede causar pérdida de datos.
-        yield exports.sequelize.sync({ force: false });
+        yield exports.sequelize.sync({ force: exports.FORCE_DATABASE_SYNC }); // Solo para desarrollo, recrea tablas según modelos
         console.log("Sequelize conectado exitosamente - Sequelize connected successfully");
+        if (exports.FORCE_DATABASE_SYNC) {
+            console.warn("ADVERTENCIA: FORCE_DATABASE_SYNC esta activo, eliminando y recreando base de datos");
+            yield (0, dbInit_1.initializeDatabase)();
+            console.log("Base de datos inicializada");
+        }
         return true;
     }
     catch (error) {

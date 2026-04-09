@@ -1,4 +1,10 @@
+import { RoleType } from "../types";
+import { UsuarioCreationAttributes } from "../models/sequelize/Usuario";
+import { PersonaCreationAttributes } from "../models/sequelize/Persona";
 export declare class AuthService {
+    personaExisting(personaID: number): Promise<void>;
+    checkEmailAndUsername(email: string, username: string): Promise<void>;
+    checkRoleExists(roleName: string): Promise<any>;
     register(userData: {
         email: string;
         username: string;
@@ -25,6 +31,21 @@ export declare class AuthService {
     }>;
     private generateToken;
     changePassword(userId: number, currentPassword: string, newPassword: string): Promise<{
+        message: string;
+    }>;
+    createUser(user: UsuarioCreationAttributes, personaID: number, role: RoleType, client?: any): Promise<{
+        message: string;
+        data: {
+            userId: any;
+            personaId: any;
+            role: RoleType;
+        };
+    }>;
+    createUserWithPersona(user: UsuarioCreationAttributes, persona: PersonaCreationAttributes, role: RoleType): Promise<{
+        message: string;
+        data: any;
+    }>;
+    resetPasswordByDefaultDocument(personaId: number): Promise<{
         message: string;
     }>;
 }

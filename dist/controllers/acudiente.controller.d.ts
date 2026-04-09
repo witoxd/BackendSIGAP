@@ -1,22 +1,13 @@
-import type { Request, Response, NextFunction } from "express";
-import { CreateAcudianteDTO, UpdateAcudianteDTO } from "../types";
-import { assignToEstudiante } from "../types";
-type CreateAcudienteAsingEstudiante = Request<never, unknown, assignToEstudiante>;
-type CreateAcudienteStaticRequest = Request<never, unknown, CreateAcudianteDTO>;
 export declare class AcudienteController {
-    getAll(req: Request, res: Response, next: NextFunction): Promise<void>;
-    getById(req: Request, res: Response, next: NextFunction): Promise<void>;
-    getByEstudiante(req: Request, res: Response, next: NextFunction): Promise<void>;
-    create(req: CreateAcudienteStaticRequest, res: Response, next: NextFunction): Promise<void>;
-    update(req: Request<{
-        id: string;
-    }, unknown, UpdateAcudianteDTO>, res: Response, next: NextFunction): Promise<void>;
-    delete(req: Request, res: Response, next: NextFunction): Promise<void>;
-    assignToEstudiante(req: CreateAcudienteAsingEstudiante, res: Response, next: NextFunction): Promise<void>;
-    removeFromEstudiante(req: Request<{
-        estudianteId: string;
-        acudienteId: string;
-    }>, res: Response, next: NextFunction): Promise<void>;
+    getAll: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getById: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getAcudientesByEstudiante: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    SearchIndex: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    create: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    update: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    delete: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    assignToEstudiante: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    removeFromEstudiante: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getEstudiantesByAcudiente: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 }
-export {};
 //# sourceMappingURL=acudiente.controller.d.ts.map

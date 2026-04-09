@@ -28,13 +28,13 @@ Matricula.init({
             key: "jornada_id",
         },
     },
-    profesor_id: {
+    periodo_id: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: "profesores",
-            key: "profesor_id"
-        }
+            model: "periodos_matricula",
+            key: "periodo_id",
+        },
     },
     curso_id: {
         type: sequelize_1.DataTypes.INTEGER,
@@ -47,18 +47,34 @@ Matricula.init({
     fecha_matricula: {
         type: sequelize_1.DataTypes.DATE,
         allowNull: false,
-        defaultValue: database_1.sequelize.literal("CURRENT_TIMESTAMP")
+        defaultValue: database_1.sequelize.literal("CURRENT_TIMESTAMP"),
     },
     estado: {
         type: sequelize_1.DataTypes.ENUM("activa", "finalizada", "retirada"),
         allowNull: false,
         defaultValue: "activa",
     },
-    anio_egreso: {
-        type: sequelize_1.DataTypes.SMALLINT,
-        allowNull: false,
-        defaultValue: database_1.sequelize.literal("EXTRACT(YEAR FROM CURRENT_DATE)")
-    }
+    // --- Retiro ---
+    fecha_retiro: {
+        type: sequelize_1.DataTypes.DATEONLY,
+        allowNull: true,
+        comment: "Fecha en que el estudiante se retiró en este año escolar específico",
+    },
+    motivo_retiro: {
+        type: sequelize_1.DataTypes.STRING(200),
+        allowNull: true,
+    },
+    // --- Firmas (futuro) ---
+    url_firma_alumno: {
+        type: sequelize_1.DataTypes.STRING(500),
+        allowNull: true,
+        comment: "TODO: ruta de imagen de firma del alumno — implementar cuando se requiera",
+    },
+    url_firma_acudiente: {
+        type: sequelize_1.DataTypes.STRING(500),
+        allowNull: true,
+        comment: "TODO: ruta de imagen de firma del acudiente — implementar cuando se requiera",
+    },
 }, {
     sequelize: database_1.sequelize,
     tableName: "matriculas",

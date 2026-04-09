@@ -17,9 +17,10 @@ const database_1 = require("../config/database");
 const PersonaRepository_1 = require("../models/Repository/PersonaRepository");
 const express_validator_1 = require("express-validator");
 const persona_service_1 = require("../services/persona.service");
+const asyncHandler_1 = require("../utils/asyncHandler");
 class AcudienteController {
-    getAll(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
+    constructor() {
+        this.getAll = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const { page, limit } = req.query;
                 const { limit: pLimit, offset } = (0, validators_1.getPagination)(page, limit);
@@ -32,174 +33,153 @@ class AcudienteController {
             catch (error) {
                 next(error);
             }
-        });
-    }
-    getById(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const id = Number(req.params.id);
-                const acudiente = yield AcudienteRepository_1.AcudienteRepository.findById(id);
-                if (!acudiente) {
-                    throw new AppError_1.AppError("Acudiente no encontrado", 404);
-                }
-                res.status(200).json({
-                    success: true,
-                    data: acudiente
-                });
+        }));
+        this.getById = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            const id = Number(req.params.id);
+            const acudiente = yield AcudienteRepository_1.AcudienteRepository.findById(id);
+            if (!acudiente) {
+                throw new AppError_1.AppError("Acudiente no encontrado", 404);
             }
-            catch (error) {
-                next(error);
+            res.status(200).json({
+                success: true,
+                data: acudiente
+            });
+        }));
+        this.getAcudientesByEstudiante = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            const estudianteId = Number(req.params.id);
+            const acudientes = yield AcudienteRepository_1.AcudienteRepository.getAcudientesByEstudiante(estudianteId);
+            res.status(200).json({
+                success: true,
+                data: acudientes,
+            });
+        }));
+        this.SearchIndex = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
+            const limit = Number.parseInt(req.query.limit) || 50;
+            const index = req.params.index;
+            if (!index) {
+                throw new AppError_1.AppError("Parámetro index requerido", 400);
             }
-        });
-    }
-    getByEstudiante(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const estudianteId = Number(req.params.id);
-                const acudientes = yield AcudienteRepository_1.AcudienteRepository.findByEstudiante(estudianteId);
-                res.status(200).json({
-                    success: true,
-                    data: acudientes,
-                });
+            const acudiente = yield AcudienteRepository_1.AcudienteRepository.SearchIndex(index, limit);
+            if (!acudiente || acudiente.length === 0) {
+                throw new AppError_1.AppError("Acudiente no encontrado", 404);
             }
-            catch (error) {
-                next(error);
-            }
-        });
-    }
-    create(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
+            res.status(200).json({
+                success: true,
+                data: acudiente,
+                pagination: {
+                    total: acudiente.length,
+                    limit,
+                    pages: Math.ceil(acudiente.length / limit),
+                },
+            });
+        }));
+        this.create = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
             }
             const { acudiente: AcudienteData, persona: PersonaData } = req.body;
-            try {
-                const { NewAcudiente, NewPersona } = yield (0, database_1.transaction)((client) => __awaiter(this, void 0, void 0, function* () {
-                    const NewPersona = yield persona_service_1.PersonaService.validateOrCreatePersona(PersonaData, client);
-                    const existingAcudiente = yield AcudienteRepository_1.AcudienteRepository.findByPersonaId(NewPersona.persona_id);
-                    if (existingAcudiente) {
-                        throw new AppError_1.AppError("La persona ya tiene rol de acudiente", 409);
-                    }
-                    console.log(AcudienteData);
-                    const NewAcudiente = yield AcudienteRepository_1.AcudienteRepository.create(Object.assign(Object.assign({}, AcudienteData), { persona_id: NewPersona.persona_id }), client);
-                    return { NewAcudiente, NewPersona };
-                }));
-                res.status(201).json({
-                    success: true,
-                    message: "Acudiente creado exitosamente",
-                    data: {
-                        acudiente: NewAcudiente,
-                        persona: NewPersona
-                    },
-                });
-            }
-            catch (error) {
-                next(error);
-            }
-        });
-    }
-    update(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
+            const { NewAcudiente, NewPersona } = yield (0, database_1.transaction)((client) => __awaiter(this, void 0, void 0, function* () {
+                const NewPersona = yield persona_service_1.PersonaService.validateOrCreatePersona(PersonaData, client);
+                const existingAcudiente = yield AcudienteRepository_1.AcudienteRepository.findByPersonaId(NewPersona.persona_id);
+                if (existingAcudiente) {
+                    throw new AppError_1.AppError("La persona ya tiene rol de acudiente", 409);
+                }
+                console.log(AcudienteData);
+                const NewAcudiente = yield AcudienteRepository_1.AcudienteRepository.create(Object.assign(Object.assign({}, AcudienteData), { persona_id: NewPersona.persona_id }), client);
+                return { NewAcudiente, NewPersona };
+            }));
+            res.status(201).json({
+                success: true,
+                message: "Acudiente creado exitosamente",
+                data: {
+                    acudiente: NewAcudiente,
+                    persona: NewPersona
+                },
+            });
+        }));
+        this.update = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
             }
-            try {
-                const AcudienteId = Number(req.params.id);
-                const { acudiente: AcudienteData, persona: PersonaData } = req.body;
-                const existingAcudiente = yield AcudienteRepository_1.AcudienteRepository.findById(AcudienteId);
-                if (!existingAcudiente) {
-                    throw new AppError_1.AppError("No existe un acudiente a actualizar", 404);
-                }
-                const AcudienteUpdate = yield (0, database_1.transaction)((client) => __awaiter(this, void 0, void 0, function* () {
-                    if (PersonaData) {
-                        // Validar documento único
-                        if (PersonaData.numero_documento) {
-                            const personaConflicto = yield PersonaRepository_1.PersonaRepository.findByDocumento(PersonaData.numero_documento);
-                            if (personaConflicto && personaConflicto.persona_id !== existingAcudiente.persona_id) {
-                                throw new AppError_1.AppError("Ya existe otra persona con ese documento", 409);
-                            }
+            const AcudienteId = Number(req.params.id);
+            const { acudiente: AcudienteData, persona: PersonaData } = req.body;
+            const existingAcudiente = yield AcudienteRepository_1.AcudienteRepository.findById(AcudienteId);
+            if (!existingAcudiente) {
+                throw new AppError_1.AppError("No existe un acudiente a actualizar", 404);
+            }
+            const AcudienteUpdate = yield (0, database_1.transaction)((client) => __awaiter(this, void 0, void 0, function* () {
+                if (PersonaData) {
+                    // Validar documento único
+                    if (PersonaData.numero_documento) {
+                        const personaConflicto = yield PersonaRepository_1.PersonaRepository.findByDocumento(PersonaData.numero_documento);
+                        if (personaConflicto && personaConflicto.persona_id !== existingAcudiente.persona_id) {
+                            throw new AppError_1.AppError("Ya existe otra persona con ese documento", 409);
                         }
-                        yield PersonaRepository_1.PersonaRepository.update(existingAcudiente.persona_id, PersonaData, client);
                     }
-                    let AcudienteUpdate = null;
-                    if (AcudienteData && Object.keys(AcudienteData).length > 0) {
-                        AcudienteUpdate = yield AcudienteRepository_1.AcudienteRepository.update(AcudienteId, AcudienteData);
-                    }
-                    else {
-                        AcudienteUpdate = yield AcudienteRepository_1.AcudienteRepository.findById(AcudienteId);
-                    }
-                    return AcudienteUpdate;
-                }));
-                const updatePersona = yield PersonaRepository_1.PersonaRepository.findById(existingAcudiente.persona_id);
-                res.status(200).json({
-                    success: true,
-                    message: "Acudiente actualizado exitosamente",
-                    data: {
-                        acudiente: AcudienteUpdate,
-                        persona: updatePersona
-                    },
-                });
-            }
-            catch (error) {
-                next(error);
-            }
-        });
-    }
-    delete(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const id = Number(req.params.id);
-                const acudiente = yield AcudienteRepository_1.AcudienteRepository.delete(id);
-                if (!acudiente) {
-                    throw new AppError_1.AppError("Acudiente no encontrado", 404);
+                    yield PersonaRepository_1.PersonaRepository.update(existingAcudiente.persona_id, PersonaData, client);
                 }
-                const persona = yield PersonaRepository_1.PersonaRepository.delete(acudiente.persona_id);
-                res.status(200).json({
-                    success: true,
-                    message: "Acudiente eliminado exitosamente",
-                });
+                let AcudienteUpdate = null;
+                if (AcudienteData && Object.keys(AcudienteData).length > 0) {
+                    AcudienteUpdate = yield AcudienteRepository_1.AcudienteRepository.update(AcudienteId, AcudienteData);
+                }
+                else {
+                    AcudienteUpdate = yield AcudienteRepository_1.AcudienteRepository.findById(AcudienteId);
+                }
+                return AcudienteUpdate;
+            }));
+            const updatePersona = yield PersonaRepository_1.PersonaRepository.findById(existingAcudiente.persona_id);
+            res.status(200).json({
+                success: true,
+                message: "Acudiente actualizado exitosamente",
+                data: {
+                    acudiente: AcudienteUpdate,
+                    persona: updatePersona
+                },
+            });
+        }));
+        this.delete = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            const id = Number(req.params.id);
+            const acudiente = yield AcudienteRepository_1.AcudienteRepository.delete(id);
+            if (!acudiente) {
+                throw new AppError_1.AppError("Acudiente no encontrado", 404);
             }
-            catch (error) {
-                next(error);
-            }
-        });
-    }
-    assignToEstudiante(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
+            const persona = yield PersonaRepository_1.PersonaRepository.delete(acudiente.persona_id);
+            res.status(200).json({
+                success: true,
+                message: "Acudiente eliminado exitosamente",
+            });
+        }));
+        this.assignToEstudiante = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
             const { assignToEstudiante: AcudienteAssingEstudiante } = req.body;
-            try {
-                const result = yield AcudienteRepository_1.AcudienteRepository.assignToEstudiante(AcudienteAssingEstudiante);
-                res.status(200).json({
-                    success: true,
-                    message: "Acudiente asignado al estudiante exitosamente",
-                    data: result,
-                });
+            const result = yield AcudienteRepository_1.AcudienteRepository.assignToEstudiante(AcudienteAssingEstudiante);
+            res.status(200).json({
+                success: true,
+                message: "Acudiente asignado al estudiante exitosamente",
+                data: result,
+            });
+        }));
+        this.removeFromEstudiante = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            const estudianteId = Number(req.params.estudianteId);
+            const acudienteId = Number(req.params.acudienteId);
+            const result = yield AcudienteRepository_1.AcudienteRepository.removeFromEstudiante(estudianteId, acudienteId);
+            if (!result) {
+                throw new AppError_1.AppError("Relación no encontrada", 404);
             }
-            catch (error) {
-                next(error);
-            }
-        });
-    }
-    removeFromEstudiante(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const estudianteId = Number(req.params.estudianteId);
-                const acudienteId = Number(req.params.acudienteId);
-                const result = yield AcudienteRepository_1.AcudienteRepository.removeFromEstudiante(estudianteId, acudienteId);
-                if (!result) {
-                    throw new AppError_1.AppError("Relación no encontrada", 404);
-                }
-                res.status(200).json({
-                    success: true,
-                    message: "Acudiente removido del estudiante exitosamente",
-                });
-            }
-            catch (error) {
-                next(error);
-            }
-        });
+            res.status(200).json({
+                success: true,
+                message: "Acudiente removido del estudiante exitosamente",
+            });
+        }));
+        this.getEstudiantesByAcudiente = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            const estudianteId = Number(req.params.id);
+            const estudiantes = yield AcudienteRepository_1.AcudienteRepository.getAcudientesByEstudiante(estudianteId);
+            res.status(200).json({
+                success: true,
+                data: estudiantes,
+            });
+        }));
     }
 }
 exports.AcudienteController = AcudienteController;

@@ -27,6 +27,7 @@ const rateLimiter_1 = require("./middleware/rateLimiter");
 const database_1 = require("./config/database");
 const routes_1 = __importDefault(require("./routes"));
 const sequelize_models_1 = require("./models/sequelize/sequelize-models");
+const database_2 = require("./config/database");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
@@ -35,7 +36,7 @@ const HOST = process.env.HOST || "localhost";
 app.use((0, helmet_1.default)());
 app.use((0, compression_1.default)());
 // CORS configuration
-const allowedOrigins = ((_a = process.env.ALLOWED_ORIGINS) === null || _a === void 0 ? void 0 : _a.split(",")) || ["http://localhost:3000"];
+const allowedOrigins = ((_a = process.env.ALLOWED_ORIGINS) === null || _a === void 0 ? void 0 : _a.split(",")) || ["http://localhost:4000"];
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
@@ -97,6 +98,7 @@ const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
             console.log(chalk_1.default.blueBright.bold(` Corriendo Server en http://${HOST}:${PORT}`));
             console.log(chalk_1.default.blueBright.bold(` Entorno: ${process.env.NODE_ENV || "development"}`));
             console.log(` API Routes: http://${HOST}:${PORT}/api`);
+            console.log("Sincronizacion forzada con la DB: ", database_2.FORCE_DATABASE_SYNC);
         });
     }
     catch (error) {

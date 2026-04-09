@@ -3,6 +3,7 @@ import { type ValidationChain } from "express-validator";
  * Validador HTTP para crear archivo
  */
 export declare const createArchivoHttpValidator: ValidationChain[];
+export declare const bulkCreateArchivoHttpValidator: ValidationChain[];
 /**
  * Validador HTTP para actualizar archivo
  * Todos los campos son opcionales en actualizacion

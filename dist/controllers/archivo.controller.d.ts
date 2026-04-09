@@ -1,34 +1,38 @@
 import type { Request, Response, NextFunction } from "express";
-import type { UpdateArchivoDTO } from "../types";
 export declare class ArchivoController {
-    getAll(req: Request, res: Response, next: NextFunction): Promise<void>;
-    getById(req: Request, res: Response, next: NextFunction): Promise<void>;
-    getByPersonaId(req: Request, res: Response, next: NextFunction): Promise<void>;
-    getByTipo(req: Request, res: Response, next: NextFunction): Promise<void>;
+    getAll: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getById: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getByPersonaId: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getByTipo: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getByTipoAndPersona: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getPhotoByPersonaId: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
     /**
-     * Crear un nuevo registro de archivo con subida de archivo fisico
-     * El archivo se sube usando multer y se guarda en el sistema de archivos
+     * Crear un nuevo archivo con subida física
      */
     create(req: Request, res: Response, next: NextFunction): Promise<void>;
+    /**
+     * Crear múltiples archivos con metadata individual
+     * FORMATO:
+     * - archivos: array de files
+     * - persona_id: número
+     * - metadata: JSON string array con: [{"tipo_archivo_id":1,"descripcion":"..."}, ...]
+     */
     bulkCreate(req: Request, res: Response, next: NextFunction): Promise<void>;
     /**
-     * Actualizar un registro de archivo
-     * Opcionalmente puede incluir un nuevo archivo
+     * Actualizar un archivo (opcionalmente con nuevo archivo físico)
      */
-    update(req: Request<{
-        id: string;
-    }, unknown, UpdateArchivoDTO>, res: Response, next: NextFunction): Promise<void>;
+    update(req: Request, res: Response, next: NextFunction): Promise<void>;
     /**
-     * Eliminar un archivo (registro y archivo fisico)
+     * Eliminar archivo (registro y archivo físico)
      */
-    delete(req: Request, res: Response, next: NextFunction): Promise<void>;
+    delete: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
     /**
-     * Descargar un archivo
+     * Descargar archivo
      */
-    download(req: Request, res: Response, next: NextFunction): Promise<void>;
+    download: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
     /**
-     * Ver archivo en el navegador (solo para PDFs e imagenes)
+     * Ver archivo en navegador
      */
-    view(req: Request, res: Response, next: NextFunction): Promise<void>;
+    view: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 }
 //# sourceMappingURL=archivo.controller.d.ts.map

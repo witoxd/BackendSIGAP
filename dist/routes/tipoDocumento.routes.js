@@ -12,10 +12,10 @@ const types_1 = require("../types");
 const router = (0, express_1.Router)();
 const tipoDocumentoController = new tipoDocumento_controller_1.TipoDocumentoController();
 router.use(auth_1.authenticate);
-router.get("/", (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.READ), tipoDocumentoController.getAll.bind(tipoDocumentoController));
-router.get("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.READ), tipoDocumentoController.getById.bind(tipoDocumentoController));
-router.post("/", tipoDocumento_validators_1.createTipoDocumentoHttpValidator, validate_1.validate, domain_1.validateCreateTipoDocumentoDomain, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.CREATE), tipoDocumentoController.create.bind(tipoDocumentoController));
-router.put("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), tipoDocumento_validators_1.updateTipoDocumentoHttpValidator, validate_1.validate, domain_1.validateUpdateTipoDocumentoDomain, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.UPDATE), tipoDocumentoController.update.bind(tipoDocumentoController));
-router.delete("/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.DELETE), tipoDocumentoController.delete.bind(tipoDocumentoController));
+router.get("/getAll", (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.READ), tipoDocumentoController.getAll.bind(tipoDocumentoController));
+router.get("/getById/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.READ), tipoDocumentoController.getById.bind(tipoDocumentoController));
+router.post("/create", tipoDocumento_validators_1.createTipoDocumentoHttpValidator, validate_1.validate, domain_1.validateCreateTipoDocumentoDomain, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.CREATE), tipoDocumentoController.create.bind(tipoDocumentoController));
+router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), tipoDocumento_validators_1.updateTipoDocumentoHttpValidator, validate_1.validate, domain_1.validateUpdateTipoDocumentoDomain, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.UPDATE), tipoDocumentoController.update.bind(tipoDocumentoController));
+router.delete("/delete/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.DELETE), tipoDocumentoController.delete.bind(tipoDocumentoController));
 exports.default = router;
 //# sourceMappingURL=tipoDocumento.routes.js.map

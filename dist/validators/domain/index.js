@@ -29,4 +29,5 @@ __exportStar(require("./permiso.domain"), exports);
 __exportStar(require("./persona.domain"), exports);
 __exportStar(require("./usuario.domain"), exports);
 __exportStar(require("./role.domain"), exports);
+__exportStar(require("./auth.domain"), exports);
 //# sourceMappingURL=index.js.map

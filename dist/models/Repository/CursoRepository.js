@@ -14,32 +14,14 @@ const database_1 = require("../../config/database");
 class CursoRepository {
     static findAll() {
         return __awaiter(this, arguments, void 0, function* (limit = 50, offset = 0) {
-            const result = yield (0, database_1.query)("SELECT * FROM cursos ORDER BY grado DESC, grado ASC LIMIT $1 OFFSET $2", [limit, offset]);
+            const result = yield (0, database_1.query)("SELECT curso_id, nombre, grado FROM cursos ORDER BY grado DESC, grado ASC LIMIT $1 OFFSET $2", [limit, offset]);
             return result.rows;
         });
     }
     static findById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)("SELECT * FROM cursos WHERE curso_id = $1", [id]);
+            const result = yield (0, database_1.query)("SELECT curso_id, nombre, grado FROM cursos WHERE curso_id = $1", [id]);
             return result.rows[0];
-        });
-    }
-    static findByGrado(grado) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)("SELECT * FROM cursos WHERE grado = $1 ORDER BY grado DESC", [grado]);
-            return result.rows[0];
-        });
-    }
-    static findByAño(año) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)("SELECT * FROM cursos WHERE año = $1 ORDER BY grado ASC", [año]);
-            return result.rows;
-        });
-    }
-    static findByProfesor(profesor_id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)("SELECT * FROM cursos WHERE profesor_id = $1 ORDER BY grado ASC", [profesor_id]);
-            return result.rows;
         });
     }
     static create(data, client) {

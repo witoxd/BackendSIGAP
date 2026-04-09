@@ -11,11 +11,21 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EgresadoRepository = void 0;
 const database_1 = require("../../config/database");
+const personasql_1 = require("../shared/personasql");
 class EgresadoRepository {
     static findAll() {
         return __awaiter(this, arguments, void 0, function* (limit = 50, offset = 0) {
-            const result = yield (0, database_1.query)(`SELECT eg.*, e.*, p.nombres, p.apellido_paterno, p.apellido_materno,
-              p.numero_documento, td.tipo_documento
+            const result = yield (0, database_1.query)(`SELECT 
+      ${personasql_1.PERSONA_FIELDS_JSON},
+       json_build_object(
+          'egresado_id', eg.egresado_id,
+          'fecha_grado', eg.fecha_grado,
+          'estudiante', json_build_object(
+         'estudiante_id', a.estudiante_id,
+         'fecha_ingreso', a.fecha_ingreso,
+         'estado', a.estado
+       )
+     ) AS egresado
        FROM egresados eg
        INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
        INNER JOIN personas p ON e.persona_id = p.persona_id
@@ -26,8 +36,17 @@ class EgresadoRepository {
     }
     static findById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)(`SELECT eg.*, e.*, p.nombres, p.apellido_paterno, p.apellido_materno,
-              td.tipo_documento, p.numero_documento
+            const result = yield (0, database_1.query)(`SELECT 
+       ${personasql_1.PERSONA_FIELDS_JSON},
+       json_build_object(
+          'egresado_id', eg.egresado_id,
+          'fecha_grado', eg.fecha_grado,
+          'estudiante', json_build_object(
+         'estudiante_id', a.estudiante_id,
+         'fecha_ingreso', a.fecha_ingreso,
+         'estado', a.estado
+       )
+     ) AS egresado,
        FROM egresados eg
        INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
        INNER JOIN personas p ON e.persona_id = p.persona_id
@@ -38,13 +57,38 @@ class EgresadoRepository {
     }
     static findByEstudianteId(estudianteId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)("SELECT * FROM egresados WHERE estudiante_id = $1", [estudianteId]);
+            const result = yield (0, database_1.query)(`SELECT 
+      ${personasql_1.PERSONA_FIELDS_JSON},
+       json_build_object(
+          'egresado_id', eg.egresado_id,
+          'fecha_grado', eg.fecha_grado,
+          'estudiante', json_build_object(
+         'estudiante_id', a.estudiante_id,
+         'fecha_ingreso', a.fecha_ingreso,
+         'estado', a.estado
+       )
+     ) AS egresado
+      FROM egresados eg
+      INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
+      INNER JOIN personas p ON e.persona_id = p.persona_id
+      LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+      WHERE eg.estudiante_id = $1`, [estudianteId]);
             return result.rows[0];
         });
     }
     static findByYear(year) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield (0, database_1.query)(`SELECT eg.*, e.*, p.nombres, p.apellido_paterno, p.apellido_materno
+            const result = yield (0, database_1.query)(`SELECT
+       ${personasql_1.PERSONA_FIELDS_JSON},
+       json_build_object(
+          'egresado_id', eg.egresado_id,
+          'fecha_grado', eg.fecha_grado,
+          'estudiante', json_build_object(
+         'estudiante_id', a.estudiante_id,
+         'fecha_ingreso', a.fecha_ingreso,
+         'estado', a.estado
+       )
+     ) AS egresado
        FROM egresados eg
        INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
        INNER JOIN personas p ON e.persona_id = p.persona_id

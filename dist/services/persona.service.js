@@ -18,18 +18,18 @@ class PersonaService {
     static validateOrCreatePersona(personaData, client) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const existingPersona = yield PersonaRepository_1.PersonaRepository.findByDocumento(personaData.numero_documento);
+                const existingPersona = yield PersonaRepository_1.PersonaRepository.existingPersonaByDocumento(personaData.numero_documento);
                 if (existingPersona) {
                     return existingPersona;
                 }
                 yield Persona_1.Persona.build(personaData).validate();
-                // 3️⃣ Crear persona
+                //  Crear persona
                 return yield PersonaRepository_1.PersonaRepository.create(personaData, client);
             }
             catch (error) {
-                // 4️⃣ Error de validación de dominio
+                //  Error de validación de dominio
                 if (error instanceof sequelize_1.ValidationError) {
-                    throw new AppError_1.AppError("Error de validación de persona", 400, error.errors.map(e => ({
+                    throw new AppError_1.AppError("Persona no encontrada y datos inválidos para creación", 400, error.errors.map(e => ({
                         field: e.path,
                         message: e.message,
                     })));

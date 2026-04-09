@@ -24,7 +24,17 @@ Acudiente.init({
     parentesco: {
         type: sequelize_1.DataTypes.STRING(50),
         allowNull: true,
+        comment: "Ej: Padre, Madre, Tío, Abuelo, Hermano mayor",
     },
+    ocupacion: {
+        type: sequelize_1.DataTypes.STRING(100),
+        allowNull: true,
+    },
+    nivel_estudio: {
+        type: sequelize_1.DataTypes.STRING(100),
+        allowNull: true,
+        comment: "Ej: Primaria, Bachillerato, Técnico, Universitario, Posgrado",
+    }
 }, {
     sequelize: database_1.sequelize,
     tableName: "acudientes",

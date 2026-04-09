@@ -24,7 +24,6 @@ Persona.init({
         type: sequelize_1.DataTypes.STRING(50),
         allowNull: true,
         validate: {
-            notEmpty: false,
             len: [2, 50],
         },
     },
@@ -32,7 +31,6 @@ Persona.init({
         type: sequelize_1.DataTypes.STRING(50),
         allowNull: true,
         validate: {
-            notEmpty: false,
             len: [2, 50],
         },
     },
@@ -42,7 +40,7 @@ Persona.init({
         references: {
             model: "tipo_documento",
             key: "tipo_documento_id",
-        }
+        },
     },
     numero_documento: {
         type: sequelize_1.DataTypes.STRING(20),
@@ -64,6 +62,37 @@ Persona.init({
     genero: {
         type: sequelize_1.DataTypes.ENUM("Masculino", "Femenino", "Otro"),
         allowNull: false,
+    },
+    // --- Nuevos campos ---
+    grupo_sanguineo: {
+        type: sequelize_1.DataTypes.STRING(5),
+        allowNull: true,
+        validate: {
+            // Valores válidos: A+, A-, B+, B-, AB+, AB-, O+, O-
+            isIn: [["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]],
+        },
+    },
+    grupo_etnico: {
+        type: sequelize_1.DataTypes.STRING(80),
+        allowNull: true,
+    },
+    credo_religioso: {
+        type: sequelize_1.DataTypes.STRING(80),
+        allowNull: true,
+    },
+    lugar_nacimiento: {
+        type: sequelize_1.DataTypes.STRING(100),
+        allowNull: true,
+    },
+    serial_registro_civil: {
+        type: sequelize_1.DataTypes.STRING(50),
+        allowNull: true,
+        comment: "Serial del Registro Civil — aplica cuando tipo_documento es T.I.",
+    },
+    expedida_en: {
+        type: sequelize_1.DataTypes.STRING(100),
+        allowNull: true,
+        comment: "Ciudad/municipio donde fue expedido el documento de identidad",
     },
 }, {
     sequelize: database_1.sequelize,

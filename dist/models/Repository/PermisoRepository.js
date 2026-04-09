@@ -49,6 +49,15 @@ class PermisoRepository {
             return result.rows[0];
         });
     }
+    static assingnRoleToUser(usuarioId, permisoId, client) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = yield (0, database_1.query)(`INSERT INTO user_permisos (usuario_id, permiso_id)
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING
+       RETURNING *`, [usuarioId, permisoId], client);
+            return result.rows[0];
+        });
+    }
     static removeFromRole(roleId, permisoId) {
         return __awaiter(this, void 0, void 0, function* () {
             const result = yield (0, database_1.query)(`DELETE FROM role_permisos

@@ -15,15 +15,6 @@ export declare const upload: multer.Multer;
 export declare const handleMulterError: (err: any, req: any, res: any, next: any) => any;
 export declare const uploadConfig: {
     baseDir: string;
-    subdirs: {
-        documento: string;
-        certificado: string;
-        diploma: string;
-        constancia: string;
-        carta: string;
-        otro: string;
-        photo: string;
-    };
     allowedMimeTypes: {
         [key: string]: string[];
     };

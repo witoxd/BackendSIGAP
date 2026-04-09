@@ -235,6 +235,21 @@ class UserService {
             }
         });
     }
+    createUser() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Implementación de creación de usuario (si es necesario)
+        });
+    }
+    resetPasswordUser() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Implementación de reseteo de contraseña (si es necesario)
+        });
+    }
+    createUserWithPersona() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Implementación de creación de usuario junto con persona (si es necesario)
+        });
+    }
 }
 exports.UserService = UserService;
 //# sourceMappingURL=user.service.js.map

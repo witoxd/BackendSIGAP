@@ -13,9 +13,10 @@ exports.CursoController = void 0;
 const CursoRepository_1 = require("../models/Repository/CursoRepository");
 const AppError_1 = require("../utils/AppError");
 const express_validator_1 = require("express-validator");
+const asyncHandler_1 = require("../utils/asyncHandler");
 class CursoController {
-    getAll(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+    constructor() {
+        this.getAll = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const limit = Number.parseInt(req.query.limit) || 50;
             const offset = Number.parseInt(req.query.offset) || 0;
             const cursos = yield CursoRepository_1.CursoRepository.findAll(limit, offset);
@@ -30,10 +31,8 @@ class CursoController {
                     pages: Math.ceil(total / limit),
                 },
             });
-        });
-    }
-    getById(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.getById = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const id = Number(req.params.id);
             const curso = yield CursoRepository_1.CursoRepository.findById(id);
             if (!curso) {
@@ -43,20 +42,16 @@ class CursoController {
                 success: true,
                 data: curso,
             });
-        });
-    }
-    getByProfesor(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const profesor_id = Number(req.params.id);
-            const cursos = yield CursoRepository_1.CursoRepository.findByProfesor(profesor_id);
-            res.status(200).json({
-                success: true,
-                data: cursos,
-            });
-        });
-    }
-    create(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        //  async getByProfesor (req: Request, res: Response) {
+        //   const profesor_id = Number(req.params.id)
+        //   const cursos = await CursoRepository.findByProfesor(profesor_id)
+        //   res.status(200).json({
+        //     success: true,
+        //     data: cursos,
+        //   })
+        // }
+        this.create = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
@@ -68,10 +63,8 @@ class CursoController {
                 data: curso,
                 message: "Curso creado exitosamente",
             });
-        });
-    }
-    update(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.update = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
@@ -87,10 +80,8 @@ class CursoController {
                 data: curso,
                 message: "Curso actualizado exitosamente",
             });
-        });
-    }
-    delete(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.delete = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const id = Number(req.params.id);
             const curso = yield CursoRepository_1.CursoRepository.delete(id);
             if (!curso) {
@@ -101,7 +92,7 @@ class CursoController {
                 data: curso,
                 message: "Curso eliminado exitosamente",
             });
-        });
+        }));
     }
 }
 exports.CursoController = CursoController;

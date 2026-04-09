@@ -64,11 +64,15 @@ export class MatriculaRepository {
        p.apellido_paterno,
        p.apellido_materno,
        c.nombre AS curso_nombre,
-       c.grado
+       c.grado,
+       e.estudiante_id,
+       j.nombre AS jornada_nombre
+
      FROM v_matriculas vm
      INNER JOIN estudiantes e ON vm.estudiante_id = e.estudiante_id
      INNER JOIN personas p    ON e.persona_id     = p.persona_id
      INNER JOIN cursos c      ON vm.curso_id      = c.curso_id
+     INNER JOIN jornadas j     ON vm.jornada_id   = j.jornada_id
      ORDER BY vm.anio DESC, vm.fecha_matricula DESC
      LIMIT $1 OFFSET $2`,
       [limit, offset]
@@ -146,7 +150,7 @@ export class MatriculaRepository {
         data.curso_id,
         data.jornada_id,
         data.periodo_id,
-        "vigente", // Solo dos estados en BD: 'vigente' o 'retirada'
+        "activa"
       ],
       client
     )

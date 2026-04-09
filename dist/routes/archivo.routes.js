@@ -25,21 +25,15 @@ router.get("/getByTipo", (0, express_validator_1.query)("tipo_archivo").notEmpty
 router.get("/download/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.READ), archivoController.download.bind(archivoController));
 // Ver archivo en navegador (para PDFs e imagenes)
 router.get("/view/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.READ), archivoController.view.bind(archivoController));
+router.get("/viewPhoto/:personaId", (0, express_validator_1.param)("personaId").isInt({ min: 1 }).withMessage("ID de persona invalido"), validate_1.validate, (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.READ), archivoController.getPhotoByPersonaId.bind(archivoController));
 // Crear archivo con subida de archivo
 // El campo del archivo debe llamarse "archivo" en el form-data
 router.post("/create", (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.CREATE), multer_1.upload.single("archivo"), // Middleware de multer para uno o varios archivos
 multer_1.handleMulterError, // Manejo de errores de multer
 archivo_validators_1.createArchivoHttpValidator, validate_1.validate, domain_1.validateCreateArchivoDomain, archivoController.create.bind(archivoController));
-// router.post(
-//   "/bulkCreate",
-//   checkPermission(Recurso.DOCUMENTOS, Accion.CREATE),
-//   upload.array("archivos"), // Middleware de multer para uno o varios archivos
-//   handleMulterError, // Manejo de errores de multer
-//   createArchivoHttpValidator,
-//   validate,
-//   validateCreateArchivoDomain,
-//   archivoController.bulkCreate.bind(archivoController)
-// )
+router.post("/bulkCreate", (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.CREATE), multer_1.upload.array("archivos"), // Middleware de multer para uno o varios archivos
+multer_1.handleMulterError, // Manejo de errores de multer
+archivo_validators_1.bulkCreateArchivoHttpValidator, validate_1.validate, domain_1.validateCreateArchivoDomain, archivoController.bulkCreate.bind(archivoController));
 // Actualizar archivo (opcionalmente con nuevo archivo)
 router.put("/update/:id", (0, express_validator_1.param)("id").isInt({ min: 1 }).withMessage("ID invalido"), (0, acl_1.checkPermission)(types_1.Recurso.DOCUMENTOS, types_1.Accion.UPDATE), multer_1.upload.single("archivo"), // Middleware de multer (opcional)
 multer_1.handleMulterError, archivo_validators_1.updateArchivoHttpValidator, validate_1.validate, domain_1.validateUpdateArchivoDomain, archivoController.update.bind(archivoController));

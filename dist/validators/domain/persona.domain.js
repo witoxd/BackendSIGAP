@@ -14,7 +14,7 @@ const Persona_1 = require("../../models/sequelize/Persona");
 const sequelize_1 = require("sequelize");
 const validateCreatePersonaDomain = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const persona = req.body;
+        const { persona: persona } = req.body;
         // Validacion dominio con Sequelize (NO DB)
         yield Persona_1.Persona.build(persona).validate();
         next();
@@ -36,7 +36,7 @@ const validateCreatePersonaDomain = (req, res, next) => __awaiter(void 0, void 0
 exports.validateCreatePersonaDomain = validateCreatePersonaDomain;
 const validateUpdatePersonaDomain = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const persona = req.body;
+        const { persona: persona } = req.body;
         yield Persona_1.Persona.build(persona).validate({ skip: ["tipo_documento_id", "numero_documento"] });
         next();
     }

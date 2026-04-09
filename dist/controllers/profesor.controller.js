@@ -16,9 +16,10 @@ const express_validator_1 = require("express-validator");
 const PersonaRepository_1 = require("../models/Repository/PersonaRepository");
 const database_1 = require("../config/database");
 const persona_service_1 = require("../services/persona.service");
+const asyncHandler_1 = require("../utils/asyncHandler");
 class ProfesorController {
-    getAll(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+    constructor() {
+        this.getAll = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const limit = Number.parseInt(req.query.limit) || 50;
             const offset = Number.parseInt(req.query.offset) || 0;
             const profesores = yield ProfesorRepository_1.ProfesorRepository.findAll(limit, offset);
@@ -33,10 +34,8 @@ class ProfesorController {
                     pages: Math.ceil(total / limit),
                 },
             });
-        });
-    }
-    getById(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.getById = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const { id } = req.params;
             const profesor = yield ProfesorRepository_1.ProfesorRepository.findById(Number(id));
             if (!profesor) {
@@ -46,10 +45,28 @@ class ProfesorController {
                 success: true,
                 data: profesor,
             });
-        });
-    }
-    create(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.SearchIndex = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
+            const limit = Number.parseInt(req.query.limit) || 50;
+            const index = req.params.index;
+            if (!index) {
+                throw new AppError_1.AppError("Parámetro index requerido", 400);
+            }
+            const profesores = yield ProfesorRepository_1.ProfesorRepository.SearchIndex(index, limit);
+            if (!profesores || profesores.length === 0) {
+                throw new AppError_1.AppError("Profesor no encontrado", 404);
+            }
+            res.status(200).json({
+                success: true,
+                data: profesores,
+                pagination: {
+                    total: profesores.length,
+                    limit,
+                    pages: Math.ceil(profesores.length / limit),
+                },
+            });
+        }));
+        this.create = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
@@ -57,10 +74,12 @@ class ProfesorController {
             const { persona: PersonaData, profesor: ProfesorData } = req.body;
             const { newPersona, newProfesor } = yield (0, database_1.transaction)((client) => __awaiter(this, void 0, void 0, function* () {
                 const newPersona = yield persona_service_1.PersonaService.validateOrCreatePersona(PersonaData, client);
+                console.log("persona valida o creada: ", newPersona);
                 const existingProfesor = yield ProfesorRepository_1.ProfesorRepository.findByPersonaId(newPersona.persona_id);
                 if (existingProfesor) {
                     throw new AppError_1.AppError("Ya la persona es profesor", 404);
                 }
+                console.log("datos de la persona: ", newPersona);
                 const newProfesor = yield ProfesorRepository_1.ProfesorRepository.create(Object.assign(Object.assign({}, ProfesorData), { persona_id: newPersona.persona_id }), client);
                 return { newPersona, newProfesor };
             }));
@@ -72,10 +91,8 @@ class ProfesorController {
                 },
                 message: "Profesor creado exitosamente",
             });
-        });
-    }
-    update(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.update = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
@@ -115,10 +132,8 @@ class ProfesorController {
                 },
                 message: "Profesor actualizado exitosamente",
             });
-        });
-    }
-    delete(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.delete = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const id = Number(req.params.id);
             const profesor = yield ProfesorRepository_1.ProfesorRepository.delete(id);
             if (!profesor) {
@@ -129,7 +144,7 @@ class ProfesorController {
                 data: profesor,
                 message: "Profesor eliminado exitosamente",
             });
-        });
+        }));
     }
 }
 exports.ProfesorController = ProfesorController;

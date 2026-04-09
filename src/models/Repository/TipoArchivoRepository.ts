@@ -134,7 +134,7 @@ static async findByRol(rol: ContextoArchivo) {
  
 static async findByContexto(contexto: ContextoArchivo): Promise<TipoArchivoCreationAttributes[]>{
   const result = await query(
-    `SELECT * FROM tipo_archivos
+    `SELECT * FROM tipos_archivo
     WHERE activo = true
     AND ($1::contexto_archivo = ANY(aplica_a) OR aplica_a IS NULL)
     ORDER BY nombre`,

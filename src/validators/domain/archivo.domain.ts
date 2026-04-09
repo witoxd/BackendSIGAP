@@ -26,7 +26,9 @@ export const validateCreateArchivoDomain = async (
       tipo_archivo_id: Number(tipo_archivo_id),
       url_archivo: "/placeholder", // Temporal, se reemplaza con la URL real
       activo: true
+
     }
+
 
     // Validacion dominio con Sequelize (NO DB)
     // Saltamos la validacion de url_archivo porque se genera despues
@@ -60,14 +62,14 @@ export const validateUpdateArchivoDomain = async (
   next: NextFunction
 ) => {
   try {
-    const { nombre, descripcion, tipo_archivo, activo } = req.body
+    const { nombre, descripcion, tipo_archivo_id, activo } = req.body
 
     // Solo validar campos que vienen en el request
     const archivoData: any = {}
 
     if (nombre !== undefined) archivoData.nombre = nombre
     if (descripcion !== undefined) archivoData.descripcion = descripcion
-    if (tipo_archivo !== undefined) archivoData.tipo_archivo = tipo_archivo
+    if (tipo_archivo_id !== undefined) archivoData.tipo_archivo_id = tipo_archivo_id
     if (activo !== undefined) {
       // Convertir string a boolean si viene de form-data
       archivoData.activo = activo === "true" || activo === true
@@ -81,7 +83,7 @@ export const validateUpdateArchivoDomain = async (
     // Validacion dominio con Sequelize (NO DB)
     // Saltamos campos requeridos que no se actualizan
     await Archivos.build(archivoData).validate({
-      skip: ["persona_id", "url_archivo", "tipo_archivo", "nombre"],
+      skip: ["persona_id", "url_archivo", "tipo_archivo_id", "nombre"],
     })
 
     next()

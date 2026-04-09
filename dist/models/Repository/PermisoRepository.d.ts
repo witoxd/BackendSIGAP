@@ -5,6 +5,7 @@ export declare class PermisoRepository {
     static findByRole(roleId: number): Promise<any>;
     static create(data: Omit<Permiso, "permiso_id">): Promise<any>;
     static assignToRole(roleId: number, permisoId: number): Promise<any>;
+    static assingnRoleToUser(usuarioId: number, permisoId: number, client?: any): Promise<any>;
     static removeFromRole(roleId: number, permisoId: number): Promise<any>;
     static checkPermission(roleId: number, recurso: string, accion: string): Promise<boolean>;
 }

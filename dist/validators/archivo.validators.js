@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.archivoValidators = exports.updateArchivoValidator = exports.createArchivoValidator = exports.searchArchivoValidator = exports.archivoIdValidator = exports.updateArchivoHttpValidator = exports.createArchivoHttpValidator = void 0;
+exports.archivoValidators = exports.updateArchivoValidator = exports.createArchivoValidator = exports.searchArchivoValidator = exports.archivoIdValidator = exports.updateArchivoHttpValidator = exports.bulkCreateArchivoHttpValidator = exports.createArchivoHttpValidator = void 0;
 const express_validator_1 = require("express-validator");
 // ============================================================================
 // VALIDADORES HTTP PARA ARCHIVOS (form-data)
@@ -24,15 +24,37 @@ exports.createArchivoHttpValidator = [
         .withMessage("El nombre debe ser texto")
         .isLength({ max: 200 })
         .withMessage("El nombre no puede exceder 200 caracteres"),
-    (0, express_validator_1.body)("descripcion")
+    (0, express_validator_1.body)("metadata.descripcion")
         .optional()
         .isString()
         .withMessage("La descripcion debe ser texto"),
-    (0, express_validator_1.body)("tipo_archivo")
+    (0, express_validator_1.body)("metadata.tipo_archivo_id")
+        .optional()
+        // .withMessage("El tipo de archivo es requerido")
+        .isInt({ min: 1 })
+        .withMessage("Tipo de archivo invalido)"),
+];
+exports.bulkCreateArchivoHttpValidator = [
+    (0, express_validator_1.body)("persona_id")
         .notEmpty()
-        .withMessage("El tipo de archivo es requerido")
-        .isIn(["certificado", "diploma", "constancia", "carta", "photo", "otro"])
-        .withMessage("Tipo de archivo invalido. Valores permitidos: certificado, diploma, constancia, carta, otro"),
+        .withMessage("El ID de persona es requerido")
+        .isInt({ min: 1 })
+        .withMessage("El ID de persona debe ser un entero positivo"),
+    (0, express_validator_1.body)("nombre")
+        .optional()
+        .isString()
+        .withMessage("El nombre debe ser texto")
+        .isLength({ max: 200 })
+        .withMessage("El nombre no puede exceder 200 caracteres"),
+    (0, express_validator_1.body)("metadata.*.descripcion")
+        .optional()
+        .isString()
+        .withMessage("La descripcion debe ser texto"),
+    (0, express_validator_1.body)("metadata.*.tipo_archivo_id")
+        .optional()
+        // .withMessage("El tipo de archivo es requerido")
+        .isInt({ min: 1 })
+        .withMessage("Tipo de archivo invalido)"),
 ];
 /**
  * Validador HTTP para actualizar archivo

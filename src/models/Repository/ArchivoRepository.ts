@@ -1,6 +1,19 @@
 import { query } from "../../config/database"
 import type { ArchivosCreationAttributes } from "../sequelize/Archivo"
 
+function ARCHIVO_FIELDS_SQL(prefijeTable: string): string{
+
+  return `${prefijeTable}.archivo_id,
+${prefijeTable}.persona_id,
+${prefijeTable}.tipo_archivo_id,
+${prefijeTable}.nombre,
+${prefijeTable}.url_archivo,
+${prefijeTable}.descripcion,
+${prefijeTable}.asignado_por,
+${prefijeTable}.fecha_carga,
+${prefijeTable}.activo
+`
+}
 export class ArchivoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
@@ -13,7 +26,7 @@ export class ArchivoRepository {
         a.descripcion,
         a.asignado_por,
         a.fecha_carga,
-        a.activo,
+        a.activo
        FROM archivos a WHERE a.activo = true
        ORDER BY a.fecha_carga DESC LIMIT $1 OFFSET $2`,
       [limit, offset],
@@ -32,9 +45,9 @@ export class ArchivoRepository {
         a.descripcion,
         a.asignado_por,
         a.fecha_carga,
-        a.activo,
+        a.activo
        FROM archivos a WHERE a.activo = true
-       WHERE a.archivo_id = $1`,
+       AND a.archivo_id = $1`,
       [id],
     )
     return result.rows[0]
@@ -50,7 +63,8 @@ export class ArchivoRepository {
         a.descripcion,
         a.asignado_por,
         a.fecha_carga,
-        a.activo, FROM archivos WHERE persona_id = $1 AND activo = true
+        a.activo
+        FROM archivos a WHERE persona_id = $1 AND activo = true
        ORDER BY fecha_carga DESC`, [personaId])
     return result.rows
   }
@@ -66,7 +80,7 @@ export class ArchivoRepository {
         a.descripcion,
         a.asignado_por,
         a.fecha_carga,
-        a.activo,
+        a.activo
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
        WHERE a.tipo_archivo_id = $1 AND a.activo = true
@@ -87,7 +101,7 @@ export class ArchivoRepository {
         a.descripcion,
         a.asignado_por,
         a.fecha_carga,
-        a.activo,
+        a.activo
        FROM archivos a
        LEFT JOIN personas p ON a.persona_id = p.persona_id
        WHERE a.tipo_archivo_id = $1 AND a.persona_id = $2 AND a.activo = true
@@ -102,7 +116,7 @@ export class ArchivoRepository {
       `SELECT a.*
        FROM archivos a INNER JOIN tipos_archivo ta ON a.tipo_archivo_id = ta.tipo_archivo_id
        LEFT JOIN personas p ON a.persona_id = p.persona_id
-       WHERE a.persona_id = $1 AND ta.nombre = 'photo' AND a.activo = true
+       WHERE a.persona_id = $1 AND ta.nombre = 'foto' AND a.activo = true
        ORDER BY a.fecha_carga DESC LIMIT 1`,
       [personaId]
     )

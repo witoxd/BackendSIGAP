@@ -2,24 +2,21 @@ import { body, type ValidationChain } from "express-validator"
 
 // HTTP Validators - Validacion de estructura de request
 export const createMatriculaHttpValidator: ValidationChain[] = [
-  body("matricula.estudiante_id")
+  body("matricula.*.estudiante_id")
     .isInt({ min: 1 })
     .withMessage("El ID de estudiante es requerido y debe ser un numero valido"),
-  body("matricula.profesor_id")
-    .isInt({ min: 1 })
-    .withMessage("El ID de profesor es requerido y debe ser un numero valido"),
-  body("matricula.curso_id")
+  body("matricula.*.curso_id")
     .isInt({ min: 1 })
     .withMessage("El ID de curso es requerido y debe ser un numero valido"),
   body("matricula.fecha_matricula")
     .optional()
     .isISO8601()
     .withMessage("La fecha de matricula debe ser una fecha valida"),
-  body("matricula.estado")
+  body("matricula.*.estado")
     .optional()
     .isIn(["activa", "finalizada", "retirada"])
     .withMessage("El estado debe ser activa, finalizada o retirada"),
-  body("matricula.anio_egreso")
+  body("matricula.*.anio_egreso")
     .optional()
     .isInt({ min: 1900 })
     .withMessage("El año de egreso debe ser valido")
@@ -30,10 +27,6 @@ export const updateMatriculaHttpValidator: ValidationChain[] = [
     .optional()
     .isInt({ min: 1 })
     .withMessage("El ID de estudiante debe ser un numero valido"),
-  body("matricula.profesor_id")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("El ID de profesor debe ser un numero valido"),
   body("matricula.curso_id")
     .optional()
     .isInt({ min: 1 })

@@ -236,89 +236,19 @@ export class ArchivoController {
       }
 
       const { persona_id, metadata } = req.body
-
-      // Verificar que la persona existe
-      const persona = await PersonaRepository.findById(Number(persona_id))
-      if (!persona) {
-        await archivoService.deleteFileArray(files)
-        throw new AppError("Persona no encontrada", 404)
-      }
-
-      // Parsear metadata (puede venir como string JSON o array)
-      let metadataArray: any[] = []
-      if (metadata) {
-        try {
-          metadataArray = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
-        } catch (e) {
-          await archivoService.deleteFileArray(files)
-          throw new AppError("El formato de metadata no es válido", 400)
-        }
-      }
-
-      // Validar que haya metadata para cada archivo
-      if (metadataArray.length !== files.length) {
-          await archivoService.deleteFileArray(files)
-        throw new AppError(
-          `Se requiere metadata para cada archivo. Archivos: ${files.length}, Metadata: ${metadataArray.length}`,
-          400
-        )
-      }
-
-      // Construir array de datos con validaciones
-      const archivosData = []
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        const meta = metadataArray[i]
-
-        // Verificar tipo de archivo
-        const tipoArchivo = await TipoArchivoRepository.findById(Number(meta.tipo_archivo_id))
-        if (!tipoArchivo) {
-          await archivoService.deleteFileArray(files)
-          throw new AppError(`Tipo de archivo con ID ${meta.tipo_archivo_id} no encontrado`, 404)
-        }
-
-        // Verificar que la persona tiene permiso para subir este tipo de archivo
-        const personaPuedeSubirArchivo = await PersonaRepository.personaPuedeSubirArchivo(Number(persona_id), Number(meta.tipo_archivo_id))
-        if (!personaPuedeSubirArchivo) {
-          await archivoService.deleteFileArray(files)
-          throw new AppError(`La persona no tiene permiso para subir este tipo de archivo: ${meta.tipo_archivo_id}`, 403)
-        }
-
-        // Verificar extensión permitida
-        const ext = path.extname(file.originalname).toLowerCase()
-        const isAllowed = await TipoArchivoRepository.isExtensionAllowed(Number(meta.tipo_archivo_id), ext)
-        if (!isAllowed) {
-          throw new AppError(
-            `La extensión ${ext} no está permitida para ${tipoArchivo.nombre} (archivo: ${file.originalname})`,
-            400
-          )
-        }
-
-        archivosData.push({
-          persona_id: Number(persona_id),
-          tipo_archivo_id: Number(meta.tipo_archivo_id),
-          nombre: file.originalname,
-          descripcion: meta.descripcion || null,
-          url_archivo: getFileUrl(file),
-          asignado_por: userId,
-        })
-      }
-
-      // Guardar todos en la base de datos
-      const archivos = await ArchivoRepository.bulkCreate(archivosData)
+      const metadataArray = archivoService.normalizeMetadata(metadata)
+      const archivos = await archivoService.RegisterFileArray(
+        files,
+        metadataArray,
+        Number(persona_id),
+        userId
+      )
 
       res.status(201).json({
         success: true,
         message: `${archivos.length} archivos creados exitosamente`,
         total: archivos.length,
-        data: archivos.map((archivo: any, index: number) => ({
-          ...archivo,
-          file_info: {
-            originalName: files[index].originalname,
-            size: files[index].size,
-            mimetype: files[index].mimetype,
-          },
-        })),
+        data: archivos,
       })
     } catch (error) {
       // Rollback: eliminar archivos físicos en caso de error

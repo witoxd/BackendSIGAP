@@ -14,9 +14,10 @@ exports.PersonaController = void 0;
 const PersonaRepository_1 = require("../models/Repository/PersonaRepository");
 const AppError_1 = require("../utils/AppError");
 const express_validator_1 = require("express-validator");
+const asyncHandler_1 = require("../utils/asyncHandler");
 class PersonaController {
-    getAll(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+    constructor() {
+        this.getAll = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const limit = Number.parseInt(req.query.limit) || 50;
             const offset = Number.parseInt(req.query.offset) || 0;
             const personas = yield PersonaRepository_1.PersonaRepository.findAll(limit, offset);
@@ -31,10 +32,8 @@ class PersonaController {
                     pages: Math.ceil(total / limit),
                 },
             });
-        });
-    }
-    getById(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.getById = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const { id } = req.params;
             const persona = yield PersonaRepository_1.PersonaRepository.findById(Number(id));
             if (!persona) {
@@ -44,10 +43,8 @@ class PersonaController {
                 success: true,
                 data: persona,
             });
-        });
-    }
-    getByDocumento(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.getByDocumento = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const { numero_documento } = req.params;
             const persona = yield PersonaRepository_1.PersonaRepository.findByDocumento(numero_documento);
             if (!persona) {
@@ -57,10 +54,8 @@ class PersonaController {
                 success: true,
                 data: persona,
             });
-        });
-    }
-    searchByDocumento(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.searchByDocumento = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const { numero_documento } = req.params;
             const persona = yield PersonaRepository_1.PersonaRepository.findByDocumento(numero_documento);
             if (!persona) {
@@ -70,10 +65,8 @@ class PersonaController {
                 success: true,
                 data: persona,
             });
-        });
-    }
-    SearchIndex(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.SearchIndex = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const index = req.params.index;
             if (!index) {
                 throw new AppError_1.AppError("Parámetro index requerido", 400);
@@ -86,20 +79,16 @@ class PersonaController {
                 success: true,
                 data: persona,
             });
-        });
-    }
-    static createPersona(data) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const existingPersona = yield PersonaRepository_1.PersonaRepository.findByDocumento(data.numero_documento);
-            if (existingPersona) {
-                throw new AppError_1.AppError("Ya existe una persona con ese número de documento", 409);
-            }
-            const persona = yield PersonaRepository_1.PersonaRepository.create(data);
-            return persona;
-        });
-    }
-    create(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        //   createPersona = asyncHandler(async (data: Omit<PersonaCreationAttributes, "persona_id">) => {
+        //   const existingPersona = await PersonaRepository.findByDocumento(data.numero_documento)
+        //   if (existingPersona) {
+        //     throw new AppError("Ya existe una persona con ese número de documento", 409)
+        //   }
+        //   const persona = await PersonaRepository.create(data)
+        //   return persona
+        // })
+        this.create = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
@@ -115,10 +104,8 @@ class PersonaController {
                 data: persona,
                 message: "Persona creada exitosamente",
             });
-        });
-    }
-    update(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.update = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
                 throw new AppError_1.AppError("Errores de validación", 400, errors.array());
@@ -127,7 +114,7 @@ class PersonaController {
             const { persona: PersonaData } = req.body;
             if (PersonaData.numero_documento) {
                 const existingPersona = yield PersonaRepository_1.PersonaRepository.findByDocumento(PersonaData.numero_documento);
-                if (existingPersona && existingPersona.persona_id !== id) {
+                if (existingPersona.persona.persona_id !== id) {
                     throw new AppError_1.AppError("Ya existe otra persona con ese número de documento", 409);
                 }
             }
@@ -140,10 +127,8 @@ class PersonaController {
                 data: persona,
                 message: "Persona actualizada exitosamente",
             });
-        });
-    }
-    delete(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        }));
+        this.delete = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(this, void 0, void 0, function* () {
             const { id } = req.params;
             const persona = yield PersonaRepository_1.PersonaRepository.delete(Number(id));
             if (!persona) {
@@ -154,7 +139,7 @@ class PersonaController {
                 data: persona,
                 message: "Persona eliminada exitosamente",
             });
-        });
+        }));
     }
 }
 exports.PersonaController = PersonaController;

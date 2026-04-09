@@ -1,17 +1,10 @@
-import type { Request, Response, NextFunction } from "express";
-import { CreateEgresadoDTO, UpdateEgresadoDTO } from "../types";
-type CreateEgresadoStaticRequest = Request<never, unknown, CreateEgresadoDTO>;
-type UpdateEgresadosStaticRequest = Request<{
-    id: string;
-}, unknown, UpdateEgresadoDTO>;
 export declare class EgresadoController {
-    getAll(req: Request, res: Response, next: NextFunction): Promise<void>;
-    getById(req: Request, res: Response, next: NextFunction): Promise<void>;
-    getByEstudianteId(req: Request, res: Response, next: NextFunction): Promise<void>;
-    getByYear(req: Request, res: Response, next: NextFunction): Promise<void>;
-    create(req: CreateEgresadoStaticRequest, res: Response, next: NextFunction): Promise<void>;
-    update(req: UpdateEgresadosStaticRequest, res: Response, next: NextFunction): Promise<void>;
-    delete(req: Request, res: Response, next: NextFunction): Promise<void>;
+    getAll: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getById: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getByEstudianteId: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getByYear: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    create: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    update: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    delete: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 }
-export {};
 //# sourceMappingURL=egresado.controller.d.ts.map

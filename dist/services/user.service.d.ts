@@ -17,5 +17,8 @@ export declare class UserService {
     toggleUserStatus(userId: number, activo: boolean): Promise<{
         message: string;
     }>;
+    createUser(): Promise<void>;
+    resetPasswordUser(): Promise<void>;
+    createUserWithPersona(): Promise<void>;
 }
 //# sourceMappingURL=user.service.d.ts.map

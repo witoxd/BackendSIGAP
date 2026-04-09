@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -8,6 +17,7 @@ const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const AppError_1 = require("../utils/AppError");
+const TipoArchivoRepository_1 = require("../models/Repository/TipoArchivoRepository");
 // ============================================================================
 // CONFIGURACION DE ALMACENAMIENTO DE ARCHIVOS
 // ============================================================================
@@ -15,15 +25,6 @@ const AppError_1 = require("../utils/AppError");
 // MODIFICAR: Cambiar esta ruta segun el entorno de produccion
 const UPLOAD_BASE_DIR = process.env.UPLOAD_DIR || "uploads";
 // Subdirectorios por tipo de archivo
-const UPLOAD_SUBDIRS = {
-    documento: "documento",
-    certificado: "certificado",
-    diploma: "diploma",
-    constancia: "constancia",
-    carta: "carta",
-    otro: "otro",
-    photo: "photo"
-};
 // ============================================================================
 // FILTRO DE TIPOS DE ARCHIVO PERMITIDOS
 // ============================================================================
@@ -39,7 +40,7 @@ const ALLOWED_MIME_TYPES = {
     "image/jpeg": [".jpg", ".jpeg"],
     "image/png": [".png"],
     // "image/gif": [".gif"],
-    // "image/webp": [".webp"],
+    "image/webp": [".webp"],
     // Documentos de Office
     // "application/msword": [".doc"],
     // "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
@@ -114,25 +115,68 @@ const generateUniqueFilename = (originalname, personaId, tipoArchivo) => {
     const tipoPart = tipoArchivo ? tipoArchivo.toLowerCase() : "doc";
     return `${personaPart}_${tipoPart}_${safeBase}_${timestamp}_${randomString}${ext}`;
 };
+const tiposArchivoCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+/**
+ * Obtiene un tipo de archivo con caché inteligente
+ * Consulta en tiempo real pero reutiliza datos si están dentro del TTL
+ * Esto garantiza integridad de datos (verificar estado activo/inactivo)
+ * mientras optimiza rendimiento
+ */
+const getTipoArchivo = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const cached = tiposArchivoCache.get(id);
+    const now = Date.now();
+    if (cached && now - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+    }
+    try {
+        const data = yield TipoArchivoRepository_1.TipoArchivoRepository.findById(id);
+        tiposArchivoCache.set(id, { data, timestamp: now });
+        return data;
+    }
+    catch (error) {
+        tiposArchivoCache.delete(id);
+        throw error;
+    }
+});
 // ============================================================================
 // CONFIGURACION DE MULTER - ALMACENAMIENTO EN DISCO
 // ============================================================================
 const storage = multer_1.default.diskStorage({
-    destination: (req, file, cb) => {
-        // Determinar subdirectorio basado en el tipo de archivo del body
-        const tipoArchivo = req.body.tipo_archivo || "otro";
-        const subdir = UPLOAD_SUBDIRS[tipoArchivo] || UPLOAD_SUBDIRS.otro;
-        console.log("tipo de archivo: ", tipoArchivo, " Y la sub direccion ala que va: ", subdir);
-        const year = req.body.anio ||
-            new Date().getFullYear().toString();
-        const personaId = req.body.persona_id
-            ? `persona_${req.body.persona_id}`
-            : "sin_persona";
-        const uploadPath = path_1.default.join(UPLOAD_BASE_DIR, subdir, year, personaId);
-        // Crear directorio si no existe
-        ensureDirectoryExists(uploadPath);
-        cb(null, uploadPath);
-    },
+    destination: (req, file, cb) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
+        try {
+            const reqAny = req;
+            if (reqAny._fileIndex === undefined)
+                reqAny._fileIndex = 0;
+            const currentIndex = reqAny._fileIndex++;
+            // Parsear metadata (viene como string JSON desde el FormData)
+            const metadata = JSON.parse(req.body.metadata);
+            const tipoArchivo = Number((_a = metadata[currentIndex]) === null || _a === void 0 ? void 0 : _a.tipo_archivo_id);
+            const existingTipoArchivoData = yield getTipoArchivo(tipoArchivo);
+            if (!existingTipoArchivoData) {
+                return cb(new AppError_1.AppError("Tipo de archivo no encontrado", 400), "");
+            }
+            // Validar integridad: verificar que el tipo esté activo (si existe propiedad activo)
+            if (existingTipoArchivoData.activo === false) {
+                return cb(new AppError_1.AppError("Tipo de archivo inactivo", 400), "");
+            }
+            const subdir = existingTipoArchivoData.nombre;
+            console.log("tipo de archivo: ", tipoArchivo, " Y la sub direccion ala que va: ", subdir);
+            const year = req.body.anio ||
+                new Date().getFullYear().toString();
+            const personaId = req.body.persona_id
+                ? `persona_${req.body.persona_id}`
+                : "sin_persona";
+            const uploadPath = path_1.default.join(UPLOAD_BASE_DIR, subdir, year, personaId);
+            // Crear directorio si no existe
+            ensureDirectoryExists(uploadPath);
+            cb(null, uploadPath);
+        }
+        catch (error) {
+            cb(error, "");
+        }
+    }),
     filename: (req, file, cb) => {
         const uniqueFilename = generateUniqueFilename(file.originalname);
         cb(null, uniqueFilename);
@@ -142,7 +186,10 @@ const storage = multer_1.default.diskStorage({
 // FILTRO DE ARCHIVOS
 // ============================================================================
 const fileFilter = (req, file, cb) => {
-    console.log(file);
+    var _a;
+    console.log(file, req.body, req.files);
+    console.log("files:", req.files);
+    console.log("files length:", (_a = req.files) === null || _a === void 0 ? void 0 : _a.length);
     // Verificar MIME type
     if (!(0, exports.isAllowedMimeType)(file.mimetype)) {
         const allowedExts = (0, exports.getAllowedExtensions)().join(", ");
@@ -166,7 +213,7 @@ exports.upload = (0, multer_1.default)({
     fileFilter,
     limits: {
         fileSize: MAX_FILE_SIZE,
-        files: 5, // Solo 5 archivos por request (cambiar si se requiere)
+        files: 10, // Solo 10 archivos por request (cambiar si se requiere)
     },
 });
 // ============================================================================
@@ -211,7 +258,6 @@ exports.handleMulterError = handleMulterError;
 // ============================================================================
 exports.uploadConfig = {
     baseDir: UPLOAD_BASE_DIR,
-    subdirs: UPLOAD_SUBDIRS,
     allowedMimeTypes: ALLOWED_MIME_TYPES,
     maxFileSize: MAX_FILE_SIZE,
     maxFileSizeFormatted: (0, exports.getMaxFileSizeFormatted)(),

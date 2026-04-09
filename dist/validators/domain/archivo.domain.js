@@ -20,14 +20,14 @@ const sequelize_1 = require("sequelize");
 const validateCreateArchivoDomain = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // En form-data los campos vienen directamente en body (no anidados)
-        const { persona_id, nombre, descripcion, tipo_archivo } = req.body;
+        const { persona_id, nombre, descripcion, tipo_archivo_id } = req.body;
         // Construir objeto para validacion
         // url_archivo se genera despues de subir el archivo, usamos placeholder
         const archivoData = {
             persona_id: Number(persona_id),
             nombre: nombre || "archivo_temporal",
             descripcion,
-            tipo_archivo,
+            tipo_archivo_id: Number(tipo_archivo_id),
             url_archivo: "/placeholder", // Temporal, se reemplaza con la URL real
             activo: true
         };

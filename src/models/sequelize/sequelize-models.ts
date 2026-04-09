@@ -172,8 +172,8 @@ export const setupAssociations = () => {
 
     Archivos.belongsToMany(Matricula, {
     through: MatriculaArchivo,
-    foreignKey: "matricula_id",
-    otherKey: "archivo_id",
+    foreignKey: "archivo_id",
+    otherKey: "matricula_id",
     as: "matricula_archivo",
   })
 

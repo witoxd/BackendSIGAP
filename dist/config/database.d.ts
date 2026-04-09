@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { Sequelize } from "sequelize";
+export declare const FORCE_DATABASE_SYNC: boolean;
 export declare const pool: Pool;
 export declare const sequelize: Sequelize;
 export declare const query: (text: string, params?: any[], client?: any) => Promise<any>;

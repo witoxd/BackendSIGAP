@@ -101,6 +101,8 @@ export class MatriculaArchivoRepository {
     archivoIds: number[],
     client?: any
   ) {
+
+
     if (archivoIds.length === 0) return []
 
     const placeholders = archivoIds
@@ -115,6 +117,7 @@ export class MatriculaArchivoRepository {
       [matriculaId, ...archivoIds],
       client
     )
+
     return result.rows
   }
 

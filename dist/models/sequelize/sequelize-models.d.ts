@@ -16,8 +16,11 @@ import { Egresado } from "./Egresado";
 import { Acudiente } from "./Acudiente";
 import { AcudienteEstudiante } from "./AcudienteEstudiante";
 import { Auditoria } from "./Auditoria";
+import { FichaEstudiante } from "./FichaEstudiante";
+import { ColegioAnterior } from "./ColegioAnterior";
+import { ViviendaEstudiante } from "./ViviendaEstudiante";
 export declare const setupAssociations: () => void;
 export declare const initializeModels: () => void;
 export declare const syncModels: (force?: boolean) => Promise<void>;
-export { Persona, Usuario, Role, UsuarioRole, Estudiante, Profesor, Administrativo, Curso, Matricula, Jornada, TipoDocumento, Archivos, Permiso, RolePermiso, Egresado, Acudiente, AcudienteEstudiante, Auditoria, };
+export { Persona, Usuario, Role, UsuarioRole, Estudiante, Profesor, Administrativo, Curso, Matricula, Jornada, TipoDocumento, Archivos, Permiso, RolePermiso, Egresado, Acudiente, AcudienteEstudiante, Auditoria, FichaEstudiante, ColegioAnterior, ViviendaEstudiante, };
 //# sourceMappingURL=sequelize-models.d.ts.map

@@ -49,11 +49,11 @@ class UserRepository {
             return result.rows[0];
         });
     }
-    static create(data) {
+    static create(data, client) {
         return __awaiter(this, void 0, void 0, function* () {
             const hashedPassword = yield bcryptjs_1.default.hash(data.contraseña, 10);
             const result = yield (0, database_1.query)(`INSERT INTO usuarios (persona_id, username, email, contraseña, activo)
-       VALUES ($1, $2, $3, $4, true) RETURNING *`, [data.persona_id, data.username, data.email, hashedPassword]);
+       VALUES ($1, $2, $3, $4, true) RETURNING *`, [data.persona_id, data.username, data.email, hashedPassword], client);
             return result.rows[0];
         });
     }
@@ -87,10 +87,10 @@ class UserRepository {
     //   )
     //   return result.rows.map((row) => row.nombre)
     // }
-    static assignRole(userId, roleId) {
+    static assignRole(userId, roleId, client) {
         return __awaiter(this, void 0, void 0, function* () {
             const result = yield (0, database_1.query)(`INSERT INTO usuarios_role (usuario_id, role_id)
-       VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *`, [userId, roleId]);
+       VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *`, [userId, roleId], client);
             return result.rows[0];
         });
     }

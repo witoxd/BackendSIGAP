@@ -1,16 +1,12 @@
-import type { Request, Response } from "express";
-import { CreateMatriculaDTO, UpdateMatriculaDTO } from "../types";
-type CreateMatriculaStaticRequest = Request<never, unknown, CreateMatriculaDTO>;
 export declare class MatriculaController {
-    getAll(req: Request, res: Response): Promise<void>;
-    getById(req: Request, res: Response): Promise<void>;
-    getByEstudiante(req: Request, res: Response): Promise<void>;
-    getByCurso(req: Request, res: Response): Promise<void>;
-    create(req: CreateMatriculaStaticRequest, res: Response): Promise<void>;
-    update(req: Request<{
-        id: string;
-    }, unknown, UpdateMatriculaDTO>, res: Response): Promise<void>;
-    delete(req: Request, res: Response): Promise<void>;
+    getAll: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getById: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getByEstudiante: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    getByCurso: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    create: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    ProcessMatricula: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    retirar: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    update: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+    delete: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 }
-export {};
 //# sourceMappingURL=matricula.controller.d.ts.map

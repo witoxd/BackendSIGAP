@@ -17,21 +17,78 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const database_1 = require("../config/database");
 const AppError_1 = require("../utils/AppError");
+const PersonaRepository_1 = require("../models/Repository/PersonaRepository");
+const UserRepository_1 = require("../models/Repository/UserRepository");
 class AuthService {
     // Registrar un nuevo usuario
-    register(userData) {
+    personaExisting(personaID) {
         return __awaiter(this, void 0, void 0, function* () {
-            try {
-                // Verificar si el email ya existe
-                const emailCheck = yield (0, database_1.query)("SELECT usuario_id FROM usuarios WHERE email = $1", [userData.email]);
+            const run = (txClient) => __awaiter(this, void 0, void 0, function* () {
+                const [personaResult] = yield Promise.all([
+                    (0, database_1.query)("SELECT persona_id FROM personas WHERE persona_id = $1", [personaID], txClient),
+                ]);
+                if (personaResult.rows.length === 0) {
+                    throw new AppError_1.NotFoundError(`Persona con ID '${personaID}' no encontrada`);
+                }
+                const existingUserByPersona = yield (0, database_1.query)("SELECT usuario_id FROM usuarios WHERE persona_id = $1", [personaID], txClient);
+                if (existingUserByPersona.rows.length > 0) {
+                    throw new AppError_1.ConflictError("La persona ya tiene un usuario asignado");
+                }
+            });
+        });
+    }
+    checkEmailAndUsername(email, username) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const run = (txClient) => __awaiter(this, void 0, void 0, function* () {
+                const [emailCheck, usernameCheck] = yield Promise.all([
+                    (0, database_1.query)("SELECT usuario_id FROM usuarios WHERE email = $1", [email], txClient),
+                    (0, database_1.query)("SELECT usuario_id FROM usuarios WHERE username = $1", [username], txClient),
+                ]);
                 if (emailCheck.rows.length > 0) {
                     throw new AppError_1.ConflictError("El email ya está registrado");
                 }
-                // Verificar si el username ya existe
-                const usernameCheck = yield (0, database_1.query)("SELECT usuario_id FROM usuarios WHERE username = $1", [userData.username]);
                 if (usernameCheck.rows.length > 0) {
                     throw new AppError_1.ConflictError("El username ya está en uso");
                 }
+            });
+            try {
+                yield (0, database_1.transaction)(run);
+            }
+            catch (error) {
+                if (error instanceof AppError_1.ConflictError) {
+                    throw error;
+                }
+                console.error("Error verificando email y username:", error);
+                throw new AppError_1.DatabaseError("Error al verificar email y username");
+            }
+        });
+    }
+    checkRoleExists(roleName) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const run = (txClient) => __awaiter(this, void 0, void 0, function* () {
+                const roleResult = yield (0, database_1.query)("SELECT role_id FROM roles WHERE nombre = $1", [roleName], txClient);
+                if (roleResult.rows.length === 0) {
+                    throw new AppError_1.NotFoundError(`Rol '${roleName}' no encontrado`);
+                }
+                return roleResult.rows[0].role_id;
+            });
+            try {
+                return yield (0, database_1.transaction)(run);
+            }
+            catch (error) {
+                if (error instanceof AppError_1.NotFoundError) {
+                    throw error;
+                }
+                console.error("Error verificando rol:", error);
+                throw new AppError_1.DatabaseError("Error al verificar rol");
+            }
+        });
+    }
+    register(userData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                this.checkEmailAndUsername(userData.email, userData.username);
+                const roleId = yield this.checkRoleExists(userData.role);
                 // Hash de la contraseña
                 const hashedPassword = yield bcryptjs_1.default.hash(userData.contraseña, 12);
                 // Usar transacción para crear persona, usuario y asignar rol
@@ -193,6 +250,104 @@ class AuthService {
                 }
                 console.error("Error al cambiar contraseña:", error);
                 throw new AppError_1.DatabaseError("Error al cambiar contraseña");
+            }
+        });
+    }
+    // Crear usuario sin persona (para casos especiales, como administradores del sistema)
+    /*
+    la funcion creareUser metodo para crear un usurio usando el ID de una personsa ya existente
+    se le puede pasar un cleint para usarlo dentro de una transaccion, para la creacion de usuario y persona en una trnsacion
+    */
+    createUser(user, personaID, role, client) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                if (client === undefined) {
+                    this.personaExisting(personaID);
+                }
+                // Validaciones previas a la creacion de usuario, chekeo de email, username y rol
+                this.checkEmailAndUsername(user.email, user.username);
+                const roleResult = yield this.checkRoleExists(role);
+                // Hash de contraseña
+                const hashedPassword = yield bcryptjs_1.default.hash(user.contraseña, 12);
+                // Creacion de usuario
+                const usuarioResult = yield UserRepository_1.UserRepository.create(Object.assign(Object.assign({}, user), { contraseña: hashedPassword }), client);
+                const roleId = roleResult.rows[0].role_id;
+                // Si usuario se creo, entonces se le asigna un rol (si no se creo, no se asigna rol y se devuelve error)
+                // En este punto, si no se creo el usuario y se le intenta dar un rol, se lanzara un error pero esto ya seria un error de estructura
+                // Nota: arreglar la manera de client, si se pasa client, se asume que ya se hizo validacion de persona
+                if (usuarioResult) {
+                    yield UserRepository_1.UserRepository.assignRole(usuarioResult.usuario_id, roleId, client);
+                }
+                return {
+                    message: "Usuario creado exitosamente",
+                    data: {
+                        userId: usuarioResult.usuario_id,
+                        personaId: usuarioResult.persona_id,
+                        role: role
+                    },
+                };
+            }
+            catch (error) {
+                if (error instanceof AppError_1.ConflictError || error instanceof AppError_1.NotFoundError) {
+                    throw error;
+                }
+                console.error("Error creando usuario:", error);
+                throw new AppError_1.DatabaseError("Error al crear usuario");
+            }
+        });
+    }
+    // Crear usuario con persona en una sola transacción
+    createUserWithPersona(user, persona, role) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // se inicia una transaccion para crear la persona y usuario mas al rol
+                const result = yield (0, database_1.transaction)((client) => __awaiter(this, void 0, void 0, function* () {
+                    const existingPersona = yield PersonaRepository_1.PersonaRepository.findByDocumento(persona.numero_documento, client);
+                    if (existingPersona.rows.length > 0) {
+                        throw new AppError_1.ConflictError("Ya existe una persona con ese documento");
+                    }
+                    const personaResult = yield PersonaRepository_1.PersonaRepository.create(persona, client);
+                    const usuarioResult = yield this.createUser(user, personaResult.persona_id, role, client);
+                    return {
+                        usuario: usuarioResult,
+                    };
+                }));
+                return {
+                    message: "Usuario con persona creado exitosamente",
+                    data: result.usuario,
+                };
+            }
+            catch (error) {
+                if (error instanceof AppError_1.ConflictError || error instanceof AppError_1.NotFoundError) {
+                    throw error;
+                }
+                console.error("Error creando usuario con persona:", error);
+                throw new AppError_1.DatabaseError("Error al crear usuario con persona");
+            }
+        });
+    }
+    // Restablecer contraseña al número de documento (para casos de olvido de contraseña)
+    resetPasswordByDefaultDocument(personaId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const persona = yield PersonaRepository_1.PersonaRepository.findById(personaId);
+                if (!persona) {
+                    throw new AppError_1.NotFoundError("Persona no encontrada");
+                }
+                const defaultPassword = persona.numero_documento;
+                const hashedPassword = yield bcryptjs_1.default.hash(defaultPassword, 12);
+                const result = yield (0, database_1.query)("UPDATE usuarios SET contraseña = $1 WHERE persona_id = $2 RETURNING *", [hashedPassword, personaId]);
+                if (result.rows.length === 0) {
+                    throw new AppError_1.NotFoundError("Usuario asociado a la persona no encontrado");
+                }
+                return { message: "Contraseña restablecida al número de documento exitosamente" };
+            }
+            catch (error) {
+                if (error instanceof AppError_1.NotFoundError) {
+                    throw error;
+                }
+                console.error("Error al restablecer contraseña:", error);
+                throw new AppError_1.DatabaseError("Error al restablecer contraseña");
             }
         });
     }

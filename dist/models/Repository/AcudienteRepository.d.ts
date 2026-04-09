@@ -2,6 +2,7 @@ import { AcudienteCreationAttributes } from "../sequelize/Acudiente";
 import { AcudienteEstudianteCreationAttributes } from "../sequelize/AcudienteEstudiante";
 export declare class AcudienteRepository {
     static findAll(limit?: number, offset?: number): Promise<any>;
+    static SearchIndex(index: string, limit?: number): Promise<any>;
     static findById(id: number): Promise<any>;
     static findByPersonaId(personaId: number): Promise<any>;
     static findByEstudiante(estudianteId: number): Promise<any>;
@@ -10,5 +11,6 @@ export declare class AcudienteRepository {
     static delete(id: number): Promise<any>;
     static assignToEstudiante(data: Omit<AcudienteEstudianteCreationAttributes, "acudiente_estudiante_id">): Promise<any>;
     static removeFromEstudiante(estudianteId: number, acudienteId: number): Promise<any>;
+    static getAcudientesByEstudiante(estudianteId: number): Promise<any>;
 }
 //# sourceMappingURL=AcudienteRepository.d.ts.map

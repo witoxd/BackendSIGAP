@@ -19,6 +19,9 @@ const archivo_routes_1 = __importDefault(require("./archivo.routes"));
 const permiso_routes_1 = __importDefault(require("./permiso.routes"));
 const egresado_routes_1 = __importDefault(require("./egresado.routes"));
 const acudiente_routes_1 = __importDefault(require("./acudiente.routes"));
+const tipoArchivo_routes_1 = __importDefault(require("./tipoArchivo.routes"));
+const fichaEstudiante_routes_1 = __importDefault(require("./fichaEstudiante.routes"));
+const contacto_routes_1 = __importDefault(require("./contacto.routes"));
 const router = (0, express_1.Router)();
 router.use("/auth", auth_routes_1.default); //listo
 router.use("/users", user_routes_1.default); //listo
@@ -30,11 +33,14 @@ router.use("/cursos", curso_routes_1.default); //listo
 router.use("/matriculas", matricula_routes_1.default); // listo
 router.use("/roles", role_routes_1.default); //En proceso
 router.use("/jornadas", jornada_routes_1.default); //listo
-router.use("/tipos-documento", tipoDocumento_routes_1.default); //En proceso
+router.use("/tipos-documento", tipoDocumento_routes_1.default); //listo
 router.use("/archivos", archivo_routes_1.default); //listo y configurado
 router.use("/permisos", permiso_routes_1.default); //No crear rutas, PELIGRO
 router.use("/egresados", egresado_routes_1.default); //listo
 router.use("/acudientes", acudiente_routes_1.default); //listo
+router.use("/tipos-archivos", tipoArchivo_routes_1.default); // listo
+router.use("/ficha", fichaEstudiante_routes_1.default); //listo
+router.use("/contactos", contacto_routes_1.default); //listo
 //router.use("/auditoria", auditoriaRoutes)
 exports.default = router;
 //# sourceMappingURL=index.js.map

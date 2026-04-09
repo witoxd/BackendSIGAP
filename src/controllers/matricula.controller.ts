@@ -21,7 +21,7 @@ import { archivoService } from "../services/archivos.services"
 import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
 import { MatriculaArchivoRepository } from "../models/Repository/MatriculaArchivoRepository"
 import { transaction } from "../config/database"
-import {ArchivosCreationAttributes} from "../models/sequelize/Archivo"
+import { ArchivosCreationAttributes } from "../models/sequelize/Archivo"
 
 export class MatriculaController {
 
@@ -124,18 +124,33 @@ export class MatriculaController {
       throw new AppError("Se requiere al menos un archivo", 400)
     }
 
-    const { persona_id, curso_id, jornada_id, metadata } = req.body
+    const { metadata, matricula } = req.body
+
+    let matriculaData: CreateMatriculaDTO["matricula"]
+    try {
+      matriculaData = typeof matricula === "string" ? JSON.parse(matricula) : matricula
+    } catch {
+      await archivoService.deleteFileArray(files)
+      throw new AppError("El formato de matricula no es válido. Debe ser un JSON.", 400)
+    }
+
+    if (!matriculaData || typeof matriculaData !== "object") {
+      await archivoService.deleteFileArray(files)
+      throw new AppError("Se requiere el objeto matricula en formato JSON.", 400)
+    }
+
+
 
     // ------------------------------------------------------------------
     // Paso 1: Verificar que el estudiante existe por persona_id
     // ------------------------------------------------------------------
-    const estudiante = await EstudianteRepository.findByPersonaId(Number(persona_id))
+    const estudiante = await EstudianteRepository.findById(matriculaData.estudiante_id)
     if (!estudiante) {
       await archivoService.deleteFileArray(files)
       throw new AppError("No se encontró un estudiante asociado a esa persona", 404)
     }
 
-    if (!curso_id || !jornada_id) {
+    if (!matriculaData.curso_id || !matriculaData.jornada_id) {
       await archivoService.deleteFileArray(files)
       throw new AppError("Se requieren curso_id y jornada_id para crear la matrícula", 400)
     }
@@ -145,15 +160,8 @@ export class MatriculaController {
     // La metadata viene como JSON string desde FormData porque multipart
     // no puede enviar objetos anidados directamente.
     // ------------------------------------------------------------------
-    let metadataArray: Array<{ tipo_archivo_id: number; descripcion?: string }> = []
-    if (metadata) {
-      try {
-        metadataArray = typeof metadata === "string" ? JSON.parse(metadata) : metadata
-      } catch {
-        await archivoService.deleteFileArray(files)
-        throw new AppError("El formato de metadata no es válido. Debe ser un JSON array.", 400)
-      }
-    }
+    const metadataArray = archivoService.normalizeMetadata(metadata)
+
 
     if (metadataArray.length !== files.length) {
       await archivoService.deleteFileArray(files)
@@ -214,7 +222,7 @@ export class MatriculaController {
 
       // La persona debe tener permiso para subir este tipo específico.
       const puedeSubir = await PersonaRepository.personaPuedeSubirArchivo(
-        Number(persona_id),
+        Number(estudiante.persona.persona_id),
         Number(meta.tipo_archivo_id)
       )
       if (!puedeSubir) {
@@ -257,6 +265,7 @@ export class MatriculaController {
 
     try {
       const resultado = await transaction(async (client) => {
+
         // 5a. Resolver período activo
         const periodoActivo = await PeriodoMatriculaRepository.findActivo()
         if (!periodoActivo) {
@@ -275,18 +284,20 @@ export class MatriculaController {
           matricula = await MatriculaRepository.create(
             {
               estudiante_id: estudiante.estudiante.estudiante_id,
-              curso_id: Number(curso_id),
-              jornada_id: Number(jornada_id),
+              curso_id: Number(matriculaData.curso_id),
+              jornada_id: Number(matriculaData.jornada_id),
               periodo_id: periodoActivo.periodo_id,
-              estado: "vigente" as any,
+              estado: "activa" as any,
             },
             client
           )
+        } else {
+          throw new AppError("El estudiante ya tiene matricula en el periodo activo", 409)
         }
 
         // 5c. Guardar registros de archivos en la BD
         const ArchivosCreationAttributes = archivosValidados.map(({ file, meta }) => ({
-          persona_id: Number(persona_id),
+          persona_id: Number(estudiante.persona.persona_id),
           tipo_archivo_id: Number(meta.tipo_archivo_id),
           nombre: file.originalname,
           descripcion: meta.descripcion || undefined,
@@ -294,10 +305,16 @@ export class MatriculaController {
           asignado_por: userId,
         }))
 
+
+
         const archivosGuardados = await ArchivoRepository.bulkCreate(ArchivosCreationAttributes, client)
+
+
 
         // 5d. Asociar cada archivo a la matrícula
         const archivoIds = archivosGuardados.map((a: any) => a.archivo_id)
+        console.log("Id de archivos guardados: ", archivoIds, "que se asociaran a matricula: ", matricula.matricula_id)
+
         await MatriculaArchivoRepository.asociarBulk(matricula.matricula_id, archivoIds, client)
 
         return { matricula, archivosGuardados }
