@@ -24,8 +24,9 @@ import { MatriculaArchivo } from "./MatriculaArchivo"
 import { FichaEstudiante } from "./FichaEstudiante"
 import { ColegioAnterior } from "./ColegioAnterior"
 import { ViviendaEstudiante } from "./ViviendaEstudiante"
-import { HasMany } from "sequelize"
 import { TipoArchivo } from "./TipoArchivo"
+import { ReemplazoProfesor } from "./ReemplazoProfesor"
+import { MatriculaHistorial } from "./MatriculaHistorial"
 
 export const setupAssociations = () => {
 
@@ -55,6 +56,7 @@ export const setupAssociations = () => {
   // TipoDocumento
   // ----------------------------------------------------------
 
+  // relacion de 1 a mcuhos entre los tippos de documento y las personas
   TipoDocumento.hasMany(Persona, { foreignKey: "tipo_documento_id", as: "personas" })
   Persona.belongsTo(TipoDocumento, { foreignKey: "tipo_documento_id", as: "tipo_documento" })
 
@@ -62,12 +64,15 @@ export const setupAssociations = () => {
   // Roles y permisos
   // ----------------------------------------------------------
 
+  // relacion de muchos a muchos para usuarios - roles
   Usuario.belongsToMany(Role, {
     through: UsuarioRole,
     foreignKey: "usuario_id",
     otherKey: "role_id",
     as: "roles",
   })
+
+  // relacion de muchos a muchos para roles - usuarios 
   Role.belongsToMany(Usuario, {
     through: UsuarioRole,
     foreignKey: "role_id",
@@ -75,12 +80,14 @@ export const setupAssociations = () => {
     as: "usuarios",
   })
 
+  // relacion de muchos a muchos para roles - permisos
   Role.belongsToMany(Permiso, {
     through: RolePermiso,
     foreignKey: "role_id",
     otherKey: "permiso_id",
     as: "permisos",
   })
+  // Relacion de muchos a muchos para permisos - roles
   Permiso.belongsToMany(Role, {
     through: RolePermiso,
     foreignKey: "permiso_id",
@@ -150,38 +157,58 @@ export const setupAssociations = () => {
   })
 
   // ----------------------------------------------------------
+  // Profesor
+  // ----------------------------------------------------------
+
+  Profesor.hasMany(ReemplazoProfesor, { foreignKey: "profesor_id", as: "reemplazos_realizados" })
+  Profesor.hasMany(ReemplazoProfesor, { foreignKey: "reemplaza_a_profesor_id", as: "reemplazos_recibidos" })
+
+  ReemplazoProfesor.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor_reemplazante" })
+  ReemplazoProfesor.belongsTo(Profesor, { foreignKey: "reemplaza_a_profesor_id", as: "profesor_reemplazado" })
+
+  Jornada.hasMany(Profesor, { foreignKey: "jornada_id", as: "profesores_jornada" })
+  Profesor.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
+
+  // ----------------------------------------------------------
   // Matrícula
   // ----------------------------------------------------------
 
+  // Curso (1:N) - un curso puede tener muchas matriculas, asi es como se referenciara año y curso
   Curso.hasMany(Matricula, { foreignKey: "curso_id", as: "matriculas" })
   Matricula.belongsTo(Curso, { foreignKey: "curso_id", as: "curso" })
 
+  // Jornada (1:N) - una jornada puede tener muchas amtriculas pero una matricula solo puede estar en una jornada
   Jornada.hasMany(Matricula, { foreignKey: "jornada_id", as: "matriculas" })
   Matricula.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
 
+  // Antes matricula necesitaba un profesor (Error de diseño, se penso que se le asignaria un profesor a un estudiante)
   // Profesor.hasMany(Matricula, { foreignKey: "profesor_id", as: "matriculas" })
   // Matricula.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor" })
 
-  PeriodoMatricula.hasMany(Matricula, {foreignKey: "periodo_id", as: "matriculas"})
-  Matricula.belongsTo(PeriodoMatricula, {foreignKey: "periodo_id", as: "periodo"})
+  // Periodo de matricula (1:N) - Un periodo puede tener muchas matriculas pero una matricula en un solo periodo
+  PeriodoMatricula.hasMany(Matricula, { foreignKey: "periodo_id", as: "matriculas" })
+  Matricula.belongsTo(PeriodoMatricula, { foreignKey: "periodo_id", as: "periodo" })
 
+  // Historial de matriculas (1:N)
+  Matricula.hasMany(MatriculaHistorial, { foreignKey: "matricula_id", as: "historial" })
+  MatriculaHistorial.belongsTo(Matricula, { foreignKey: "matricula_id", as: "matricula" })
 
   // ----------------------------------------------------------
   // Archivos
   // ----------------------------------------------------------
 
-    Archivos.belongsToMany(Matricula, {
+  Archivos.belongsToMany(Matricula, {
     through: MatriculaArchivo,
     foreignKey: "archivo_id",
     otherKey: "matricula_id",
     as: "matricula_archivo",
   })
 
-  TipoArchivo.hasMany(Archivos, {foreignKey: "tipo_archivo_id", as: "tipoArchivo"})
-  Archivos.belongsTo(TipoArchivo, {foreignKey: "tipo_archivo_id", as: "archivos"})
+  TipoArchivo.hasMany(Archivos, { foreignKey: "tipo_archivo_id", as: "tipoArchivo" })
+  Archivos.belongsTo(TipoArchivo, { foreignKey: "tipo_archivo_id", as: "archivos" })
 
 
-  
+
   // ----------------------------------------------------------
   // Auditoría
   // ----------------------------------------------------------
@@ -200,7 +227,7 @@ export const syncModels = async (force = false) => {
     await sequelize.sync({ force, alter: !force })
     console.log(`✅ Database ${force ? "reset" : "synchronized"} successfully`)
   } catch (error) {
-    console.error("❌ Error synchronizing database:", error)
+    console.error("❌ Error de syncronozacion de base de datos:", error)
     throw error
   }
 }
@@ -214,6 +241,7 @@ export {
   UsuarioRole,
   Estudiante,
   Profesor,
+  ReemplazoProfesor,
   Administrativo,
   Curso,
   Matricula,
@@ -229,4 +257,5 @@ export {
   FichaEstudiante,
   ColegioAnterior,
   ViviendaEstudiante,
+  MatriculaHistorial
 }

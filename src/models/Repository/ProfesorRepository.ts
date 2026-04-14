@@ -3,12 +3,24 @@ import { ProfesorCreationAttributes } from "../sequelize/Profesor"
 import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 
 const PROFESOR_FIELDS_JSON = `
-        json_build_object(
-          'profesor_id', pr.profesor_id,
-          'fecha_contratacion', pr.fecha_contratacion,
-          'estado', pr.estado
-        ) AS profesor
+  json_build_object(
+    'profesor_id', pr.profesor_id,
+    'fecha_contratacion', pr.fecha_contratacion,
+    'fecha_nombramiento', pr.fecha_nombramiento,
+    'numero_resolucion', pr.numero_resolucion,
+    'estado', pr.estado,
+    'jornada_id', pr.jornada_id,
+    'sede', pr.sede,
+    'titulo', pr.titulo,
+    'perfil_profesional', pr.perfil_profesional,
+    'posgrado', pr.posgrado,
+    'grado_escalafon', pr.grado_escalafon,
+    'cargo', pr.cargo,
+    'area', pr.area,
+    'tipo_contrato', pr.tipo_contrato
+  ) AS profesor
 `
+
 export class ProfesorRepository  {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
@@ -53,15 +65,35 @@ export class ProfesorRepository  {
 
   
 
-  static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, client?: any) {
-    const result = await query(
-      `INSERT INTO profesores (persona_id, fecha_contratacion, estado)
-       VALUES ($1, $2, $3) RETURNING *`,
-      [data.persona_id,  data.fecha_contratacion || new Date(), data.estado || "activo"],
-      client
-    )
-    return result.rows[0]
-  }
+static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, client?: any) {
+  const result = await query(
+    `INSERT INTO profesores 
+       (persona_id, fecha_contratacion, fecha_nombramiento, numero_resolucion,
+        estado, jornada_id, sede, titulo, perfil_profesional, posgrado,
+        grado_escalafon, cargo, area, tipo_contrato)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     RETURNING *`,
+    [
+      data.persona_id,
+      data.fecha_contratacion || new Date(),
+      data.fecha_nombramiento ?? null,
+      data.numero_resolucion ?? null,
+      data.estado || "activo",
+      data.jornada_id,
+      data.sede,
+      data.titulo,
+      data.perfil_profesional,
+      data.posgrado,
+      data.grado_escalafon,
+      data.cargo,
+      data.area,
+      data.tipo_contrato,
+    ],
+    client
+  )
+  return result.rows[0]
+}
+
 
   static async update(id: number, data: Partial<ProfesorCreationAttributes>, client?: any) {
     const fields: string[] = []
