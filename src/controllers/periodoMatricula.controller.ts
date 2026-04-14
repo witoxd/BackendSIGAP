@@ -67,7 +67,7 @@ export class PeriodoMatriculaController {
 
     const periodo = await PeriodoMatriculaRepository.create({
       ...PeriodoData,
-      activo:     false, // Siempre inactivo al crear — se activa explícitamente
+      activo: false, // Siempre inactivo al crear — se activa explícitamente
       created_by: userId,
     })
 
@@ -97,14 +97,17 @@ export class PeriodoMatriculaController {
       throw new AppError("Este período ya está activo", 409)
     }
 
-    // Verificar que las fechas sean válidas respecto a hoy
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
-    const fechaFin = new Date(periodo.fecha_fin)
 
-    if (fechaFin < hoy) {
+    // Usa fecha_fin_inscripcion si existe, si no usa fecha_fin del período
+    const fechaLimite = periodo.fecha_fin_inscripcion
+      ? new Date(periodo.fecha_fin_inscripcion)
+      : new Date(periodo.fecha_fin)
+
+    if (fechaLimite < hoy) {
       throw new AppError(
-        "No se puede activar un período cuya fecha de fin ya pasó. Actualiza las fechas primero.",
+        "No se puede activar un período cuya fecha de cierre de inscripción ya pasó.",
         400
       )
     }
@@ -181,7 +184,7 @@ export class PeriodoMatriculaController {
 
     // Validar fechas si ambas llegan en el update
     const fechaInicio = PeriodoData.fecha_inicio ?? existente.fecha_inicio
-    const fechaFin    = PeriodoData.fecha_fin    ?? existente.fecha_fin
+    const fechaFin = PeriodoData.fecha_fin ?? existente.fecha_fin
     if (new Date(fechaFin) < new Date(fechaInicio)) {
       throw new AppError("La fecha de fin no puede ser anterior a la fecha de inicio", 400)
     }
@@ -244,29 +247,28 @@ export class PeriodoMatriculaController {
 
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
-    const fechaFin = new Date(periodo.fecha_fin)
+    const fechaCierre = periodo.fecha_fin_inscripcion
+      ? new Date(periodo.fecha_fin_inscripcion)
+      : new Date(periodo.fecha_fin)
 
-    if (fechaFin < hoy) {
-      // El período venció — desactivar automáticamente
+    if (fechaCierre < hoy) {
       await PeriodoMatriculaRepository.desactivar(periodo.periodo_id)
-
       return res.status(200).json({
         success: true,
         abierto: false,
-        mensaje: `El período de matrícula ${periodo.anio} venció el ${periodo.fecha_fin}. Fue desactivado automáticamente.`,
+        mensaje: `El período de matrícula ${periodo.anio} cerró el ${periodo.fecha_fin_inscripcion ?? periodo.fecha_fin}. Fue desactivado automáticamente.`,
         periodo,
       })
     }
 
-    // Calcular días restantes para informar al frontend
-    const msRestantes  = fechaFin.getTime() - hoy.getTime()
+    const msRestantes = fechaCierre.getTime() - hoy.getTime()
     const diasRestantes = Math.ceil(msRestantes / (1000 * 60 * 60 * 24))
 
     res.status(200).json({
-      success:        true,
-      abierto:        true,
+      success: true,
+      abierto: true,
       dias_restantes: diasRestantes,
-      mensaje:        `El proceso de matrícula está abierto. Quedan ${diasRestantes} día(s).`,
+      mensaje: `El proceso de matrícula está abierto. Quedan ${diasRestantes} día(s).`,
       periodo,
     })
   })

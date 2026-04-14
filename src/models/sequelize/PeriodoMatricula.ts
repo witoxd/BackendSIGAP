@@ -11,14 +11,16 @@ import { sequelize } from "../../config/database"
 // ------------------------------------------------------------
 
 interface PeriodoMatriculaAttributes {
-  periodo_id:   number
-  anio:         number        // Año escolar, ej: 2025
+  periodo_id: number
+  anio: number        // Año escolar, ej: 2025
   fecha_inicio: Date          // Cuándo abre el proceso
-  fecha_fin:    Date          // Cuándo cierra el proceso
-  activo:       boolean       // El admin lo habilita/deshabilita
+  fecha_fin: Date          // Cuándo cierra el proceso
+  fecha_inicio_inscripcion?: Date  // Cuándo ABRE el formulario de matrícula
+  fecha_fin_inscripcion?: Date     // Cuándo CIERRA el formulario de matrícula
+  activo: boolean       // El admin lo habilita/deshabilita
   descripcion?: string        // Opcional, ej: "Matrícula ordinaria 2025"
-  created_by?:  number        // usuario_id de quien lo creó
-  created_at?:  Date
+  created_by?: number        // usuario_id de quien lo creó
+  created_at?: Date
 }
 
 export interface PeriodoMatriculaCreationAttributes
@@ -27,78 +29,82 @@ export interface PeriodoMatriculaCreationAttributes
     | "periodo_id"
     | "activo"
     | "descripcion"
+    | "fecha_inicio_inscripcion"
+    | "fecha_fin_inscripcion"
     | "created_by"
     | "created_at"
-  > {}
+  > { }
 
 export class PeriodoMatricula
   extends Model<PeriodoMatriculaAttributes, PeriodoMatriculaCreationAttributes>
-  implements PeriodoMatriculaAttributes
-{
-  public periodo_id!:   number
-  public anio!:         number
+  implements PeriodoMatriculaAttributes {
+  public periodo_id!: number
+  public anio!: number
   public fecha_inicio!: Date
-  public fecha_fin!:    Date
-  public activo!:       boolean
-  public descripcion?:  string
-  public created_by?:   number
-  public created_at?:   Date
+  public fecha_fin!: Date
+  public fecha_fin_inscripcion?: Date 
+  public fecha_inicio_inscripcion?: Date 
+  public activo!: boolean
+  public descripcion?: string
+  public created_by?: number
+  public created_at?: Date
 }
 
 PeriodoMatricula.init(
   {
     periodo_id: {
-      type:          DataTypes.INTEGER,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
-      primaryKey:    true,
+      primaryKey: true,
     },
     anio: {
-      type:      DataTypes.SMALLINT,
+      type: DataTypes.SMALLINT,
       allowNull: false,
-      validate:  { min: 2000, max: 2100 },
-      comment:   "Año escolar al que corresponde este período",
+      validate: { min: 2000, max: 2900 }, //iba a poner 2100 pero mejor dejar un margen por si acaso
+      comment: "Año escolar al que corresponde este período",
     },
     fecha_inicio: {
-      type:      DataTypes.DATEONLY,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     fecha_fin: {
-      type:      DataTypes.DATEONLY,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
+    fecha_inicio_inscripcion: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: "Inicio de la ventana donde se acepta el formulario de matrícula",
+    },
+    fecha_fin_inscripcion: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: "Fin de la ventana de inscripción — distinto al fin del período escolar",
+    },
     activo: {
-      type:         DataTypes.BOOLEAN,
-      allowNull:    false,
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: false,
-      comment:      "Solo un período puede estar activo — garantizado por índice parcial UNIQUE WHERE activo = true",
+      comment: "Solo un período puede estar activo — garantizado por índice parcial UNIQUE WHERE activo = true",
     },
     descripcion: {
-      type:      DataTypes.STRING(200),
+      type: DataTypes.STRING(200),
       allowNull: true,
     },
     created_by: {
-      type:      DataTypes.INTEGER,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: { model: "usuarios", key: "usuario_id" },
     },
     created_at: {
-      type:         DataTypes.DATE,
-      allowNull:    true,
+      type: DataTypes.DATE,
+      allowNull: true,
       defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
     },
   },
   {
     sequelize,
-    tableName:  "periodos_matricula",
+    tableName: "periodos_matricula",
     timestamps: false,
-    // El índice parcial se crea en la migración SQL, no aquí,
-    // porque Sequelize no soporta índices parciales nativamente:
-    //
-    //   CREATE UNIQUE INDEX idx_un_periodo_activo
-    //   ON periodos_matricula(activo)
-    //   WHERE activo = true;
-    //
-    // Eso garantiza que si intentas activar un segundo período
-    // la BD rechaza el INSERT/UPDATE antes de que el código lo vea.
   },
 )

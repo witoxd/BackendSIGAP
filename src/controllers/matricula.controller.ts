@@ -375,9 +375,24 @@ export class MatriculaController {
 
     const id = Number(req.params.id)
     const { matricula: matriculaData } = req.body as UpdateMatriculaDTO
-    const matricula = await MatriculaRepository.update(id, matriculaData)
+    const userId = req.user!.userId
 
-    if (!matricula) throw new AppError("Matrícula no encontrada", 404)
+    // Obtener estado actual ANTES de modificar — necesario para el historial
+    const matriculaActual = await MatriculaRepository.findById(id)
+    if (!matriculaActual) throw new AppError("Matrícula no encontrada", 404)
+
+    const matricula = await transaction(async (client) => {
+      // 1. Guardar snapshot del estado anterior
+      await MatriculaRepository.registrarHistorial(
+        matriculaActual,
+        matriculaData,
+        userId,
+        req.body.motivo_cambio,
+        client
+      )
+      // 2. Aplicar el cambio
+      return await MatriculaRepository.update(id, matriculaData, client)
+    })
 
     res.status(200).json({ success: true, data: matricula, message: "Matrícula actualizada exitosamente" })
   })

@@ -1,7 +1,7 @@
 import { query } from "../../config/database"
 import { MatriculaCreationAttributes } from "../sequelize/Matricula"
 
-const V_MATRICULA_FIELDS_SQL =  (prefije_table: string): string =>{
+const V_MATRICULA_FIELDS_SQL = (prefije_table: string): string => {
   return `
 ${prefije_table}.matricula_id,
 ${prefije_table}.estudiante_id,
@@ -16,8 +16,8 @@ ${prefije_table}.anio,
 ${prefije_table}.estado_actual
 `
 }
-const PREVIEWS_V_MATRICULA_FIELDS_SQL = ( prefije_table: string ): string => {
-return `
+const PREVIEWS_V_MATRICULA_FIELDS_SQL = (prefije_table: string): string => {
+  return `
 ${prefije_table}.matricula_id,
 ${prefije_table}.periodo_id,
 ${prefije_table}.estado_actual,
@@ -31,8 +31,8 @@ ${prefije_table}.periodo_descripcion
 }
 
 
- const V_MATRICULA_FIELDS_JSON = ( prefije_table: string ): string => {
-  return  `
+const V_MATRICULA_FIELDS_JSON = (prefije_table: string): string => {
+  return `
   SELECT json_build_object(
   'matricula_id', ${prefije_table}.matricula_id,
   'estudiante_id', ${prefije_table}.estudiante_id,
@@ -265,5 +265,34 @@ export class MatriculaRepository {
   static async count() {
     const result = await query("SELECT COUNT(*) FROM matriculas")
     return Number.parseInt(result.rows[0].count)
+  }
+
+  // Registra un snapshot ANTES de actualizar.
+  // Llamar desde el controller ANTES de hacer el update.
+  static async registrarHistorial(
+    matriculaActual: any,
+    datosNuevos: Partial<MatriculaCreationAttributes>,
+    modificadoPor?: number,
+    motivoCambio?: string,
+    client?: any
+  ) {
+    await query(
+      `INSERT INTO matriculas_historial
+       (matricula_id, curso_id_anterior, jornada_id_anterior, estado_anterior,
+        curso_id_nuevo, jornada_id_nuevo, estado_nuevo, modificado_por, motivo_cambio)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        matriculaActual.matricula_id,
+        matriculaActual.curso_id,
+        matriculaActual.jornada_id,
+        matriculaActual.estado_raw ?? matriculaActual.estado,
+        datosNuevos.curso_id ?? matriculaActual.curso_id,
+        datosNuevos.jornada_id ?? matriculaActual.jornada_id,
+        datosNuevos.estado ?? matriculaActual.estado_raw ?? matriculaActual.estado,
+        modificadoPor ?? null,
+        motivoCambio ?? null,
+      ],
+      client
+    )
   }
 }
