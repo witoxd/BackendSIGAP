@@ -175,6 +175,8 @@ const createViews = async () => {
       p.anio,
       p.fecha_inicio  AS periodo_fecha_inicio,
       p.fecha_fin     AS periodo_fecha_fin,
+      p.fecha_inicio_inscripcion AS periodo_fecha_inicio_inscripcion,
+      p.fecha_fin_inscripcion AS periodo_fecha_fin_inscripcion,
       p.activo        AS periodo_activo,
       p.descripcion   AS periodo_descripcion,
 

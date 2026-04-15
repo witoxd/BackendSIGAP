@@ -1,9 +1,3 @@
-// ============================================================================
-// PATCH para src/controllers/matricula.controller.ts
-//
-// Reemplaza el método PreocessMatricula (typo incluido) por ProcessMatricula.
-// Añade también el método retirar que faltaba para usar MatriculaRepository.retirar()
-// ============================================================================
 
 import type { Request, Response, NextFunction } from "express"
 import { MatriculaRepository } from "../models/Repository/MatriculaRepository"
@@ -380,6 +374,13 @@ export class MatriculaController {
     // Obtener estado actual ANTES de modificar — necesario para el historial
     const matriculaActual = await MatriculaRepository.findById(id)
     if (!matriculaActual) throw new AppError("Matrícula no encontrada", 404)
+
+      const PeriodoMatricula = await PeriodoMatriculaRepository.findById(matriculaActual.periodo_id)
+
+  
+      if (PeriodoMatricula && PeriodoMatricula.estado_raw === "retirada"){
+        throw new AppError("No se pueden modificar matriculas de periodos cerrados", 400)
+      }
 
     const matricula = await transaction(async (client) => {
       // 1. Guardar snapshot del estado anterior

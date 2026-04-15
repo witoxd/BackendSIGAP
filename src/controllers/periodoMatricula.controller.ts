@@ -112,7 +112,7 @@ export class PeriodoMatriculaController {
       )
     }
 
-    // Verificar si ya hay un período activo — dar mensaje amigable
+    // Verificar si ya hay un período activo
     // antes de que el índice parcial lance un error crudo de BD
     const periodoActivoActual = await PeriodoMatriculaRepository.findActivo()
     if (periodoActivoActual) {

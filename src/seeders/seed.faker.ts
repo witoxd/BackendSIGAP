@@ -35,6 +35,36 @@ const tiposTransporte  = ["Bus", "Moto", "A pie", "Bicicleta", "Carro particular
 const eps              = ["Sura", "Sanitas", "Nueva EPS", "Compensar", "Coosalud", "Cajacopi"]
 const credos           = ["Católico", "Cristiano", "Evangélico", "Ninguno", "Otro"]
 const gruposEtnicos    = ["Mestizo", "Afrocolombiano", "Indígena", "Ninguno"]
+const sedes            = ["Principal", "Sede Norte", "Sede Sur", "Sede Rural", "Sede Centro"]
+const titulos          = [
+  "Licenciatura en Matemáticas",
+  "Licenciatura en Lengua Castellana",
+  "Licenciatura en Ciencias Naturales",
+  "Licenciatura en Ciencias Sociales",
+  "Licenciatura en Educación Física",
+  "Licenciatura en Inglés",
+  "Licenciatura en Preescolar",
+]
+const posgrados        = [
+  "Especialización en Pedagogía",
+  "Especialización en Evaluación Educativa",
+  "Maestría en Educación",
+  "Maestría en Gestión Educativa",
+  "Especialización en TIC para la Enseñanza",
+]
+const gradosEscalafon  = ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "14"]
+const cargosProfesor   = ["Docente de aula", "Director de grupo", "Coordinador de área"]
+const areasProfesor    = [
+  "Matemáticas",
+  "Lengua Castellana",
+  "Ciencias Naturales",
+  "Ciencias Sociales",
+  "Inglés",
+  "Educación Física",
+  "Tecnología e Informática",
+  "Artística",
+]
+const tiposContratoProfesor = ["En propiedad", "Provisional", "Temporal", "Cátedra"]
 
 const randomItem = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
 // Genera un número de documento
@@ -176,17 +206,40 @@ const seedProfesores = async (client: any, ids: Awaited<ReturnType<typeof getIds
 
   for (let i = 0; i < 5; i++) {
     const persona = await crearPersona(client, tipoCC.tipo_documento_id)
+    const fechaContratacion = faker.date.past({ years: 10 })
+    const fechaNombramiento = faker.date.between({
+      from: fechaContratacion,
+      to: new Date(),
+    })
+    const titulo = randomItem(titulos)
+    const area = randomItem(areasProfesor)
+    const tienePosgrado = faker.datatype.boolean(0.6)
+
     // await crearUsuario(client, persona.persona_id, persona, ids.roleProfesor)
 
     const profResult = await query(
-      `INSERT INTO profesores (persona_id, fecha_contratacion, estado)
-       VALUES ($1, $2, $3)
+      `INSERT INTO profesores
+         (persona_id, fecha_contratacion, fecha_nombramiento, numero_resolucion,
+          estado, jornada_id, sede, titulo, perfil_profesional, posgrado,
+          grado_escalafon, cargo, area, tipo_contrato)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        ON CONFLICT DO NOTHING
        RETURNING *`,
       [
         persona.persona_id,
-        faker.date.past({ years: 10 }).toISOString().split("T")[0],
+        fechaContratacion.toISOString().split("T")[0],
+        fechaNombramiento.toISOString().split("T")[0],
+        `RES-${faker.date.between({ from: fechaNombramiento, to: new Date() }).getFullYear()}-${faker.string.numeric(5)}`,
         "activo",
+        randomItem(ids.jornadas).jornada_id,
+        randomItem(sedes),
+        titulo,
+        faker.lorem.sentences({ min: 1, max: 2 }),
+        tienePosgrado ? randomItem(posgrados) : null,
+        randomItem(gradosEscalafon),
+        randomItem(cargosProfesor),
+        area,
+        randomItem(tiposContratoProfesor),
       ],
       client
     )
