@@ -2,14 +2,14 @@
 import multer from "multer"
 import path from "path"
 import fs from "fs"
+import { Request, Response, NextFunction } from "express"
 import { AppError } from "../utils/AppError"
 import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepository"
 // ============================================================================
 // CONFIGURACION DE ALMACENAMIENTO DE ARCHIVOS
 // ============================================================================
 
-// Directorio base para almacenar archivos subidos
-// MODIFICAR: Cambiar esta ruta segun el entorno de produccion
+// Directorio base para uploads (se puede modificar en las varibales de entorno, aichivo .env)
 const UPLOAD_BASE_DIR = process.env.UPLOAD_DIR || "uploads"
 
 // Subdirectorios por tipo de archivo
@@ -21,6 +21,15 @@ const UPLOAD_BASE_DIR = process.env.UPLOAD_DIR || "uploads"
 // ============================================================================
 // MODIFICAR: Agregar o quitar MIME types segun los formatos permitidos
 // Actualmente solo permite PDF
+
+/*
+* MIME types y extensiones permitidas para subir archivos.
+*@key ALLOWED_MIME_TYPES
+*@type {Object<string, string[]>}
+*@description
+*Cada clave es un MIME type permitido, y su valor es un array de extensiones de archivo asociadas.
+*Esto se utiliza para validar tanto el tipo declarado como la extensión del archivo subido.
+*/
 const ALLOWED_MIME_TYPES: { [key: string]: string[] } = {
   // PDF
   "application/pdf": [".pdf"],
@@ -63,11 +72,142 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 // 50MB = 50 * 1024 * 1024
 
 // ============================================================================
+// MAGIC BYTES - FIRMAS DE ARCHIVO
+// ============================================================================
+
+/**
+ * Firmas de bytes conocidas por MIME type.
+ * Cada entrada define uno o más patrones:
+ *   - bytes: valores esperados (null = ignorar esa posición)
+ *   - offset: posición desde donde empezar a leer (default 0)
+ */
+interface MagicByteSignature {
+  bytes: (number | null)[]
+  offset?: number
+}
+
+const MAGIC_BYTES: Record<string, MagicByteSignature[]> = {
+  "application/pdf": [
+    { bytes: [0x25, 0x50, 0x44, 0x46] }, 
+  ],
+  "image/jpeg": [
+    { bytes: [0xFF, 0xD8, 0xFF] }, 
+  ],
+  "image/png": [
+    { bytes: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] }, 
+  ],
+  "image/webp": [
+    { bytes: [0x52, 0x49, 0x46, 0x46] },             
+    { bytes: [0x57, 0x45, 0x42, 0x50], offset: 8 },  
+  ],
+}
+
+/**
+ * Cantidad máxima de bytes a leer para validación de firma.
+ * WebP requiere los primeros 12 bytes.
+ */
+const MAGIC_BYTES_READ_LENGTH = 12
+
+/**
+ * Lee los primeros N bytes de un archivo desde disco.
+ * @params filePath Ruta o direccion del archivo a leer
+ * @params length Cantidad de bytes a leer
+ * @returns Buffer con los bytes leídos
+ * @throws Error si no se puede leer el archivo
+ */
+
+const readFileHeader = (filePath: string, length: number): Promise<Buffer> => {
+  return new Promise((resolve, reject) => {
+    const buffer = Buffer.alloc(length)
+    fs.open(filePath, "r", (openErr, fd) => {
+      if (openErr) return reject(openErr)
+      fs.read(fd, buffer, 0, length, 0, (readErr, bytesRead) => {
+        fs.close(fd, () => {})
+        if (readErr) return reject(readErr)
+        resolve(buffer.subarray(0, bytesRead))
+      })
+    })
+  })
+}
+
+/**
+ * Valida que el contenido real del archivo coincida con las firmas
+ * conocidas para el MIME type declarado.
+ * Retorna true si el archivo es válido o si el MIME type no tiene
+ * firmas registradas (para no bloquear tipos no configurados).
+ * 
+ * @param filePath Ruta o direccion del archivo a validar
+ * @param mimeType MIME type declarado del archivo
+ * @returns Promise<boolean> retorna true si el archiivo es valido y false si no lo es.
+ */
+export const checkMagicBytes = async (
+  filePath: string,
+  mimeType: string
+): Promise<boolean> => {
+  const signatures = MAGIC_BYTES[mimeType]
+  if (!signatures || signatures.length === 0) return true
+
+  let header: Buffer
+  try {
+    header = await readFileHeader(filePath, MAGIC_BYTES_READ_LENGTH)
+  } catch {
+    return false
+  }
+
+  // Todos los patrones del MIME type deben coincidir
+  return signatures.every(({ bytes, offset = 0 }) =>
+    bytes.every((byte, i) => byte === null || header[offset + i] === byte)
+  )
+}
+
+/**
+ * Middleware post-upload: valida magic bytes de todos los archivos subidos.
+ * Elimina del disco cualquier archivo que no pase la validación.
+ */
+export const validateUploadedFiles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const files = req.files as Express.Multer.File[] | undefined
+  if (!files || files.length === 0) return next()
+
+  const invalidFiles: string[] = []
+
+  for (const file of files) {
+    const valid = await checkMagicBytes(file.path, file.mimetype)
+    if (!valid) {
+      invalidFiles.push(file.originalname)
+      // Eliminar el archivo inválido del disco
+      fs.unlink(file.path, () => {})
+    }
+  }
+
+  if (invalidFiles.length > 0) {
+    // Eliminar también los archivos válidos para no dejar archivos huérfanos
+    // Sospecho que si uno esta modificado, los otros tambien pueden estarlo
+    // por eso prefiero eliminar todo
+    for (const file of files) {
+      if (!invalidFiles.includes(file.originalname)) {
+        fs.unlink(file.path, () => {})
+      }
+    }
+    res.status(400).json({
+      success: false,
+      message: `El contenido de los siguientes archivos no corresponde al tipo declarado: ${invalidFiles.join(", ")}`,
+    })
+    return
+  }
+
+  next()
+}
+
+// ============================================================================
 // FUNCIONES DE UTILIDAD
 // ============================================================================
 
 /**
- * Obtiene la lista de extensiones permitidas para mostrar en mensajes de error
+ * Obtiene la lista de extensiones permitidas del tipo de archivo para mostrar en mensajes de error
  */
 export const getAllowedExtensions = (): string[] => {
   const extensions: string[] = []
@@ -79,6 +219,7 @@ export const getAllowedExtensions = (): string[] => {
 
 /**
  * Obtiene el tamano maximo en formato legible
+ * 
  */
 export const getMaxFileSizeFormatted = (): string => {
   const mb = MAX_FILE_SIZE / (1024 * 1024)
@@ -189,7 +330,6 @@ const storage = multer.diskStorage({
 
       const subdir = existingTipoArchivoData.nombre
 
-      console.log("tipo de archivo: ", tipoArchivo, " Y la sub direccion ala que va: ", subdir)
       const year =
         req.body.anio ||
         new Date().getFullYear().toString()
@@ -213,7 +353,7 @@ const storage = multer.diskStorage({
       cb(error as any, "")
     }
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueFilename = generateUniqueFilename(file.originalname)
     cb(null, uniqueFilename)
   },
@@ -223,11 +363,8 @@ const storage = multer.diskStorage({
 // FILTRO DE ARCHIVOS
 // ============================================================================
 
-const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
+const fileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
 
-  console.log(file, req.body, req.files)
-  console.log("files:", req.files)
-  console.log("files length:", (req.files as any[])?.length)
 
   // Verificar MIME type
   if (!isAllowedMimeType(file.mimetype)) {
@@ -336,7 +473,6 @@ export const deleteFile = (filePath: string): Promise<void> => {
 
     fs.unlink(fullPath, (err) => {
       if (err) {
-        console.error(`Error al eliminar archivo: ${fullPath}`, err)
         reject(err)
       } else {
         resolve()
