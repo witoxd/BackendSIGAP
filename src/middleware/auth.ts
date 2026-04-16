@@ -66,20 +66,9 @@ export const authorize = (roles: string | string[]) => {
     }
 
     const rolesArray = Array.isArray(roles) ? roles : [roles]
-    const userRoles = Array.isArray(req.user.roles)
-      ? req.user.roles
-      : [req.user.roles]
+    const userRoles = Array.isArray(req.user.roles) ? req.user.roles : [req.user.roles]
 
-    console.log("Rol del usuario a peticion", userRoles)
-    console.log("Array de roles", rolesArray)
-
-
-    const normalizeRole = (role: string) =>
-      role.replace(/[{}"]/g, "").trim()
-
-    const hasRole = userRoles.some(role =>
-      rolesArray.includes(normalizeRole(role))
-    )
+    const hasRole = userRoles.some((role) => rolesArray.includes(role))
 
 
     if (!hasRole) {

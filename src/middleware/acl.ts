@@ -14,7 +14,7 @@ export const checkPermission = (recurso: Recurso, accion: Accion) => {
 
       const roles = req.user.roles as string | string[]
 
-      // Admin tiene acceso a todo
+
       if (roles.includes("admin")) {
         return next()
       }
@@ -30,7 +30,7 @@ export const checkPermission = (recurso: Recurso, accion: Accion) => {
         rolesArray = roles
       }
 
-      // Verificar permisos para cada rol del usuario
+
       let tienePermiso = false
 
       for (const roleName of rolesArray) {
