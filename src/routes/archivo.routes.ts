@@ -14,7 +14,7 @@ import {
 import { validate } from "../middleware/validate"
 import { param, query } from "express-validator"
 import { Recurso, Accion } from "../types"
-import { upload, handleMulterError } from "../config/multer"
+import { upload, handleMulterError, validateUploadedFiles } from "../config/multer"
 
 const router = Router()
 const archivoController = new ArchivoController()
@@ -88,6 +88,7 @@ router.post(
   checkPermission(Recurso.DOCUMENTOS, Accion.CREATE),
   upload.single("archivo"), // Middleware de multer para uno o varios archivos
   handleMulterError, // Manejo de errores de multer
+  validateUploadedFiles, // Validacion de magic bytes
   createArchivoHttpValidator,
   validate,
   validateCreateArchivoDomain,
@@ -99,6 +100,7 @@ router.post(
   checkPermission(Recurso.DOCUMENTOS, Accion.CREATE),
   upload.array("archivos"), // Middleware de multer para uno o varios archivos
   handleMulterError, // Manejo de errores de multer
+  validateUploadedFiles, // Validacion de magic bytes
   bulkCreateArchivoHttpValidator,
   validate,
   validateCreateArchivoDomain,
@@ -112,6 +114,7 @@ router.put(
   checkPermission(Recurso.DOCUMENTOS, Accion.UPDATE),
   upload.single("archivos"), // Middleware de multer (opcional)
   handleMulterError,
+  validateUploadedFiles, // Validacion de magic bytes
   updateArchivoHttpValidator,
   validate,
   validateUpdateArchivoDomain,

@@ -13,7 +13,7 @@ import {
 import { validate } from "../middleware/validate"
 import { param } from "express-validator"
 import { Recurso, Accion } from "../types"
-import { upload } from "../config/multer"
+import { upload, handleMulterError, validateUploadedFiles } from "../config/multer"
 
 const router = Router()
 const matriculaController = new MatriculaController()
@@ -35,6 +35,8 @@ router.post(
   createMatriculaHttpValidator,
   validate,
   upload.array("archivos"),
+  handleMulterError,
+  validateUploadedFiles, // Validacion de magic bytes
   //validateCreateMatriculaDomain,
   checkPermission(Recurso.MATRICULAS, Accion.CREATE),
   matriculaController.ProcessMatricula.bind(matriculaController),
