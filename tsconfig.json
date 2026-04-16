@@ -16,7 +16,7 @@
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "commonjs",
+    "module": "node20",
     "outDir": "./dist",
     "rootDir": "./src",
     // "moduleResolution": "bundler",
@@ -24,6 +24,9 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
     "plugins": [
       {
         "name": "next"
@@ -34,7 +37,7 @@
         "./*"
       ]
     },
-    "moduleResolution": "node"
+    "moduleResolution": "node16"
   },
   "include": [
     "next-env.d.ts",
