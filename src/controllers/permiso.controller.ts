@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler"
 
 export class PermisoController {
   
-   getAll = asyncHandler( async (req: Request, res: Response, next: NextFunction)  => {
+   getAll = asyncHandler( async (req: Request, res: Response)  => {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -18,7 +18,7 @@ export class PermisoController {
       })
   })
 
-   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getById = asyncHandler(async (req: Request, res: Response) => {
       const id = Number(req.params.id)
       const permiso = await PermisoRepository.findById(id)
 
@@ -32,7 +32,7 @@ export class PermisoController {
       })
   })
 
-   getByRole = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getByRole = asyncHandler(async (req: Request, res: Response) => {
 
       const roleId = Number(req.params.roleId)
       const permisos = await PermisoRepository.findByRole(roleId)
@@ -45,7 +45,7 @@ export class PermisoController {
 
 
 
-   assignToRole =asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   assignToRole =asyncHandler(async (req: Request, res: Response) => {
       const { role_id, permiso_id } = req.body
       const result = await PermisoRepository.assignToRole(role_id, permiso_id)
 
@@ -56,7 +56,7 @@ export class PermisoController {
       })
   })
 
- removeFromRole = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+ removeFromRole = asyncHandler(async (req: Request, res: Response) => {
       const { roleId, permisoId } = req.params
       const result = await PermisoRepository.removeFromRole(Number(roleId), Number(permisoId))
 
@@ -70,7 +70,7 @@ export class PermisoController {
       })
   })
 
-   checkPermission = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   checkPermission = asyncHandler(async (req: Request, res: Response) => {
       const { roleId } = req.params
       const { recurso, accion } = req.query
 

@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { ArchivoRepository } from "../models/Repository/ArchivoRepository"
 import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepository"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
@@ -12,7 +12,7 @@ import { asyncHandler } from "../utils/asyncHandler"
 import { archivoService } from "../services/archivos.services"
 
 export class ArchivoController {
-   getAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getAll = asyncHandler(async (req: Request, res: Response) => {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -31,7 +31,7 @@ export class ArchivoController {
       })
   })
 
-   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getById = asyncHandler(async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
       const archivo = await ArchivoRepository.findById(id)
@@ -46,7 +46,7 @@ export class ArchivoController {
       })
   })
 
-   getByPersonaId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getByPersonaId = asyncHandler(async (req: Request, res: Response) => {
 
       const personaId = Number(req.params.personaId)
       const archivos = await ArchivoRepository.findByPersonaId(personaId)
@@ -57,7 +57,7 @@ export class ArchivoController {
       })
   })
 
-   getByTipo = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getByTipo = asyncHandler(async (req: Request, res: Response) => {
 
       const { tipo_archivo_id, page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
@@ -74,7 +74,7 @@ export class ArchivoController {
       })
   })
 
-   getByTipoAndPersona = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getByTipoAndPersona = asyncHandler(async (req: Request, res: Response) => {
 
       const { tipo_archivo_id, persona_id, page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
@@ -92,7 +92,7 @@ export class ArchivoController {
 
   })
 
-   getPhotoByPersonaId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getPhotoByPersonaId = asyncHandler(async (req: Request, res: Response) => {
 
       const personaId = Number(req.params.personaId)
       const archivo = await ArchivoRepository.findPhotoByPersonaId(personaId)
@@ -127,7 +127,7 @@ export class ArchivoController {
   /**
    * Crear un nuevo archivo con subida física
    */
-  async create(req: Request, res: Response, next: NextFunction) {
+  create = asyncHandler(async (req: Request, res: Response) => {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -199,32 +199,24 @@ export class ArchivoController {
         },
       })
     } catch (error) {
-      if (req.file) {
-        try {
-          await deleteFile(req.file.path)
-        } catch (deleteError) {
-          console.error("Error al eliminar archivo:", deleteError)
-        }
-      }
-      next(error)
+      // Cleanup: eliminar archivo físico si alguna validación falla después del upload
+      if (req.file) await deleteFile(req.file.path).catch(() => {})
+      throw error
     }
-  }
+  })
 
   /**
    * Crear múltiples archivos con metadata individual
-   * FORMATO: 
+   * FORMATO:
    * - archivos: array de files
    * - persona_id: número
    * - metadata: JSON string array con: [{"tipo_archivo_id":1,"descripcion":"..."}, ...]
    */
-  async bulkCreate(req: Request, res: Response, next: NextFunction) {
-
+  bulkCreate = asyncHandler(async (req: Request, res: Response) => {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
-        if (req.files) {
-          await archivoService.deleteFileArray(req.files as Express.Multer.File[])
-         }
+        if (req.files) await archivoService.deleteFileArray(req.files as Express.Multer.File[])
         throw new AppError("Errores de validación", 400, errors.array())
       }
 
@@ -251,22 +243,16 @@ export class ArchivoController {
         data: archivos,
       })
     } catch (error) {
-      // Rollback: eliminar archivos físicos en caso de error
-      if (req.files) {
-        try {
-         await archivoService.deleteFileArray(req.files as Express.Multer.File[])
-        } catch (deleteError) {
-          console.error("Error limpiando archivos:", deleteError)
-        }
-      }
-      next(error)
+      // Cleanup: eliminar archivos físicos si alguna validación o registro falla
+      if (req.files) await archivoService.deleteFileArray(req.files as Express.Multer.File[]).catch(() => {})
+      throw error
     }
-  }
+  })
 
   /**
    * Actualizar un archivo (opcionalmente con nuevo archivo físico)
    */
-  async update(req: Request, res: Response, next: NextFunction) {
+  update = asyncHandler(async (req: Request, res: Response) => {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -316,14 +302,10 @@ export class ArchivoController {
 
         const archivo = await ArchivoRepository.update(id, updateData)
 
-        // Eliminar archivo anterior
+        // Eliminar archivo anterior tras confirmar que el update fue exitoso
         if (oldFilePath) {
-          try {
-            const absolutePath = path.join(process.cwd(), oldFilePath.replace(/^\//, ""))
-            await deleteFile(absolutePath)
-          } catch (deleteError) {
-            console.error("Error al eliminar archivo anterior:", deleteError)
-          }
+          const absolutePath = path.join(process.cwd(), oldFilePath.replace(/^\//, ""))
+          await deleteFile(absolutePath).catch(() => {})
         }
 
         res.status(200).json({
@@ -352,21 +334,16 @@ export class ArchivoController {
         })
       }
     } catch (error) {
-      if (req.file) {
-        try {
-          await deleteFile(req.file.path)
-        } catch (deleteError) {
-          console.error("Error al eliminar archivo:", deleteError)
-        }
-      }
-      next(error)
+      // Cleanup: eliminar archivo nuevo si el update falló
+      if (req.file) await deleteFile(req.file.path).catch(() => {})
+      throw error
     }
-  }
+  })
 
   /**
    * Eliminar archivo (registro y archivo físico)
    */
-   delete = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   delete = asyncHandler( async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
 
@@ -396,7 +373,7 @@ export class ArchivoController {
   /**
    * Descargar archivo
    */
-   download = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   download = asyncHandler(async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
 
@@ -420,39 +397,35 @@ export class ArchivoController {
   /**
    * Ver archivo en navegador
    */
-   view = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const id = Number(req.params.id)
+   view = asyncHandler(async (req: Request, res: Response) => {
+    const id = Number(req.params.id)
 
-      const archivo = await ArchivoRepository.findById(id)
-      if (!archivo) {
-        throw new AppError("Archivo no encontrado", 404)
-      }
-
-      const filePath = path.join(process.cwd(), archivo.url_archivo.replace(/^\//, ""))
-
-      if (!fs.existsSync(filePath)) {
-        throw new AppError("El archivo físico no existe", 404)
-      }
-
-      const ext = path.extname(filePath).toLowerCase()
-      const contentTypes: { [key: string]: string } = {
-        ".pdf": "application/pdf",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".png": "image/png",
-        ".gif": "image/gif",
-        ".webp": "image/webp",
-      }
-
-      const contentType = contentTypes[ext] || "application/octet-stream"
-
-      res.setHeader("Content-Type", contentType)
-      res.setHeader("Content-Disposition", `inline; filename="${archivo.nombre}"`)
-      res.sendFile(filePath)
-    } catch (error) {
-      next(error)
+    const archivo = await ArchivoRepository.findById(id)
+    if (!archivo) {
+      throw new AppError("Archivo no encontrado", 404)
     }
+
+    const filePath = path.join(process.cwd(), archivo.url_archivo.replace(/^\//, ""))
+
+    if (!fs.existsSync(filePath)) {
+      throw new AppError("El archivo físico no existe", 404)
+    }
+
+    const ext = path.extname(filePath).toLowerCase()
+    const contentTypes: { [key: string]: string } = {
+      ".pdf": "application/pdf",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+    }
+
+    const contentType = contentTypes[ext] || "application/octet-stream"
+
+    res.setHeader("Content-Type", contentType)
+    res.setHeader("Content-Disposition", `inline; filename="${archivo.nombre}"`)
+    res.sendFile(filePath)
   })
 
 }

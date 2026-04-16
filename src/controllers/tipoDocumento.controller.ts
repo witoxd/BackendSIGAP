@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler"
 
 export class TipoDocumentoController {
 
-   getAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getAll = asyncHandler(async (req: Request, res: Response) => {
       const tiposDocumento = await TipoDocumentoRepository.findAll()
 
       res.status(200).json({
@@ -16,7 +16,7 @@ export class TipoDocumentoController {
       })
   })
 
-   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction)  => {
+   getById = asyncHandler(async (req: Request, res: Response)  => {
 
       const id = Number(req.params.id)
       const tipoDocumento = await TipoDocumentoRepository.findById(id)
@@ -33,7 +33,7 @@ export class TipoDocumentoController {
 
 
 
-   create = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   create = asyncHandler(async (req: Request, res: Response) => {
 
     const {tipo_documento: TipoDocumentoData} = req.body as CreateTipoDocumentoDTO
 
@@ -52,7 +52,7 @@ export class TipoDocumentoController {
       })
   })
 
-   update = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   update = asyncHandler(async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
       const {tipo_documento: TipoDocumentoData} = req.body as UpdateTipoDocumentoDTO
@@ -69,7 +69,7 @@ export class TipoDocumentoController {
       })
   })
 
-   delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   delete = asyncHandler(async (req: Request, res: Response) => {
       const id = Number(req.params.id)
       const tipoDocumento = await TipoDocumentoRepository.delete(id)
 

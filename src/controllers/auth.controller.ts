@@ -1,11 +1,11 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { AuthService } from "../services/auth.service"
 import { asyncHandler } from "../utils/asyncHandler"
 
 const authService = new AuthService()
 
 export class AuthController {
-   register = asyncHandler(async (req: Request, res: Response, next: NextFunction)  => {
+   register = asyncHandler(async (req: Request, res: Response)  => {
       const result = await authService.register(req.body)
 
       res.status(201).json({
@@ -15,7 +15,7 @@ export class AuthController {
       })
   })
 
-   login = asyncHandler( async (req: Request, res: Response, next: NextFunction)  =>{
+   login = asyncHandler( async (req: Request, res: Response)  =>{
       const { email, contraseña } = req.body
       const result = await authService.login(email, contraseña)
 
@@ -26,7 +26,7 @@ export class AuthController {
       })
   })
 
-   changePassword = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   changePassword = asyncHandler( async (req: Request, res: Response) => {
   
       const userId = req.user!.userId
       const { currentPassword, newPassword } = req.body
@@ -39,7 +39,7 @@ export class AuthController {
       })
   })
 
-   me = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   me = asyncHandler(async (req: Request, res: Response) => {
 
       res.status(200).json({
         success: true,
@@ -48,7 +48,7 @@ export class AuthController {
       })
   })
 
-   createUserWithPersona = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   createUserWithPersona = asyncHandler(async (req: Request, res: Response) => {
       const { user: userData, persona: personaData, role } = req.body
       const result = await authService.createUserWithPersona(userData, personaData, role)
 
@@ -59,7 +59,7 @@ export class AuthController {
       })
   })
 
-     createUser  = asyncHandler (async (req: Request, res: Response, next: NextFunction) => {
+     createUser  = asyncHandler (async (req: Request, res: Response) => {
 
       const personaId = Number(req.params.personaId)
       const { user: userData, role } = req.body
@@ -72,7 +72,7 @@ export class AuthController {
       })
 })
 
-   resetPassword = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   resetPassword = asyncHandler( async (req: Request, res: Response) => {
        const personaId = Number(req.params.id)
 
        const result = await authService.resetPasswordByDefaultDocument(personaId)

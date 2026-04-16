@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { EgresadoRepository } from "../models/Repository/EgresadoRepository"
 import { AppError } from "../utils/AppError"
 import { getPagination } from "../utils/validators"
@@ -13,7 +13,7 @@ type UpdateEgresadosStaticRequest = Request<{id: string}, unknown, UpdateEgresad
 
 export class EgresadoController {
 
-   getAll = asyncHandler (async (req: Request, res: Response, next: NextFunction) => {
+   getAll = asyncHandler (async (req: Request, res: Response) => {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -32,7 +32,7 @@ export class EgresadoController {
       })
   })
 
-   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getById = asyncHandler(async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
       const egresado = await EgresadoRepository.findById(id)
@@ -47,7 +47,7 @@ export class EgresadoController {
       })
   })
 
-   getByEstudianteId = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   getByEstudianteId = asyncHandler( async (req: Request, res: Response) => {
       const estudianteId = Number(req.params.estudianteId)
       const egresado = await EgresadoRepository.findByEstudianteId(estudianteId)
 
@@ -61,7 +61,7 @@ export class EgresadoController {
       })
   })
 
-   getByYear = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getByYear = asyncHandler(async (req: Request, res: Response) => {
       const year = Number(req.params.year)
       const egresados = await EgresadoRepository.findByYear(year)
 
@@ -71,7 +71,7 @@ export class EgresadoController {
       })
   })
 
-   create = asyncHandler(async (req: Request, res: Response, next: NextFunction) =>{
+   create = asyncHandler(async (req: Request, res: Response) =>{
 
     const { egresado: EgresadoData } = req.body as CreateEgresadoDTO
 
@@ -95,7 +95,7 @@ export class EgresadoController {
       })
   })
 
-   update = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   update = asyncHandler( async (req: Request, res: Response) => {
   
       const id = Number(req.params.id)
 
@@ -114,7 +114,7 @@ export class EgresadoController {
       })
   })
 
-   delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   delete = asyncHandler(async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
       const egresado = await EgresadoRepository.delete(id)

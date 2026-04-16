@@ -1,9 +1,7 @@
 import type { Request, Response } from "express"
 import { PeriodoMatriculaRepository } from "../models/Repository/PeriodoMatriculaRepository"
-import { MatriculaRepository } from "../models/Repository/MatriculaRepository"
 import { AppError } from "../utils/AppError"
 import { asyncHandler } from "../utils/asyncHandler"
-import { transaction } from "../config/database"
 import { validationResult } from "express-validator"
 import type { CreatePeriodoMatriculaDTO, UpdatePeriodoMatriculaDTO } from "../types"
 

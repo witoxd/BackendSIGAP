@@ -5,7 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler"
 const userService = new UserService()
 
 export class UserController {
-   getUser = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   getUser = asyncHandler( async (req: Request, res: Response) => {
       const userId = Number(req.params.id)
       const user = await userService.getUserById(userId)
 
@@ -15,7 +15,7 @@ export class UserController {
       })
   })
 
-   searchUsers = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   searchUsers = asyncHandler(async (req: Request, res: Response) => {
 
       const { query, nombres, numero_documento, role, page = 1, limit = 10, sortBy, sortOrder } = req.query
 
@@ -39,7 +39,7 @@ export class UserController {
       })
   })
 
-   assignAdmin = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   assignAdmin = asyncHandler( async (req: Request, res: Response) => {
 
       const targetUserId = Number(req.params.id)
       const adminUserId = req.user!.userId
@@ -52,7 +52,7 @@ export class UserController {
       })
   })
 
-   transferAdmin = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   transferAdmin = asyncHandler(async (req: Request, res: Response) => {
 
       const fromUserId = req.user!.userId
       const toUserId = Number.parseInt(req.body.toUserId)
@@ -65,7 +65,7 @@ export class UserController {
       })
   })
 
-   toggleStatus = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   toggleStatus = asyncHandler( async (req: Request, res: Response) => {
 
       const userId = Number(req.params.id)
       const  activo  = req.params.activo === "true" // Convertir a booleano

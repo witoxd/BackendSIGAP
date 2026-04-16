@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { JornadaRepository } from "../models/Repository/JornadaRepository"
 import { AppError } from "../utils/AppError"
 import { CreateJornadaDTO, UpdateJornadDTO } from "../types"
@@ -9,7 +9,7 @@ type CreateJornadaStaticRequest = Request<never, unknown, CreateJornadaDTO>
 
 export class JornadaController {
 
-   getAll = asyncHandler( async (req: Request, res: Response, next: NextFunction)  => {
+   getAll = asyncHandler( async (req: Request, res: Response)  => {
 
       const jornadas = await JornadaRepository.findAll()
 
@@ -20,7 +20,7 @@ export class JornadaController {
 
   })
 
-   getById = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   getById = asyncHandler( async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
       const jornada = await JornadaRepository.findById(id)
@@ -36,7 +36,7 @@ export class JornadaController {
 
   })
 
-   create = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   create = asyncHandler(async (req: Request, res: Response) => {
 
     const {jornada: Jornada} = req.body as CreateJornadaDTO
 
@@ -50,7 +50,7 @@ export class JornadaController {
 
   })
 
-   update = (async (req: Request, res: Response, next: NextFunction) => {
+   update = (async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
 
@@ -69,7 +69,7 @@ export class JornadaController {
       })
   })
 
-   delete = ( async (req: Request, res: Response, next: NextFunction) => {
+   delete = ( async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
       const jornada = await JornadaRepository.delete(id)

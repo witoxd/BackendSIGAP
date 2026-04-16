@@ -10,7 +10,7 @@ export class TipoArchivoController {
   /**
    * Obtener todos los tipos de archivo
    */
-   getAll = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   getAll = asyncHandler( async (req: Request, res: Response) => {
   
       const tiposArchivo = await TipoArchivoRepository.findAll()
 
@@ -25,7 +25,7 @@ export class TipoArchivoController {
    * Obtener tipo de archivo por rol de perosna
    */
 
-   getRolByTipoArchivo = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getRolByTipoArchivo = asyncHandler(async (req: Request, res: Response) => {
 
       const rol = req.params.rol as ContextoArchivoEnum
 
@@ -48,7 +48,7 @@ export class TipoArchivoController {
   /**
    * Obtener tipo de archivo por ID
    */
-   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getById = asyncHandler(async (req: Request, res: Response) => {
   
       const id = Number(req.params.id)
       const tipoArchivo = await TipoArchivoRepository.findById(id)
@@ -66,7 +66,7 @@ export class TipoArchivoController {
   /**
    * Buscar tipo de archivo por nombre
    */
-   getByNombre = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   getByNombre = asyncHandler( async (req: Request, res: Response) => {
 
       const { nombre } = req.params
       const tipoArchivo = await TipoArchivoRepository.findByNombre(nombre as string)
@@ -84,7 +84,7 @@ export class TipoArchivoController {
   /**
    * Crear un nuevo tipo de archivo
    */
-   create = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   create = asyncHandler( async (req: Request, res: Response) => {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
         throw new AppError("Errores de validación", 400, errors.array())
@@ -110,7 +110,7 @@ export class TipoArchivoController {
   /**
    * Actualizar un tipo de archivo
    */
-   update = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   update = asyncHandler(async (req: Request, res: Response) => {
  
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -149,7 +149,7 @@ export class TipoArchivoController {
   /**
    * Eliminar un tipo de archivo (soft delete)
    */
-   delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   delete = asyncHandler(async (req: Request, res: Response) => {
 
       const id = Number(req.params.id)
       const tipoArchivo = await TipoArchivoRepository.softDelete(id)

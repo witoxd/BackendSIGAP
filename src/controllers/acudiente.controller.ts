@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express"
 import { AcudienteRepository } from "../models/Repository/AcudienteRepository"
-import { CreateAcudianteDTO, UpdateAcudianteDTO, CreateAssingAcudienteDTO } from "../types"
+import { CreateAcudianteDTO } from "../types"
 import { AppError } from "../utils/AppError"
 import { getPagination } from "../utils/validators"
 import { transaction } from "../config/database"
@@ -11,15 +11,11 @@ import { PersonaService } from "../services/persona.service"
 import { asyncHandler } from "../utils/asyncHandler"
 
 
-type CreateAcudienteAsingEstudiante = Request<never, unknown, assignToEstudiante>
-
-type CreateAcudienteStaticRequest = Request<never, unknown, CreateAcudianteDTO>
 
 export class AcudienteController {
 
-  getAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  getAll = asyncHandler(async (req: Request, res: Response) => {
     
-    try {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -29,9 +25,6 @@ export class AcudienteController {
         success: true,
         data: acudientes,
       })
-    } catch (error) {
-      next(error)
-    }
   })
 
   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -50,7 +43,7 @@ export class AcudienteController {
     })
   })
 
-  getAcudientesByEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  getAcudientesByEstudiante = asyncHandler(async (req: Request, res: Response) => {
 
     const estudianteId = Number(req.params.id)
     const acudientes = await AcudienteRepository.getAcudientesByEstudiante(estudianteId)
@@ -86,7 +79,7 @@ export class AcudienteController {
     })
   })
 
-   create = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   create = asyncHandler( async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())

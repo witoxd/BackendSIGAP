@@ -77,7 +77,7 @@ export class AdministrativoController {
     })
 
 
-   create= asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   create= asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -113,7 +113,7 @@ export class AdministrativoController {
   })
 
 
-   update = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   update = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())

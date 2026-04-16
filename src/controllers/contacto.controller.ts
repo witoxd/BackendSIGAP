@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { ContactoRepository } from "../models/Repository/ContactoRepository"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { AppError } from "../utils/AppError"
@@ -14,7 +14,7 @@ export class ContactoController {
   /**
    * Obtener todos los contactos
    */
-   getAll = asyncHandler( async (req: Request, res: Response, next: NextFunction) =>  {
+   getAll = asyncHandler( async (req: Request, res: Response) =>  {
       const { page, limit } = req.query
       const { limit: pLimit, offset } = getPagination(page as string, limit as string)
 
@@ -36,7 +36,7 @@ export class ContactoController {
   /**
    * Obtener contacto por ID
    */
-   getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getById = asyncHandler(async (req: Request, res: Response) => {
       const id = Number(req.params.id)
       const contacto = await ContactoRepository.findById(id)
 
@@ -53,7 +53,7 @@ export class ContactoController {
   /**
    * Obtener contactos por persona
    */
-   getByPersonaId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getByPersonaId = asyncHandler(async (req: Request, res: Response) => {
       const personaId = Number(req.params.personaId)
       const contactos = await ContactoRepository.findByPersonaId(personaId)
 
@@ -66,7 +66,7 @@ export class ContactoController {
   /**
    * Obtener contactos por tipo
    */
-   getByTipo = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getByTipo = asyncHandler(async (req: Request, res: Response) => {
 
       const personaId = Number(req.params.personaId)
       const { tipo } = req.query
@@ -86,7 +86,7 @@ export class ContactoController {
   /**
    * Crear un nuevo contacto
    */
-   create = asyncHandler ( async (req: Request, res: Response, next: NextFunction) => {
+   create = asyncHandler ( async (req: Request, res: Response) => {
   
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -125,7 +125,7 @@ export class ContactoController {
   /**
    * Crear múltiples contactos
    */
-   bulkCreate = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   bulkCreate = asyncHandler(async (req: Request, res: Response) => {
 
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -160,7 +160,7 @@ export class ContactoController {
   /**
    * Actualizar un contacto
    */
-   update = asyncHandler (async (req: Request, res: Response, next: NextFunction) => {
+   update = asyncHandler (async (req: Request, res: Response) => {
   
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -196,7 +196,7 @@ export class ContactoController {
   /**
    * Eliminar un contacto (soft delete)
    */
-   delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   delete = asyncHandler(async (req: Request, res: Response) => {
       const id = Number(req.params.id)
       const contacto = await ContactoRepository.delete(id)
 
@@ -213,7 +213,7 @@ export class ContactoController {
   /**
    * Establecer contacto como principal
    */
-   setPrincipal = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   setPrincipal = asyncHandler(async (req: Request, res: Response) => {
   
       const id = Number(req.params.id)
 

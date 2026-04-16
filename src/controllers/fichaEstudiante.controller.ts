@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { FichaEstudianteRepository } from "../models/Repository/FichaEstudianteRepository"
 import { ColegioAnteriorRepository } from "../models/Repository/ColegioAnteriorRepository"
 import { ViviendaEstudianteRepository } from "../models/Repository/ViviendaEstudianteRepository"
@@ -24,7 +24,7 @@ async function assertEstudianteExists(estudianteId: number) {
 export class FichaEstudianteController {
 
   // GET /fichaEstudiante/:estudianteId
-  getByEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  getByEstudiante = asyncHandler(async (req: Request, res: Response) => {
 
     const estudianteId = Number(req.params.estudianteId)
     await assertEstudianteExists(estudianteId)
@@ -41,7 +41,7 @@ export class FichaEstudianteController {
 
   // PUT /fichaEstudiante/:estudianteId
   // Upsert: crea si no existe, actualiza si ya existe
-  upsert = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  upsert = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -61,12 +61,12 @@ export class FichaEstudianteController {
         data: ficha,
       })
     } catch (error) {
-      next(error)
+      throw error
     }
   })
 
   // DELETE /fichaEstudiante/:estudianteId
-  delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  delete = asyncHandler(async (req: Request, res: Response) => {
 
     const estudianteId = Number(req.params.estudianteId)
     await assertEstudianteExists(estudianteId)
@@ -98,7 +98,7 @@ export class FichaEstudianteController {
 export class ColegioAnteriorController {
 
   // GET /colegiosAnteriores/:estudianteId
-  getByEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  getByEstudiante = asyncHandler(async (req: Request, res: Response) => {
     try {
       const estudianteId = Number(req.params.estudianteId)
       await assertEstudianteExists(estudianteId)
@@ -110,13 +110,13 @@ export class ColegioAnteriorController {
         data: colegios,
       })
     } catch (error) {
-      next(error)
+      throw error
     }
   })
 
   // POST /colegiosAnteriores/:estudianteId
   // Agrega un colegio individual a la lista
-  create = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  create = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -143,7 +143,7 @@ export class ColegioAnteriorController {
   // El frontend manda la lista completa tal como quedó tras la edición.
   // Analogía: como "Guardar como" — reemplaza el archivo completo en lugar
   // de parcharlo línea por línea.
-  replaceAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  replaceAll = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -167,13 +167,13 @@ export class ColegioAnteriorController {
         data: result,
       })
     } catch (error) {
-      next(error)
+      throw error
     }
   })
 
   // PATCH /colegiosAnteriores/:estudianteId/:colegioId
   // Actualiza un colegio individual sin afectar el resto
-  update = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  update = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -203,7 +203,7 @@ export class ColegioAnteriorController {
   })
 
   // DELETE /colegiosAnteriores/:estudianteId/:colegioId
-  delete = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  delete = asyncHandler(async (req: Request, res: Response) => {
 
     const colegioId = Number(req.params.colegioId)
     const estudianteId = Number(req.params.estudianteId)
@@ -237,7 +237,7 @@ export class ColegioAnteriorController {
 export class ViviendaEstudianteController {
 
   // GET /viviendaEstudiante/:estudianteId
-  getByEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  getByEstudiante = asyncHandler(async (req: Request, res: Response) => {
     try {
       const estudianteId = Number(req.params.estudianteId)
       await assertEstudianteExists(estudianteId)
@@ -249,12 +249,12 @@ export class ViviendaEstudianteController {
         data: vivienda ?? null,
       })
     } catch (error) {
-      next(error)
+      throw error
     }
   })
 
   // PUT /viviendaEstudiante/:estudianteId
-  upsert = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  upsert = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -274,13 +274,13 @@ export class ViviendaEstudianteController {
         data: vivienda,
       })
     } catch (error) {
-      next(error)
+      throw error
     }
   }
   )
 
   // DELETE /viviendaEstudiante/:estudianteId
-   delete = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   delete = asyncHandler( async (req: Request, res: Response) => {
     try {
       const estudianteId = Number(req.params.estudianteId)
       await assertEstudianteExists(estudianteId)
@@ -296,7 +296,7 @@ export class ViviendaEstudianteController {
         message: "Datos de vivienda eliminados exitosamente",
       })
     } catch (error) {
-      next(error)
+      throw error
     }
   })
 
@@ -316,7 +316,7 @@ export class ViviendaEstudianteController {
 export class ExpedienteController {
 
   // GET /expediente/:estudianteId
-   getExpediente = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   getExpediente = asyncHandler( async (req: Request, res: Response) => {
     try {
       const estudianteId = Number(req.params.estudianteId)
       await assertEstudianteExists(estudianteId)
@@ -338,12 +338,12 @@ export class ExpedienteController {
         },
       })
     } catch (error) {
-      next(error)
+      throw error
     }
   })
 
   // PUT /expediente/:estudianteId
-   upsertExpediente = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   upsertExpediente = asyncHandler( async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       throw new AppError("Errores de validación", 400, errors.array())
@@ -371,7 +371,7 @@ export class ExpedienteController {
         data: result,
       })
     } catch (error) {
-      next(error)
+      throw error
     }
   })
 

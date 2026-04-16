@@ -102,7 +102,7 @@ export class MatriculaController {
   //   - metadata:    JSON string — [{ tipo_archivo_id: 1, descripcion: "..." }, ...]
   //                  Un objeto por cada archivo, en el mismo orden
   // --------------------------------------------------------------------------
-  ProcessMatricula = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  ProcessMatricula = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       // Multer ya guardó los archivos físicos antes de llegar aquí.
