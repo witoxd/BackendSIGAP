@@ -21,10 +21,13 @@ const poolConfig: PoolConfig = {
   statement_timeout: Number.parseInt(process.env.DB_TIMEOUT || "5000"),
 }
 
-// pg Pool - Para queries SQL directas y consultas complejas optimizadas
+// pg Pool — Toda la capa DML: queries, inserts, updates, transacciones.
+// Es el único canal de acceso a datos en runtime. Ver ARCHITECTURE.md.
 export const pool = new Pool(poolConfig)
 
-// Sequelize - Para operaciones CRUD, validaciones y relaciones
+// Sequelize — Solo DDL: sincronización de esquema, definición de tablas y relaciones.
+// NO usar para queries de datos en runtime (no Model.findAll, no Model.create, etc.)
+// Ver ARCHITECTURE.md para la separación de responsabilidades.
 export const sequelize = new Sequelize({
   dialect: "postgres",
   host: process.env.DB_HOST || "localhost",
@@ -58,7 +61,6 @@ export const query = async (
 ) => {
   const executor = client ?? pool
 
-  const start = Date.now()
   try {
     const res = await executor.query(text, params)
 
