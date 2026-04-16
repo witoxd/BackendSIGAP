@@ -7,7 +7,27 @@ import { UsuarioCreationAttributes } from "../models/sequelize/Usuario"
 import { PersonaCreationAttributes } from "../models/sequelize/Persona"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { UserRepository } from "../models/Repository/UserRepository"
-import { PermisoRepository } from "../models/Repository/PermisoRepository"
+
+/**
+ * Convierte el valor de roles a string[] limpio.
+ * El driver pg puede devolver arrays PostgreSQL como:
+ *   - string[]: ["admin", "profesor"]  → ya correcto
+ *   - string:   "{admin,profesor}"     → necesita parseo
+ *   - null/undefined                   → array vacío
+ */
+const parsePostgresArray = (value: unknown): string[] => {
+  if (!value) return []
+  if (Array.isArray(value)) return value.filter(Boolean)
+  if (typeof value === "string") {
+    // Formato PostgreSQL: {admin,profesor} o {"admin","profesor"}
+    return value
+      .replace(/^\{|\}$/g, "")
+      .split(",")
+      .map((s) => s.replace(/^"|"$/g, "").trim())
+      .filter(Boolean)
+  }
+  return []
+}
 export class AuthService {
   // Registrar un nuevo usuario
 
@@ -95,8 +115,8 @@ export class AuthService {
   }) {
     try {
 
-      this.checkEmailAndUsername(userData.email, userData.username)
-      const roleId = await this.checkRoleExists(userData.role)
+      await this.checkEmailAndUsername(userData.email, userData.username)
+      await this.checkRoleExists(userData.role)
 
       // Hash de la contraseña
       const hashedPassword = await bcrypt.hash(userData.contraseña, 12)
@@ -189,9 +209,9 @@ export class AuthService {
     try {
       // Buscar usuario con sus roles
       const result = await query(
-        `SELECT 
+        `SELECT
           u.usuario_id, u.persona_id, u.username, u.email, u.contraseña, u.activo,
-          ARRAY_AGG(r.nombre) as roles
+          COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL), ARRAY[]::text[]) as roles
         FROM usuarios u
         LEFT JOIN usuarios_role ur ON u.usuario_id = ur.usuario_id
         LEFT JOIN roles r ON ur.role_id = r.role_id
@@ -205,6 +225,10 @@ export class AuthService {
       }
 
       const user = result.rows[0]
+
+      // Normalizar roles: pg puede devolver el array PostgreSQL como string "{admin,profesor}"
+      // en algunos entornos. Lo convertimos siempre a string[] limpio.
+      user.roles = parsePostgresArray(user.roles)
 
       // Verificar si el usuario está activo
       if (!user.activo) {
@@ -303,11 +327,11 @@ export class AuthService {
 
     try {
       if (client === undefined) {
-        this.personaExisting(personaID)
+        await this.personaExisting(personaID)
       }
 
       // Validaciones previas a la creacion de usuario, chekeo de email, username y rol
-      this.checkEmailAndUsername(user.email, user.username)
+      await this.checkEmailAndUsername(user.email, user.username)
       const roleResult = await this.checkRoleExists(role)
 
       // Hash de contraseña

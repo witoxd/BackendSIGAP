@@ -35,7 +35,6 @@ export class UserService {
       if (error instanceof NotFoundError) {
         throw error
       }
-      console.error("Error obteniendo usuario:", error)
       throw new DatabaseError("Error al obtener usuario")
     }
   }
@@ -50,7 +49,7 @@ export class UserService {
   }) {
     try {
       const { query: searchQuery, nombres, numero_documento, role, pagination } = params
-      const { page, limit, sortBy = "usuario_id", sortOrder = "DESC" } = pagination
+      const { page, limit } = pagination
       const offset = (page - 1) * limit
 
       // Construir WHERE dinámicamente
@@ -116,7 +115,6 @@ export class UserService {
         LEFT JOIN roles r ON ur.role_id = r.role_id
         ${whereClause}
         GROUP BY u.usuario_id, p.nombres, p.apellido_paterno, p.apellido_materno, p.numero_documento, td.tipo_documento
-        ORDER BY u.${sortBy} ${sortOrder}
         LIMIT $${paramCount} OFFSET $${paramCount + 1}
       `
 
@@ -132,7 +130,6 @@ export class UserService {
         },
       } as PaginatedResponse<any>
     } catch (error: any) {
-      console.error("Error buscando usuarios:", error)
       throw new DatabaseError("Error al buscar usuarios")
     }
   }
@@ -195,7 +192,6 @@ export class UserService {
       if (error instanceof NotFoundError || error instanceof ForbiddenError || error instanceof ConflictError) {
         throw error
       }
-      console.error("Error asignando rol admin:", error)
       throw new DatabaseError("Error al asignar rol de administrador")
     }
   }
@@ -247,7 +243,6 @@ export class UserService {
       if (error instanceof NotFoundError) {
         throw error
       }
-      console.error("Error transfiriendo rol admin:", error)
       throw new DatabaseError("Error al transferir rol de administrador")
     }
   }
@@ -269,7 +264,6 @@ export class UserService {
       if (error instanceof NotFoundError) {
         throw error
       }
-      console.error("Error actualizando estado de usuario:", error)
       throw new DatabaseError("Error al actualizar estado del usuario")
     }
   }
