@@ -7,9 +7,6 @@ import { CreateEstudianteDTO, UpdateEstudianteDTO } from "../types"
 import { transaction } from "../config/database"
 import { asyncHandler } from "../utils/asyncHandler"
 
-type CreateEstudianteStaticRequest = Request<never, unknown, CreateEstudianteDTO>
-
-type UpdateEstudianteStaticRequest = Request<{ id: string }, unknown, UpdateEstudianteDTO>
 
 export class EstudianteController {
 

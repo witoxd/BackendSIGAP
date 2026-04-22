@@ -211,7 +211,7 @@ export class AuthService {
       const result = await query(
         `SELECT
           u.usuario_id, u.persona_id, u.username, u.email, u.contraseña, u.activo,
-          COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL), ARRAY[]::text[]) as roles
+          COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL),  ARRAY[]::enum_roles_nombre[]) as roles
         FROM usuarios u
         LEFT JOIN usuarios_role ur ON u.usuario_id = ur.usuario_id
         LEFT JOIN roles r ON ur.role_id = r.role_id
@@ -226,8 +226,6 @@ export class AuthService {
 
       const user = result.rows[0]
 
-      // Normalizar roles: pg puede devolver el array PostgreSQL como string "{admin,profesor}"
-      // en algunos entornos. Lo convertimos siempre a string[] limpio.
       user.roles = parsePostgresArray(user.roles)
 
       // Verificar si el usuario está activo

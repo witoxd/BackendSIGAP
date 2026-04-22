@@ -1,3 +1,4 @@
+import { Optional } from "sequelize"
 import { query } from "../../config/database"
 import type { EstudianteCreationAttributes } from "../sequelize/Estudiante"
 import { PERSONA_FIELDS_JSON } from "../shared/personasql"
@@ -127,7 +128,7 @@ export class EstudianteRepository {
     return result.rows
   }
 
-  static async create(data: Omit<EstudianteCreationAttributes, "estudiante_id">, client?: any) {
+  static async create(data: Optional<EstudianteCreationAttributes, "estudiante_id" | "fecha_ingreso">, client?: any) {
     const result = await query(
       `INSERT INTO estudiantes (persona_id, fecha_ingreso, estado)
        VALUES ($1, $2, $3) RETURNING *`,

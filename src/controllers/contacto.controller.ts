@@ -15,8 +15,9 @@ export class ContactoController {
    * Obtener todos los contactos
    */
    getAll = asyncHandler( async (req: Request, res: Response) =>  {
-      const { page, limit } = req.query
-      const { limit: pLimit, offset } = getPagination(page as string, limit as string)
+    const pLimit = Number.parseInt(req.query.limit as string) || 50
+    const offset = Number.parseInt(req.query.offset as string) || 0
+
 
       const contactos = await ContactoRepository.findAll(pLimit, offset)
       const total = await ContactoRepository.count()

@@ -8,7 +8,7 @@ import {
   bulkCreateContactoHttpValidator,
   contactoIdValidator,
   personaIdValidator,
-  searchContactoValidator,
+  // searchContactoValidator,
 } from "../validators/contacto.validators"
 import {
   validateCreateContactoDomain,
@@ -23,21 +23,139 @@ const contactoController = new ContactoController()
 
 router.use(authenticate)
 
+/**
+ * @swagger
+ * tags: 
+ *  - name: Contactos
+ *  description: Rutas o Endpoints para gestionar los contactos de las personas.
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Contacto:
+ *        type: object
+ *        propierties:
+ *       contacto_id:
+ *         type:integer
+ *         example: 1
+ *       perosna_id:
+ *         type:integer
+ *         example:1
+ *       tipo_contacto:
+ *         type:enum
+ *         enum: [telefono, email, direccion]
+ *         example: "telefono"
+ *       valor: 
+ *         type:string
+ *         example: "300-###-####"
+ *       es_principal:
+ *         type:boolean
+ *         example:true
+ *       activo:
+ *         type:boolean
+ *         example:true
+ * 
+ *   
+ */
+
 // Obtener todos los contactos
+
+/**
+ * @swagger
+ * /contactos/getAll:
+ *  get:
+ *  summary: Obtener todos los contactos (este endpoint es paginado)
+ *  tags: [Contactos]
+ *  parameters:
+ *   -in: query
+ *    name: limit
+ *     schema:
+ *      type:integer
+ *      default: 50
+ *    description: Cantidad de registros por pagina
+ *    - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Número de registros a saltar
+ *     responses:
+ *       200:
+ *       description: listado de contactos
+ *      content:
+ *  application/json:
+ *      schema:
+ *       type: object
+ *      properties:
+ *        success:
+ *        type: boolean
+ *        example: true
+ *      data:
+ *        type:array
+ *        items:
+ *        $ref: '#/components/schemas/Contacto'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ * 
+ */
 router.get(
   "/getAll",
+  validate,
   checkPermission(Recurso.PERSONAS, Accion.READ),
   contactoController.getAll.bind(contactoController)
 )
 
-// Obtener contacto por ID
-router.get(
-  "/getById/:id",
-  contactoIdValidator,
-  validate,
-  checkPermission(Recurso.PERSONAS, Accion.READ),
-  contactoController.getById.bind(contactoController)
-)
+
+// router.get(
+//   "/getById/:id",
+//   contactoIdValidator,
+//   validate,
+//   checkPermission(Recurso.PERSONAS, Accion.READ),
+//   contactoController.getById.bind(contactoController)
+// )
+
+
+/**
+ * @swagger
+ * 
+ * /contactos/getByPersona/{personaId}:
+ * get: 
+ * 
+ *   summary: Obtener los contactos de una persona por ID
+ *    tags: [Contactos]
+ *    parameters:
+ *      - in: path
+ *          name: personaId
+ *          requered: true
+ *        schema:
+ *          type: integer
+ *         description: ID de la persona
+ *       responses:
+ *         200:
+ *          description: Contactos encontrados
+ *            content:
+ *              application/json
+ *             schema:
+ *               type: object
+ *              properties:
+ *                success: true
+ *                type:boolean
+ *                example: true
+ *               data:
+ *                 $ref: '#/components/schemas/Contacto'
+ *         401:
+ *           $ref: '#/components/responses/Unauthorized'
+ *         403:
+ *           $ref: '#/components/responses/Forbidden'
+ *         404:
+ *           $ref: '#/components/responses/NotFound'
+ * 
+ */
+
 
 // Obtener contactos por persona
 router.get(
@@ -49,16 +167,29 @@ router.get(
 )
 
 // Obtener contactos por tipo
-router.get(
-  "/getByTipo/:personaId",
-  personaIdValidator,
-  searchContactoValidator,
-  validate,
-  checkPermission(Recurso.PERSONAS, Accion.READ),
-  contactoController.getByTipo.bind(contactoController)
-)
+// router.get(
+//   "/getByTipo/:personaId",
+//   personaIdValidator,
+//   searchContactoValidator,
+//   validate,
+//   checkPermission(Recurso.PERSONAS, Accion.READ),
+//   contactoController.getByTipo.bind(contactoController)
+// )
 
-// Crear contacto
+/**
+ * @swagger
+ *  /contactos/create:
+ *    post: 
+ *      summary: Crea un contacto de una personana
+ *      tags: [Contactos]
+ *    requestBody:
+ *      requered: true
+ *        content:
+ *          application/json:
+ *            schema:
+ * 
+ *              $ref: '#/components/schemas/Contacto'
+ */
 router.post(
   "/create",
   createContactoHttpValidator,
