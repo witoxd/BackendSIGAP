@@ -13,6 +13,7 @@ import { testConnection, closeConnections } from "./config/database"
 import routes from "./routes"
 import { initializeModels } from "./models/sequelize/sequelize-models"
 import { FORCE_DATABASE_SYNC } from "./config/database"
+import { setupSwagger } from "./config/swagger"
 
 dotenv.config()
 
@@ -64,6 +65,9 @@ app.get("/health", (req, res) => {
 
 // API Routes
 app.use("/api", routes)
+
+// Swagger UI — disponible en http://localhost:PORT/api/docs
+setupSwagger(app)
 
 // Error handlers
 app.use(notFoundHandler)

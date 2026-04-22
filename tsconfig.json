@@ -9,7 +9,8 @@
     "types": [
       "node",
       "express",
-      "multer"
+      "multer",
+      "jest"
     ],
     "target": "es2022",
     "skipLibCheck": true,
@@ -48,6 +49,7 @@
   ],
   "exclude": [
     "node_modules",
+    "jest.config.ts",
     "app",
     "hooks",
     "components",
