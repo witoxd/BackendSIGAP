@@ -1,21 +1,6 @@
 import { query } from "../../config/database"
 import { MatriculaCreationAttributes } from "../sequelize/Matricula"
 
-const V_MATRICULA_FIELDS_SQL = (prefije_table: string): string => {
-  return `
-${prefije_table}.matricula_id,
-${prefije_table}.estudiante_id,
-${prefije_table}.curso_id,
-${prefije_table}.jornada_id,
-${prefije_table}.periodo_id,
-${prefije_table}.estado_actual,
-${prefije_table}.fecha_matricula,
-${prefije_table}.fecha_retiro,
-${prefije_table}.motivo_retiro,
-${prefije_table}.anio,
-${prefije_table}.estado_actual
-`
-}
 const PREVIEWS_V_MATRICULA_FIELDS_SQL = (prefije_table: string): string => {
   return `
 ${prefije_table}.matricula_id,
@@ -29,25 +14,6 @@ ${prefije_table}.estado_actual,
 ${prefije_table}.periodo_descripcion
 `
 }
-
-
-const V_MATRICULA_FIELDS_JSON = (prefije_table: string): string => {
-  return `
-  SELECT json_build_object(
-  'matricula_id', ${prefije_table}.matricula_id,
-  'estudiante_id', ${prefije_table}.estudiante_id,
-  'curso_id', ${prefije_table}.curso_id,
-  'jornada_id', ${prefije_table}.jornada_id,
-  'periodo_id', ${prefije_table}.periodo_id,
-  'estado', ${prefije_table}.estado,
-  'fecha_matricula', ${prefije_table}.fecha_matricula,
-  'fecha_retiro', ${prefije_table}.fecha_retiro,
-  'motivo_retiro', ${prefije_table}.motivo_retiro,
-  'anio', ${prefije_table}.anio,
-  'estado_actual', ${prefije_table}.estado_actual
-  ) AS V_Matricula`
-}
-
 
 
 export class MatriculaRepository {
