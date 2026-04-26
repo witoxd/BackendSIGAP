@@ -42,7 +42,7 @@ AcudienteEstudiante.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "acudeintes",
+        model: "acudientes",
         key: "acudiente_id",
       },
     },
