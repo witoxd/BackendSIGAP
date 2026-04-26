@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express"
 import { UserService } from "../services/user.service"
 import { asyncHandler } from "../utils/asyncHandler"
+import { param } from "express-validator"
 
 const userService = new UserService()
 
@@ -55,7 +56,7 @@ export class UserController {
    transferAdmin = asyncHandler(async (req: Request, res: Response) => {
 
       const fromUserId = req.user!.userId
-      const toUserId = Number.parseInt(req.body.toUserId)
+      const toUserId = Number(req.params.id)
 
       const result = await userService.transferAdminRole(fromUserId, toUserId)
 
