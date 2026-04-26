@@ -132,15 +132,15 @@ router.get("/getById/:id",
  *   post:
  *     summary: Transferir el rol de administrador a otro usuario (solo admin)
  *     tags: [Usuarios]
- *     requestBody:
+ *     parametres:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required: [toUserId]
+ *             type: number
+ *             required: [id]
  *             properties:
- *               toUserId:
+ *               id:
  *                 type: integer
  *                 example: 5
  *                 description: ID del usuario que recibirá el rol de admin
@@ -171,9 +171,9 @@ router.get("/getById/:id",
  */
 // Transferir rol de administrador (solo admin)
 router.post(
-  "/transfer-admin",
+  "/transfer-admin/toUser/:id",
   isAdmin,
-  body("toUserId").isInt({ min: 1 }).withMessage("ID de usuario destino inválido"),
+  param("id").isInt({ min: 1 }).withMessage("ID de usuario destino inválido"),
   validate,
   userController.transferAdmin.bind(userController),
 )
