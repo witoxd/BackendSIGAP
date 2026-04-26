@@ -13,7 +13,7 @@ export const validateCreatePersonaDomain = async (
     // Validacion dominio con Sequelize (NO DB)
     await Persona.build(persona).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreatePersonaDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -40,7 +40,7 @@ export const validateUpdatePersonaDomain = async (
 
     await Persona.build(persona).validate({ skip: ["tipo_documento_id", "numero_documento"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -53,6 +53,6 @@ export const validateUpdatePersonaDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

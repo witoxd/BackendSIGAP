@@ -3,13 +3,11 @@ import { ProfesorRepository } from "../models/Repository/ProfesorRepository"
 import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
-import { CreateProfesorDTO, UpdateProfesorDTO, CreateAssingProfesorDTO } from "../types"
+import { CreateProfesorDTO, UpdateProfesorDTO } from "../types"
 import { transaction } from "../config/database"
 import { PersonaService } from "../services/persona.service"
 import { asyncHandler } from "../utils/asyncHandler"
 
-
-type CreateProfesorStaticRequest = Request<never, unknown, CreateProfesorDTO>
 
 export class ProfesorController {
    getAll = asyncHandler(async (req: Request, res: Response) => {

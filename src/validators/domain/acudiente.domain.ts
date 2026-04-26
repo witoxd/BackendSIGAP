@@ -15,7 +15,7 @@ export const validateCreateAcudienteDomain = async (
     await Acudiente.build(acudiente).validate({ skip: ["persona_id"] })
       await Persona.build(persona).validate({ skip: ["nombres", "tipo_documento_id", "fecha_nacimiento", "genero"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -28,7 +28,7 @@ export const validateCreateAcudienteDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -47,7 +47,7 @@ export const validateUpdateAcudienteDomain = async (
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "numero_documento", "fecha_nacimiento", "genero"] })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -60,6 +60,6 @@ export const validateUpdateAcudienteDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

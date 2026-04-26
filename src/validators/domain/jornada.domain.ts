@@ -13,7 +13,7 @@ export const validateCreateJornadaDomain = async (
     // Validacion dominio con Sequelize (NO DB)
     await Jornada.build(jornada).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreateJornadaDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -40,7 +40,7 @@ export const validateUpdateJornadaDomain = async (
 
     await Jornada.build(jornada).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -53,6 +53,6 @@ export const validateUpdateJornadaDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

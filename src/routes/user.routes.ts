@@ -3,7 +3,7 @@ import { UserController } from "../controllers/user.controller"
 import { authenticate, isAdmin, isSelfOrAdmin } from "../middleware/auth"
 import { searchValidator, idValidator } from "../utils/validators"
 import { validate } from "../middleware/validate"
-import { body, param } from "express-validator"
+import { param } from "express-validator"
 
 const router = Router()
 const userController = new UserController()

@@ -13,7 +13,7 @@ export const validateCreateCursoDomain = async (
     // Validacion dominio con Sequelize (NO DB)
     await Curso.build(CursoData).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreateCursoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -40,7 +40,7 @@ export const validateUpdateCursoDomain = async (
 
     await Curso.build(CursoData).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -53,6 +53,6 @@ export const validateUpdateCursoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

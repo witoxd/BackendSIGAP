@@ -89,7 +89,7 @@ export class MatriculaArchivoController {
       })
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Archivo asociado a la matrícula exitosamente",
       data:    asociacion,

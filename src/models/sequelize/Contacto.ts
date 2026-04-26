@@ -13,13 +13,15 @@ interface ContactoAttributes {
   valor: string
   es_principal: boolean
   activo: boolean
+  created_at?: Date | null
+  updated_at?: Date | null
 }
 
-export interface ContactoCreationAttributes 
-  extends Optional<ContactoAttributes, "contacto_id" | "es_principal" | "activo"> {}
+export interface ContactoCreationAttributes
+  extends Optional<ContactoAttributes, "contacto_id" | "es_principal" | "activo" | "created_at" | "updated_at"> {}
 
-export class Contacto 
-  extends Model<ContactoAttributes, ContactoCreationAttributes> 
+export class Contacto
+  extends Model<ContactoAttributes, ContactoCreationAttributes>
   implements ContactoAttributes {
   public contacto_id!: number
   public persona_id!: number
@@ -27,6 +29,8 @@ export class Contacto
   public valor!: string
   public es_principal!: boolean
   public activo!: boolean
+  public created_at?: Date | null
+  public updated_at?: Date | null
 }
 
 Contacto.init(
@@ -65,10 +69,21 @@ Contacto.init(
       allowNull: false,
       defaultValue: true,
     },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     tableName: "contactos",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   }
 )

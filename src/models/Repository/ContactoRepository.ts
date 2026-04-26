@@ -3,25 +3,6 @@ import type { ContactoCreationAttributes } from "../sequelize/Contacto"
 
 export class ContactoRepository {
   /**
-   * Obtener todos los contactos con paginación
-   */
-  static async findAll(limit = 50, offset = 0) {
-    const result = await query(
-      `SELECT 
-      contacto_id,
-      persona_id,
-      tipo_contacto,
-      valor,
-      es_principal
-       FROM contactos WHERE activo = true
-       ORDER BY es_principal DESC, contacto_id
-       LIMIT $1 OFFSET $2`,
-      [limit, offset]
-    )
-    return result.rows
-  }
-
-  /**
    * Buscar contacto por ID
    */
   static async findById(id: number) {
@@ -69,19 +50,6 @@ export class ContactoRepository {
       [personaId, tipoContacto]
     )
     return result.rows
-  }
-
-  /**
-   * Obtener contacto principal de una persona
-   */
-  static async findPrincipalByPersona(personaId: number) {
-    const result = await query(
-      `SELECT * FROM contactos 
-       WHERE persona_id = $1 AND es_principal = true AND activo = true
-       LIMIT 1`,
-      [personaId]
-    )
-    return result.rows[0]
   }
 
   /**
@@ -206,42 +174,22 @@ export class ContactoRepository {
   }
 
   /**
-   * Contar contactos totales
-   */
-  static async count() {
-    const result = await query("SELECT COUNT(*) FROM contactos WHERE activo = true")
-    return Number.parseInt(result.rows[0].count)
-  }
-
-  /**
-   * Contar contactos por persona
-   */
-  static async countByPersona(personaId: number) {
-    const result = await query(
-      "SELECT COUNT(*) FROM contactos WHERE persona_id = $1 AND activo = true",
-      [personaId]
-    )
-    return Number.parseInt(result.rows[0].count)
-  }
-
-  /**
    * Establecer un contacto como principal y quitar principal de los demás
    */
   static async setPrincipal(contactoId: number, personaId: number, client?: any) {
-    // Primero quitar principal de todos los contactos de la persona
+    // Quitar principal de todos los contactos de la persona
     await query(
-      `UPDATE contactos SET es_principal = false 
-       WHERE persona_id = $1`,
+      `UPDATE contactos SET es_principal = false WHERE persona_id = $1`,
       [personaId],
       client
     )
 
-    // Luego establecer el nuevo principal
+    // Establecer el nuevo principal — solo si el contacto pertenece a la persona
     const result = await query(
-      `UPDATE contactos SET es_principal = true 
-       WHERE contacto_id = $1 
+      `UPDATE contactos SET es_principal = true
+       WHERE contacto_id = $1 AND persona_id = $2
        RETURNING *`,
-      [contactoId],
+      [contactoId, personaId],
       client
     )
     return result.rows[0]

@@ -15,7 +15,7 @@ export const validateCreateAdministrativoDomain = async (
     await Administrativo.build(administrativo).validate({ skip: ["persona_id"] })
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "fecha_nacimiento", "genero"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -28,7 +28,7 @@ export const validateCreateAdministrativoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -48,7 +48,7 @@ export const validateUpdateAdministrativoDomain = async (
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "numero_documento", "fecha_nacimiento", "genero"] })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -61,6 +61,6 @@ export const validateUpdateAdministrativoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express"
 import { Archivos } from "../../models/sequelize/Archivo"
 import { ValidationError } from "sequelize"
-import { toDefaultValue } from "sequelize/types/utils"
+
 
 /**
  * Validador de dominio para creacion de archivo
@@ -36,7 +36,7 @@ export const validateCreateArchivoDomain = async (
       skip: ["url_archivo"],
     })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -49,7 +49,7 @@ export const validateCreateArchivoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -86,7 +86,7 @@ export const validateUpdateArchivoDomain = async (
       skip: ["persona_id", "url_archivo", "tipo_archivo_id", "nombre"],
     })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -99,6 +99,6 @@ export const validateUpdateArchivoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

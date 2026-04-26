@@ -1,7 +1,6 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { UserService } from "../services/user.service"
 import { asyncHandler } from "../utils/asyncHandler"
-import { param } from "express-validator"
 
 const userService = new UserService()
 

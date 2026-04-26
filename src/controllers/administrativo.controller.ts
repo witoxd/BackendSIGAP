@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response } from "express"
+import type { Request, Response } from "express"
 import { AdministrativoRepository } from "../models/Repository/AdministrativoRepository"
 import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
@@ -8,10 +8,6 @@ import { PersonaService } from "../services/persona.service"
 import { transaction } from "../config/database"
 import { asyncHandler } from "../utils/asyncHandler"
 
-
-type CreateAdministrativoStaticRequest = Request<never, unknown, CreateAdministrativoDTO>
-
-type UpdateAdministrativoStaticRequest = Request<{ id: string }, unknown, UpdateAdministrativoDTO>
 
 export class AdministrativoController {
 
@@ -89,7 +85,7 @@ export class AdministrativoController {
 
         const newPersona = await PersonaService.validateOrCreatePersona(PersonaData, client)
 
-        const existingAdministrativo = await AdministrativoRepository.findByPersonaId(newPersona.permiso_id)
+        const existingAdministrativo = await AdministrativoRepository.findByPersonaId(newPersona.persona_id)
 
         if(existingAdministrativo){
           throw new AppError ("La persona ya tiene rol administrativo", 409)

@@ -13,7 +13,7 @@ export const validateCreateRoleDomain = async (
     // Validacion dominio con Sequelize (NO DB)
     await Role.build(role).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreateRoleDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -40,7 +40,7 @@ export const validateUpdateRoleDomain = async (
 
     await Role.build(role).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -53,6 +53,6 @@ export const validateUpdateRoleDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

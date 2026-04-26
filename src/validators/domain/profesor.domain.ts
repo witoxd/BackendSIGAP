@@ -15,7 +15,7 @@ export const validateCreateProfesorDomain = async (
     await Profesor.build(profesor).validate({ skip: ["persona_id"] })
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "fecha_nacimiento", "genero"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -28,7 +28,7 @@ export const validateCreateProfesorDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -47,7 +47,7 @@ export const validateUpdateProfesorDomain = async (
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "numero_documento", "fecha_nacimiento", "genero"] })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -60,6 +60,6 @@ export const validateUpdateProfesorDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

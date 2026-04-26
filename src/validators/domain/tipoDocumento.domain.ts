@@ -13,7 +13,7 @@ export const validateCreateTipoDocumentoDomain = async (
     // Validacion dominio con Sequelize (NO DB)
     await TipoDocumento.build(tipoDocumento).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreateTipoDocumentoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -40,7 +40,7 @@ export const validateUpdateTipoDocumentoDomain = async (
 
     await TipoDocumento.build(tipoDocumento).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -53,6 +53,6 @@ export const validateUpdateTipoDocumentoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

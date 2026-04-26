@@ -13,7 +13,7 @@ export const validateCreateTipoArchivoDomain = async (
     // Validación dominio con Sequelize (NO DB)
     await TipoArchivo.build(TipoArchivoData).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreateTipoArchivoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -44,7 +44,7 @@ export const validateUpdateTipoArchivoDomain = async (
       })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -57,6 +57,6 @@ export const validateUpdateTipoArchivoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

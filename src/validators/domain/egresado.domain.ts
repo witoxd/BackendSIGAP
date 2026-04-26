@@ -13,7 +13,7 @@ export const validateCreateEgresadoDomain = async (
     // Validacion dominio con Sequelize (NO DB)
     await Egresado.build(EgresadoData).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreateEgresadoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -40,7 +40,7 @@ export const validateUpdateEgresadoDomain = async (
 
     await Egresado.build(egresado).validate({ skip: ["estudiante_id"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -53,6 +53,6 @@ export const validateUpdateEgresadoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

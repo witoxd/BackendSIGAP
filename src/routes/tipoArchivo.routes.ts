@@ -16,8 +16,6 @@ import {
 } from "../validators/domain/tipoArchivo.domain"
 import { validate } from "../middleware/validate"
 import { Recurso, Accion } from "../types"
-import { param } from "express-validator"
-
 const router = Router()
 const tipoArchivoController = new TipoArchivoController()
 

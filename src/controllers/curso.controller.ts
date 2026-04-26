@@ -5,8 +5,6 @@ import { validationResult } from "express-validator"
 import { CreateCursoDTO, updateCursoDTO } from "../types"
 import { asyncHandler } from "../utils/asyncHandler"
 
-type CreateCursoStaticrequest = Request<never, unknown, CreateCursoDTO>
-
 export class CursoController{
 
   getAll = asyncHandler(async (req: Request, res: Response) => {

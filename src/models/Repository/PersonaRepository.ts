@@ -1,8 +1,6 @@
 import { query } from "../../config/database"
 import type { PersonaCreationAttributes, PersonaAttributes } from "../../models/sequelize/Persona"
-import { AppError } from "@/src/utils/AppError"
-import { PERSONA_FIELDS_JSON, PERSONA_FIELDS_SQL } from "../shared/personasql"
-import { CreatePersonaDTO } from "@/dist/types"
+import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 export class PersonaRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(

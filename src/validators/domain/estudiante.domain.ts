@@ -15,7 +15,7 @@ export const validateCreateEstudianteDomain = async (
     await Estudiante.build(estudiante).validate({ skip: ["persona_id"] })
     await Persona.build(persona).validate({ skip: ["apellido_paterno", "apellido_materno"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -28,7 +28,7 @@ export const validateCreateEstudianteDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -47,7 +47,7 @@ export const validateUpdateEstudianteDomain = async (
       await Persona.build(persona).validate({ skip: ["nombres", "tipo_documento_id", "numero_documento", "fecha_nacimiento", "genero"] })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -60,6 +60,6 @@ export const validateUpdateEstudianteDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

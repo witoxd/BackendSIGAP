@@ -12,14 +12,12 @@ import { sequelize } from "../../config/database"
 
 interface PeriodoMatriculaAttributes {
   periodo_id: number
-  anio: number        // Año escolar, ej: 2025
-  fecha_inicio: Date          // Cuándo abre el proceso
-  fecha_fin: Date          // Cuándo cierra el proceso
-  fecha_inicio_inscripcion?: Date  // Cuándo ABRE el formulario de matrícula
-  fecha_fin_inscripcion?: Date     // Cuándo CIERRA el formulario de matrícula
-  activo: boolean       // El admin lo habilita/deshabilita
-  descripcion?: string        // Opcional, ej: "Matrícula ordinaria 2025"
-  created_by?: number        // usuario_id de quien lo creó
+  anio: number
+  fecha_inicio: Date
+  fecha_fin: Date
+  activo: boolean
+  descripcion?: string
+  created_by?: number
   created_at?: Date
 }
 
@@ -29,8 +27,6 @@ export interface PeriodoMatriculaCreationAttributes
     | "periodo_id"
     | "activo"
     | "descripcion"
-    | "fecha_inicio_inscripcion"
-    | "fecha_fin_inscripcion"
     | "created_by"
     | "created_at"
   > { }
@@ -42,8 +38,6 @@ export class PeriodoMatricula
   public anio!: number
   public fecha_inicio!: Date
   public fecha_fin!: Date
-  public fecha_fin_inscripcion?: Date 
-  public fecha_inicio_inscripcion?: Date 
   public activo!: boolean
   public descripcion?: string
   public created_by?: number
@@ -70,16 +64,6 @@ PeriodoMatricula.init(
     fecha_fin: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-    },
-    fecha_inicio_inscripcion: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-      comment: "Inicio de la ventana donde se acepta el formulario de matrícula",
-    },
-    fecha_fin_inscripcion: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-      comment: "Fin de la ventana de inscripción — distinto al fin del período escolar",
     },
     activo: {
       type: DataTypes.BOOLEAN,

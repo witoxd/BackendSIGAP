@@ -13,7 +13,7 @@ export const validateCreateMatriculaDomain = async (
     // Validacion dominio con Sequelize (NO DB)
     await Matricula.build(MatriculaData).validate()
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreateMatriculaDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -40,7 +40,7 @@ export const validateUpdateMatriculaDomain = async (
 
     await Matricula.build(MatriculaData).validate({ skip: ["estudiante_id", "curso_id", "profesor_id", "jornada_id"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -53,6 +53,6 @@ export const validateUpdateMatriculaDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

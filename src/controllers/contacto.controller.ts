@@ -2,37 +2,24 @@ import type { Request, Response } from "express"
 import { ContactoRepository } from "../models/Repository/ContactoRepository"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { AppError } from "../utils/AppError"
-import { getPagination } from "../utils/validators"
 import { validationResult } from "express-validator"
 import type { CreateContactoDTO, UpdateContactoDTO } from "../types"
 import { asyncHandler } from "../utils/asyncHandler"
 
-type CreateContactoStaticRequest = Request<never, unknown, CreateContactoDTO>
-type UpdateContactoStaticRequest = Request<{ id: string }, unknown, UpdateContactoDTO>
+const ROLES_CON_CONTACTO = ["profesor", "acudiente", "administrativo"]
+
+async function verificarPermiteContacto(personaId: number): Promise<void> {
+  const roles = await PersonaRepository.getRoles(personaId)
+  const tieneRolValido = roles.some((r) => ROLES_CON_CONTACTO.includes(r))
+  if (!tieneRolValido) {
+    throw new AppError(
+      "Esta persona no puede tener contactos registrados. Solo profesores, acudientes y administrativos pueden tenerlos.",
+      403
+    )
+  }
+}
 
 export class ContactoController {
-  /**
-   * Obtener todos los contactos
-   */
-   getAll = asyncHandler( async (req: Request, res: Response) =>  {
-    const pLimit = Number.parseInt(req.query.limit as string) || 50
-    const offset = Number.parseInt(req.query.offset as string) || 0
-
-
-      const contactos = await ContactoRepository.findAll(pLimit, offset)
-      const total = await ContactoRepository.count()
-
-      res.status(200).json({
-        success: true,
-        data: contactos,
-        pagination: {
-          page: Math.floor(offset / pLimit) + 1,
-          limit: pLimit,
-          total,
-          pages: Math.ceil(total / pLimit),
-        },
-      })
-  })
 
   /**
    * Obtener contacto por ID
@@ -102,6 +89,9 @@ export class ContactoController {
         throw new AppError("Persona no encontrada", 404)
       }
 
+      // Solo profesores, acudientes y administrativos pueden tener contactos
+      await verificarPermiteContacto(ContactoData.persona_id)
+
       // Si se marca como principal, quitar principal de otros contactos
       if (ContactoData.es_principal) {
         const contacto = await ContactoRepository.create(ContactoData)
@@ -139,13 +129,14 @@ export class ContactoController {
         throw new AppError("Se requiere un array de contactos", 400)
       }
 
-      // Verificar que todas las personas existen
+      // Verificar que todas las personas existen y tienen rol válido para contactos
       const personaIds = [...new Set(contactos.map((c: any) => c.persona_id))]
       for (const personaId of personaIds) {
         const persona = await PersonaRepository.findById(personaId)
         if (!persona) {
           throw new AppError(`Persona con ID ${personaId} no encontrada`, 404)
         }
+        await verificarPermiteContacto(personaId)
       }
 
       const nuevosContactos = await ContactoRepository.bulkCreate(contactos)

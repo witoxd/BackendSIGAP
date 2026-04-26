@@ -1,4 +1,4 @@
-import { DataTypes, Model, Sequelize, type Optional } from "sequelize"
+import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
  interface CursoAttributes {

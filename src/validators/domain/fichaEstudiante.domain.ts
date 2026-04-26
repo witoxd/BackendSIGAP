@@ -36,7 +36,7 @@ export const validateUpsertFichaDomain = async (
       })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -48,7 +48,7 @@ export const validateUpsertFichaDomain = async (
         })),
       })
     }
-    next(error)
+    return next(error)
   }
 }
 
@@ -66,7 +66,7 @@ export const validateCreateColegioDomain = async (
 
     await ColegioAnterior.build(colegio).validate({ skip: ["estudiante_id"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -78,7 +78,7 @@ export const validateCreateColegioDomain = async (
         })),
       })
     }
-    next(error)
+    return next(error)
   }
 }
 
@@ -117,7 +117,7 @@ export const validateReplaceColegiosDomain = async (
       seen.add(key)
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -129,7 +129,7 @@ export const validateReplaceColegiosDomain = async (
         })),
       })
     }
-    next(error)
+    return next(error)
   }
 }
 
@@ -150,7 +150,7 @@ export const validateUpdateColegioDomain = async (
       skip: ["estudiante_id", "nombre_colegio"],
     })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -162,7 +162,7 @@ export const validateUpdateColegioDomain = async (
         })),
       })
     }
-    next(error)
+    return next(error)
   }
 }
 
@@ -180,7 +180,7 @@ export const validateUpsertViviendaDomain = async (
 
     await ViviendaEstudiante.build(vivienda).validate({ skip: ["estudiante_id"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -192,7 +192,7 @@ export const validateUpsertViviendaDomain = async (
         })),
       })
     }
-    next(error)
+    return next(error)
   }
 }
 
@@ -255,7 +255,7 @@ export const validateUpsertExpedienteDomain = async (
       await ViviendaEstudiante.build(vivienda).validate({ skip: ["estudiante_id"] })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -267,6 +267,6 @@ export const validateUpsertExpedienteDomain = async (
         })),
       })
     }
-    next(error)
+    return next(error)
   }
 }

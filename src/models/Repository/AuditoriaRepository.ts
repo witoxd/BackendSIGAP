@@ -1,5 +1,4 @@
 import { query } from "../../config/database"
-import type { Auditoria } from "../sequelize/Auditoria"
 
 export class AuditoriaRepository {
   static async findAll(limit = 50, offset = 0) {

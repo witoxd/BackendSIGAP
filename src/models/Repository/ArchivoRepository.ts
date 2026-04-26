@@ -1,19 +1,6 @@
 import { query } from "../../config/database"
 import type { ArchivosCreationAttributes } from "../sequelize/Archivo"
 
-function ARCHIVO_FIELDS_SQL(prefijeTable: string): string{
-
-  return `${prefijeTable}.archivo_id,
-${prefijeTable}.persona_id,
-${prefijeTable}.tipo_archivo_id,
-${prefijeTable}.nombre,
-${prefijeTable}.url_archivo,
-${prefijeTable}.descripcion,
-${prefijeTable}.asignado_por,
-${prefijeTable}.fecha_carga,
-${prefijeTable}.activo
-`
-}
 export class ArchivoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
@@ -201,11 +188,10 @@ export class ArchivoRepository {
   }
 
   static async softDelete(id: number){
-    const result = await query(
+    await query(
       `UPDATE archivos SET activo = false WHETE archivo_id = $1 RETURNING *`,
       [id]
     )
-    
   }
   static async delete(id: number) {
     const result = await query("DELETE FROM archivos WHERE archivo_id = $1 RETURNING *", [id])

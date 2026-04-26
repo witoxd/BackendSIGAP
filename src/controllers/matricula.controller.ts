@@ -1,12 +1,12 @@
 
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { MatriculaRepository } from "../models/Repository/MatriculaRepository"
 import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { CreateMatriculaDTO, UpdateMatriculaDTO } from "../types"
 import { PeriodoMatriculaRepository } from "../models/Repository/PeriodoMatriculaRepository"
 import { asyncHandler } from "../utils/asyncHandler"
-import { deleteFile, getFileUrl } from "../config/multer"
+import { getFileUrl } from "../config/multer"
 import { ArchivoRepository } from "../models/Repository/ArchivoRepository"
 import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepository"
 import path from "path"
@@ -15,7 +15,6 @@ import { archivoService } from "../services/archivos.services"
 import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
 import { MatriculaArchivoRepository } from "../models/Repository/MatriculaArchivoRepository"
 import { transaction } from "../config/database"
-import { ArchivosCreationAttributes } from "../models/sequelize/Archivo"
 
 export class MatriculaController {
 
@@ -241,7 +240,7 @@ export class MatriculaController {
         )
       }
 
-      archivosValidados.push({ file, meta, tipoArchivo })
+      archivosValidados.push({ file, meta: { tipo_archivo_id: Number(meta.tipo_archivo_id), descripcion: meta.descripcion ?? undefined }, tipoArchivo })
     }
 
     // ------------------------------------------------------------------
@@ -255,8 +254,6 @@ export class MatriculaController {
     // transacción de BD — si la transacción falla, hay que eliminarlos
     // manualmente en el catch exterior.
     // ------------------------------------------------------------------
-    let matriculaId: number
-
     try {
       const resultado = await transaction(async (client) => {
 
@@ -313,8 +310,6 @@ export class MatriculaController {
 
         return { matricula, archivosGuardados }
       })
-
-      matriculaId = resultado.matricula.matricula_id
 
       res.status(201).json({
         success: true,

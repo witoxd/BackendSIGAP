@@ -33,21 +33,18 @@ export class AuthService {
 
   async personaExisting(personaID: number) {
 
-    const run = async (txClient: any) => {
-      const [personaResult] = await Promise.all([
-        query("SELECT persona_id FROM personas WHERE persona_id = $1", [personaID], txClient),
-      ])
+    const [personaResult] = await Promise.all([
+      query("SELECT persona_id FROM personas WHERE persona_id = $1", [personaID]),
+    ])
 
-      if (personaResult.rows.length === 0) {
-        throw new NotFoundError(`Persona con ID '${personaID}' no encontrada`)
-      }
+    if (personaResult.rows.length === 0) {
+      throw new NotFoundError(`Persona con ID '${personaID}' no encontrada`)
+    }
 
-      const existingUserByPersona = await query("SELECT usuario_id FROM usuarios WHERE persona_id = $1", [personaID], txClient)
+    const existingUserByPersona = await query("SELECT usuario_id FROM usuarios WHERE persona_id = $1", [personaID])
 
-      if (existingUserByPersona.rows.length > 0) {
-        throw new ConflictError("La persona ya tiene un usuario asignado")
-      }
-
+    if (existingUserByPersona.rows.length > 0) {
+      throw new ConflictError("La persona ya tiene un usuario asignado")
     }
   }
 

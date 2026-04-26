@@ -98,14 +98,9 @@ export class PeriodoMatriculaController {
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
 
-    // Usa fecha_fin_inscripcion si existe, si no usa fecha_fin del período
-    const fechaLimite = periodo.fecha_fin_inscripcion
-      ? new Date(periodo.fecha_fin_inscripcion)
-      : new Date(periodo.fecha_fin)
-
-    if (fechaLimite < hoy) {
+    if (new Date(periodo.fecha_fin) < hoy) {
       throw new AppError(
-        "No se puede activar un período cuya fecha de cierre de inscripción ya pasó.",
+        "No se puede activar un período cuya fecha de fin ya pasó.",
         400
       )
     }
@@ -245,16 +240,14 @@ export class PeriodoMatriculaController {
 
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
-    const fechaCierre = periodo.fecha_fin_inscripcion
-      ? new Date(periodo.fecha_fin_inscripcion)
-      : new Date(periodo.fecha_fin)
+    const fechaCierre = new Date(periodo.fecha_fin)
 
     if (fechaCierre < hoy) {
       await PeriodoMatriculaRepository.desactivar(periodo.periodo_id)
       return res.status(200).json({
         success: true,
         abierto: false,
-        mensaje: `El período de matrícula ${periodo.anio} cerró el ${periodo.fecha_fin_inscripcion ?? periodo.fecha_fin}. Fue desactivado automáticamente.`,
+        mensaje: `El período de matrícula ${periodo.anio} cerró el ${periodo.fecha_fin}. Fue desactivado automáticamente.`,
         periodo,
       })
     }
@@ -262,7 +255,7 @@ export class PeriodoMatriculaController {
     const msRestantes = fechaCierre.getTime() - hoy.getTime()
     const diasRestantes = Math.ceil(msRestantes / (1000 * 60 * 60 * 24))
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       abierto: true,
       dias_restantes: diasRestantes,

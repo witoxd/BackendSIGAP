@@ -1,4 +1,4 @@
-import { query, pool } from "./database"
+import { query } from "./database"
 
 // =============================================================================
 // DATABASE INIT — Todo lo que Sequelize no puede crear nativamente
@@ -126,6 +126,18 @@ const createConstraints = async () => {
     END $$;
   `)
 
+  // Las fechas de inscripción de un proceso deben ser coherentes
+  await query(`
+    DO $$ BEGIN
+      ALTER TABLE procesos_inscripcion
+        ADD CONSTRAINT chk_fechas_proceso_inscripcion
+        CHECK (fecha_fin_inscripcion >= fecha_inicio_inscripcion);
+    EXCEPTION
+      WHEN duplicate_object THEN NULL;
+      WHEN others THEN NULL;
+    END $$;
+  `)
+
   console.log("  ✓ Constraints adicionales creados")
 }
 
@@ -175,8 +187,6 @@ const createViews = async () => {
       p.anio,
       p.fecha_inicio  AS periodo_fecha_inicio,
       p.fecha_fin     AS periodo_fecha_fin,
-      p.fecha_inicio_inscripcion AS periodo_fecha_inicio_inscripcion,
-      p.fecha_fin_inscripcion AS periodo_fecha_fin_inscripcion,
       p.activo        AS periodo_activo,
       p.descripcion   AS periodo_descripcion,
 

@@ -5,8 +5,6 @@ import { CreateJornadaDTO, UpdateJornadDTO } from "../types"
 import { asyncHandler } from "../utils/asyncHandler"
 
 
-type CreateJornadaStaticRequest = Request<never, unknown, CreateJornadaDTO>
-
 export class JornadaController {
 
    getAll = asyncHandler( async (req: Request, res: Response)  => {

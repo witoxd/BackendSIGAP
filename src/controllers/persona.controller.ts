@@ -3,11 +3,8 @@ import { PersonaRepository } from "../models/Repository/PersonaRepository";
 import { AppError } from "../utils/AppError";
 import { Request, Response } from "express";
 import { validationResult } from "express-validator"
-import { PersonaCreationAttributes } from "../models/sequelize/Persona";
 import { CreatePersonaDTO, UpdatePersonaDTO } from "../types";
 import { asyncHandler } from "../utils/asyncHandler";
-
-type CreationPersonaStaticRequest = Request<never, unknown, CreatePersonaDTO>
 
 export class PersonaController {
 

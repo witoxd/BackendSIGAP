@@ -170,7 +170,7 @@ export class AcudienteController {
         throw new AppError("Acudiente no encontrado", 404)
       }
 
-      const persona = await PersonaRepository.delete(acudiente.persona_id)
+      await PersonaRepository.delete(acudiente.persona_id)
 
       res.status(200).json({
         success: true,

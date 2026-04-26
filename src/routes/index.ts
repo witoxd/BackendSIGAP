@@ -17,8 +17,8 @@ import acudienteRoutes from "./acudiente.routes"
 import tipoArchivoRoutes from "./tipoArchivo.routes"
 import fichaEstudianteRoutes from "./fichaEstudiante.routes"
 import contactos from "./contacto.routes"
-import auditoriaRoutes from "./auditoria.routes"
 import  PeriodoMatricula  from "./periodoMatricula.routes"
+import procesoInscripcionRoutes from "./procesoInscripcion.routes"
 const router = Router()
 
 router.use("/auth", authRoutes) //listo
@@ -40,6 +40,7 @@ router.use("/tipos-archivos", tipoArchivoRoutes) // listo
 router.use("/ficha", fichaEstudianteRoutes) //listo
 router.use("/contactos", contactos) //listo
 router.use("/periodos-matricula", PeriodoMatricula) //listo
+router.use("/procesos-inscripcion", procesoInscripcionRoutes) //listo
 //router.use("/auditoria", auditoriaRoutes)
 
 export default router

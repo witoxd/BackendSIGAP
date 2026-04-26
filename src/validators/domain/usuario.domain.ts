@@ -19,7 +19,7 @@ export const validateCreateUsuarioDomain = async (
       await Persona.build(persona).validate()
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -32,7 +32,7 @@ export const validateCreateUsuarioDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -51,7 +51,7 @@ export const validateUpdateUsuarioDomain = async (
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "numero_documento", "fecha_nacimiento", "genero"] })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -64,6 +64,6 @@ export const validateUpdateUsuarioDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }

@@ -381,13 +381,22 @@ export interface ACLEntry {
 // ============================================================================
  
 import { PeriodoMatriculaCreationAttributes } from "../models/sequelize/PeriodoMatricula"
- 
+import { ProcesoInscripcionCreationAttributes } from "../models/sequelize/ProcesoInscripcion"
+
 export interface CreatePeriodoMatriculaDTO {
   periodo: Omit<PeriodoMatriculaCreationAttributes, "periodo_id" | "activo" | "created_by" | "created_at">
 }
- 
+
 export interface UpdatePeriodoMatriculaDTO {
   periodo: Partial<Omit<PeriodoMatriculaCreationAttributes, "periodo_id" | "activo" | "created_by" | "created_at">>
+}
+
+export interface CreateProcesoInscripcionDTO {
+  proceso: Omit<ProcesoInscripcionCreationAttributes, "proceso_id" | "activo" | "created_at">
+}
+
+export interface UpdateProcesoInscripcionDTO {
+  proceso: Partial<Omit<ProcesoInscripcionCreationAttributes, "proceso_id" | "created_at">>
 }
 
 // ============================================================================

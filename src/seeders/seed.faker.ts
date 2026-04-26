@@ -74,17 +74,6 @@ const generarDocumento = (tipo: "CC" | "TI" | "RC"): string => {
   return faker.string.numeric({ length: 11 })
 }
 
-// Genera un username único a partir del nombre
-const generarUsername = (nombres: string, apellido: string): string => {
-  const base = `${nombres.split(" ")[0].toLowerCase()}.${apellido.toLowerCase()}`
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9.]/g, "")
-  return `${base}${faker.string.numeric(3)}`
-}
-
-// Contraseña hasheada por defecto para todos los usuarios de prueba
-let hashedDefaultPassword: string
 
 // -----------------------------------------------------------------------------
 // OBTENER IDs de tablas ya pobladas por seed.default
@@ -487,7 +476,7 @@ const runFakerSeed = async () => {
   console.log("  ℹ  Todos los usuarios tendrán contraseña: Test123!\n")
 
   // Hashear contraseña por defecto una sola vez
-  hashedDefaultPassword = await bcrypt.hash("Test123!", 12)
+  await bcrypt.hash("Test123!", 12)
 
   try {
     await transaction(async (client) => {
@@ -500,7 +489,7 @@ const runFakerSeed = async () => {
       }
 
       const periodoId = await seedPeriodoMatricula(client)
-       const profesores = await seedProfesores(client, ids)
+      await seedProfesores(client, ids)
       await seedAdministrativos(client, ids)
       await seedEstudiantes(client, ids, periodoId)
     })

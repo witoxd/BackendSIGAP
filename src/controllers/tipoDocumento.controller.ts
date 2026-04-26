@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { TipoDocumentoRepository } from "../models/Repository/TipoDocumentoRepository"
 import { AppError } from "../utils/AppError"
 import { CreateTipoDocumentoDTO, UpdateTipoDocumentoDTO } from "../types"

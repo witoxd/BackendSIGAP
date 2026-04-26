@@ -1,6 +1,4 @@
 import { body, type ValidationChain } from "express-validator"
-import { personaBaseHttpValidator, updatePersonaHttpValidator } from "./persona.validators"
-
 // HTTP Validators - Validacion de estructura de request
 export const createAdministrativoHttpValidator: ValidationChain[] = [
   body("administrativo")

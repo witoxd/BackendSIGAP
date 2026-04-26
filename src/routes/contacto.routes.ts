@@ -8,7 +8,6 @@ import {
   bulkCreateContactoHttpValidator,
   contactoIdValidator,
   personaIdValidator,
-  // searchContactoValidator,
 } from "../validators/contacto.validators"
 import {
   validateCreateContactoDomain,
@@ -60,63 +59,6 @@ router.use(authenticate)
  *   
  */
 
-// Obtener todos los contactos
-
-/**
- * @swagger
- * /contactos/getAll:
- *  get:
- *  summary: Obtener todos los contactos (este endpoint es paginado)
- *  tags: [Contactos]
- *  parameters:
- *   -in: query
- *    name: limit
- *     schema:
- *      type:integer
- *      default: 50
- *    description: Cantidad de registros por pagina
- *    - in: query
- *         name: offset
- *         schema:
- *           type: integer
- *           default: 0
- *         description: Número de registros a saltar
- *     responses:
- *       200:
- *       description: listado de contactos
- *      content:
- *  application/json:
- *      schema:
- *       type: object
- *      properties:
- *        success:
- *        type: boolean
- *        example: true
- *      data:
- *        type:array
- *        items:
- *        $ref: '#/components/schemas/Contacto'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- * 
- */
-router.get(
-  "/getAll",
-  validate,
-  checkPermission(Recurso.PERSONAS, Accion.READ),
-  contactoController.getAll.bind(contactoController)
-)
-
-
-// router.get(
-//   "/getById/:id",
-//   contactoIdValidator,
-//   validate,
-//   checkPermission(Recurso.PERSONAS, Accion.READ),
-//   contactoController.getById.bind(contactoController)
-// )
 
 
 /**

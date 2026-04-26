@@ -7,10 +7,6 @@ import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
 import { asyncHandler } from "../utils/asyncHandler"
 
 
-type CreateEgresadoStaticRequest = Request<never, unknown, CreateEgresadoDTO>
-
-type UpdateEgresadosStaticRequest = Request<{id: string}, unknown, UpdateEgresadoDTO>
-
 export class EgresadoController {
 
    getAll = asyncHandler (async (req: Request, res: Response) => {

@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express"
+import type { Request, Response } from "express"
 import { PermisoRepository } from "../models/Repository/PermisoRepository"
 import { AppError } from "../utils/AppError"
 import { getPagination } from "../utils/validators"

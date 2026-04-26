@@ -6,9 +6,8 @@ import {
   createMatriculaHttpValidator, 
   updateMatriculaHttpValidator 
 } from "../validators/matricula.validators"
-import { 
-  validateCreateMatriculaDomain, 
-  validateUpdateMatriculaDomain 
+import {
+  validateUpdateMatriculaDomain
 } from "../validators/domain"
 import { validate } from "../middleware/validate"
 import { param } from "express-validator"

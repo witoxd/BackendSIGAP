@@ -13,7 +13,7 @@ export const validateCreateContactoDomain = async (
     // Validación dominio con Sequelize (NO DB)
     await Contacto.build(ContactoData).validate({ skip: ["persona_id"] })
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -26,7 +26,7 @@ export const validateCreateContactoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -44,7 +44,7 @@ export const validateUpdateContactoDomain = async (
       })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -57,7 +57,7 @@ export const validateUpdateContactoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
 
@@ -81,7 +81,7 @@ export const validateBulkCreateContactoDomain = async (
       await Contacto.build(contactos[i]).validate({ skip: ["persona_id"] })
     }
 
-    next()
+    return next()
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -94,6 +94,6 @@ export const validateBulkCreateContactoDomain = async (
       })
     }
 
-    next(error)
+    return next(error)
   }
 }
