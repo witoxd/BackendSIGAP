@@ -41,6 +41,28 @@ export class MatriculaController {
     res.status(200).json({ success: true, data: matricula })
   })
 
+  findMatriculaAndPeriodo = asyncHandler(async (req: Request, res: Response) => {
+        const errors = validationResult(req)
+    if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
+
+      let hasMatricula = true
+
+    const estudiante_id = Number(req.params.estudianteId)
+      const periodo_id = Number(req.params.periodoId)
+
+      const isRegister = await MatriculaRepository.findByEstudianteAndPeriodo(estudiante_id, periodo_id)
+
+      if(!isRegister){
+        hasMatricula = false
+      }
+      res.status(200).json(
+        {
+          success: hasMatricula,
+          message: ""
+        }
+      )
+  })
+
   getByEstudiante = asyncHandler(async (req: Request, res: Response) => {
     const estudiante_id = Number(req.params.estudianteId)
     const matriculas = await MatriculaRepository.findByEstudiante(estudiante_id)
