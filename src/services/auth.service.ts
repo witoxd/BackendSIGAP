@@ -192,9 +192,29 @@ export class AuthService {
     }
 
     try {
+      switch (role) {
+        case RoleType.ADMIN:
+        case RoleType.ADMINISTRATIVO:
+          await client.query(
+            "INSERT INTO administrativos (persona_id, cargo) VALUES ($1, 'gestor')",
+            [personaId],
+          )
+          break
 
-      await client.query("INSERT INTO administrativos (persona_id, cargo) VALUES ($1, 'gestor')", [personaId])
+        case RoleType.PROFESOR:
+          await client.query(
+            "INSERT INTO profesores (persona_id) VALUES ($1)",
+            [personaId],
+          )
+          break
 
+        case RoleType.ESTUDIANTE:
+          // El registro de estudiante se gestiona mediante el flujo de matrícula
+          break
+
+        default:
+          throw new Error(`Rol '${role}' no tiene una tabla específica asociada`)
+      }
     } catch (error) {
       console.error("Error creando registro específico de rol:", error)
       throw error
@@ -327,15 +347,13 @@ export class AuthService {
 
       // Validaciones previas a la creacion de usuario, chekeo de email, username y rol
       await this.checkEmailAndUsername(user.email, user.username)
-      const roleResult = await this.checkRoleExists(role)
+      const roleId = await this.checkRoleExists(role)
 
       // Hash de contraseña
       const hashedPassword = await bcrypt.hash(user.contraseña, 12)
 
       // Creacion de usuario
       const usuarioResult = await UserRepository.create({ ...user, contraseña: hashedPassword }, client)
-      
-      const roleId = roleResult.rows[0].role_id
 
       // Si usuario se creo, entonces se le asigna un rol (si no se creo, no se asigna rol y se devuelve error)
       // En este punto, si no se creo el usuario y se le intenta dar un rol, se lanzara un error pero esto ya seria un error de estructura

@@ -119,6 +119,9 @@ router.get("/getById/:id",
   isSelfOrAdmin,
   userController.getUser.bind(userController))
 
+  // No implementar, se le asigna el rol admin pero, no quita el rol del anterior usuario
+  // Mejor usar transferer admin, para evitar que mas de un usuario tenga el rol admin.
+  
 // Asignar rol de administrador (solo admin)
 // router.post("/:id/assign-admin",
 //   isAdmin,
@@ -128,25 +131,22 @@ router.get("/getById/:id",
 
 /**
  * @swagger
- * /users/transfer-admin:
+ * /users/transfer-admin/toUser/{id}:
  *   post:
  *     summary: Transferir el rol de administrador a otro usuario (solo admin)
+ *     description: Quita el rol de admin al usuario autenticado y lo asigna al usuario destino. Usar este endpoint en vez de assign-admin para garantizar que solo un usuario tenga el rol.
  *     tags: [Usuarios]
- *     parametres:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: number
- *             required: [id]
- *             properties:
- *               id:
- *                 type: integer
- *                 example: 5
- *                 description: ID del usuario que recibirá el rol de admin
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 5
+ *         description: ID del usuario que recibirá el rol de administrador
  *     responses:
  *       200:
- *         description: Rol de admin transferido exitosamente
+ *         description: Rol de administrador transferido exitosamente
  *         content:
  *           application/json:
  *             schema:
@@ -154,14 +154,10 @@ router.get("/getById/:id",
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
- *       400:
- *         description: Errores de validación
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *                   example: Rol de administrador transferido exitosamente
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
