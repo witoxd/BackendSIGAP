@@ -35,13 +35,15 @@ export class TipoDocumentoController {
 
    create = asyncHandler(async (req: Request, res: Response) => {
 
-    const {tipo_documento: TipoDocumentoData} = req.body as CreateTipoDocumentoDTO
+    const {tipo_documento: TipoDocumentoData } = req.body as CreateTipoDocumentoDTO
 
     const existingTipoDocumento = await TipoDocumentoRepository.findByName(TipoDocumentoData.tipo_documento)
 
     if(existingTipoDocumento){
       throw new AppError("Ya existe un tipo documento con este nombre", 404)
     }
+
+    console.log("Data llegando", TipoDocumentoData)
 
       const tipoDocumento = await TipoDocumentoRepository.create(TipoDocumentoData)
 

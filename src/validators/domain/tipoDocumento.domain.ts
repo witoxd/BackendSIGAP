@@ -8,7 +8,7 @@ export const validateCreateTipoDocumentoDomain = async (
   next: NextFunction
 ) => {
   try {
-    const tipoDocumento = req.body
+    const {tipo_documento: tipoDocumento} = req.body
 
     // Validacion dominio con Sequelize (NO DB)
     await TipoDocumento.build(tipoDocumento).validate()
@@ -36,7 +36,7 @@ export const validateUpdateTipoDocumentoDomain = async (
   next: NextFunction
 ) => {
   try {
-    const tipoDocumento = req.body
+    const {tipo_documento: tipoDocumento} = req.body
 
     await TipoDocumento.build(tipoDocumento).validate()
 
