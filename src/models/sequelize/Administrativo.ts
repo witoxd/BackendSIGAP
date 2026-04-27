@@ -2,6 +2,8 @@ import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
 interface AdministrativoAttributes {
+  // Administrativos, incompleta todavia (Pedir fichero de administrativos a profesora rosa)
+  // Relacion 1:1 con perosnas
   administrativo_id: number
   persona_id: number
   cargo: string

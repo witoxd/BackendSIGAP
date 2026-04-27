@@ -3,9 +3,11 @@ import { sequelize } from "../../config/database"
 
 
 // Contacto — información de contacto de personas
-// Relación 1:N con personas (una persona puede tener múltiples contactos: teléfono, email, dirección, etc.)
-// Dilema: Estudiante tambien es una persona tambien podra hacer uso de esta tabla????
+// Relación 1:N con personas (una persona puede tener múltiples contactos: teléfono, email, dirección, etc.) 
+// Estudiante tambien es una persona tambien podra usar esta tabla???? Opino que no.
+// El enum de tipo_contacto......... No me llama mucho la atencion es..... restrictiva
 // Tener en cuenta no repetir datos
+
 interface ContactoAttributes {
   contacto_id: number
   persona_id: number

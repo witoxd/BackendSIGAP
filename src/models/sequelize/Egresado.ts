@@ -1,6 +1,8 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+// Egresados de la institucion, falta implementar las funciones para esta tabla
+// Relacion 1:N con estudiantes
 interface EgresadoAttributes {
   egresado_id: number
   estudiante_id: number

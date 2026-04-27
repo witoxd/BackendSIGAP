@@ -2,6 +2,8 @@ import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
 
+// Falta agregar el contacto de familiar
+
 interface ProfesorAttributes {
   profesor_id: number
   persona_id: number

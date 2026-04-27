@@ -1,6 +1,8 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+// YA se implementarion todas las funciones de esta tabla, menos la de agresado
+// Deberia cambiar estado por activo? 
 interface EstudianteAttributes {
   estudiante_id: number
   persona_id: number

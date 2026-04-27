@@ -2,6 +2,9 @@ import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
 interface AcudienteEstudianteAttributes {
+
+  // Tabla de relacion de acudiante-estudiante
+  // Consultar despues si se deberian agregar mas cambios
   acudiente_estudiante_id: number
   estudiante_id: number
   acudiente_id: number

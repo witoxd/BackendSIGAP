@@ -13,9 +13,9 @@ interface MatriculaAttributes {
   motivo_retiro?: string
 
   // --- Campos futuros: firmas digitales ---
-  // Columnas creadas como nullable para no bloquear la implementación futura.
-  // Cuando se implemente, guardarán la ruta del archivo de firma.
-  // TODO: implementar endpoint PATCH /matriculas/:id/firmas
+  // En el fichero de las matriculas habia un apartado de firmas, 
+  // no especificaron si se agregara, de todos modos aqui estan para un futura implementacion.
+
   url_firma_alumno?: string
   url_firma_acudiente?: string
 }

@@ -22,18 +22,20 @@ interface FichaEstudianteAttributes {
 
   // Contexto familiar
   numero_hermanos?: number
-  posicion_hermanos?: number       // Posición entre los hermanos (1 = mayor)
+  posicion_hermanos?: number       // Posición entre los hermanos (1 = mayor) esto deberia cambairlo por un boolean
   nombre_hermano_mayor?: string
-  parientes_hogar?: string         // Descripción libre: "abuela, tío"
-  total_parientes?: number         // Total de personas en el hogar
+  parientes_hogar?: string         
+  total_parientes?: number         
 
   // Datos médicos
+  // Tener en cuenta que son datos sensibles, agregar en la docuemntacion
   eps_ars?: string
   alergia?: string
   centro_atencion_medica?: string
 
   // Transporte
-  medio_transporte?: string        // Ej: 'Bus', 'Moto', 'A pie'
+  // Si el medio son "pies" se tomaria como transporte propio? seria muy mlp de mi parte.... me encanta
+  medio_transporte?: string       
   transporte_propio?: boolean
 
   // Observaciones generales 
@@ -104,7 +106,7 @@ FichaEstudiante.init(
     estudiante_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      unique: true,              // 1:1 — un estudiante, una ficha
+      unique: true,              
       references: {
         model: "estudiantes",
         key: "estudiante_id",

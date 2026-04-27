@@ -4,17 +4,15 @@ import { sequelize } from "../../config/database"
 // ------------------------------------------------------------
 // ViviendaEstudiante — características del hogar
 // Relación 1:1 con estudiantes.
-//
-// Datos socioeconómicos del formulario de caracterización.
-// Se usan principalmente para reportes estadísticos.
+// 
 
 
 interface ViviendaEstudianteAttributes {
   vivienda_id: number
   estudiante_id: number
-  tipo_paredes?: string   // Ej: 'Ladrillo', 'Madera', 'Bahareque'
-  tipo_techo?: string     // Ej: 'Zinc', 'Concreto', 'Palma'
-  tipo_pisos?: string     // Ej: 'Cerámica', 'Cemento', 'Tierra'
+  tipo_paredes?: string   
+  tipo_techo?: string     
+  tipo_pisos?: string     
   num_banos?: number
   num_cuartos?: number
   updated_at?: Date

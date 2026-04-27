@@ -2,6 +2,7 @@ import { DataTypes, Model, Sequelize, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
 interface AuditoriaAttributes {
+  // Tabal de auditoria o mas bien historial, opino que hay que cambiarlo y en vez de una varias para distintas tablas, esta se queda corta.
   auditoria_id: number
   tabla_nombre: string
   accion: string

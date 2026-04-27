@@ -4,12 +4,9 @@ import { sequelize } from "../../config/database"
 // ------------------------------------------------------------
 // MatriculaArchivo — tabla intermedia M:N entre matriculas y archivos
 //
-// Un archivo (documento de identidad, boletín, etc.) vive en
-// la tabla `archivos` asociado a la persona. Esta tabla
-// simplemente dice "este archivo fue presentado para esta matrícula".
-//
-// Ventaja: el documento de identidad se sube una vez y puede
+// el documento se sube una vez y puede
 // asociarse a múltiples matrículas sin duplicar el archivo físico.
+// Debo implementar las funciones para esto, pero como????
 // ------------------------------------------------------------
 
 interface MatriculaArchivoAttributes {

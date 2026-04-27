@@ -4,6 +4,7 @@ import { sequelize } from "../../config/database"
 // ----------------------------------------------------------
 // aplica_a y requerido_en se declaran como STRING[] aquí.
 // Sequelize los crea como TEXT[] en la BD.
+// Esto se debe a que no maneja un array de enums de manera nativa
 //
 // Luego dbInit.ts, que corre DESPUÉS del sync, crea el ENUM
 // contexto_archivo y convierte ambas columnas:
@@ -28,8 +29,8 @@ interface TipoArchivoAttributes {
   descripcion?:            string
   extensiones_permitidas?: string[]
   activo:                  boolean
-  aplica_a?:               string[]   // TEXT[] → convertido a contexto_archivo[] por dbInit
-  requerido_en?:           string[]   // TEXT[] → convertido a contexto_archivo[] por dbInit
+  aplica_a?:               string[]   // TEXT[]  convertido a contexto_archivo[] por dbInit
+  requerido_en?:           string[]   // TEXT[]  convertido a contexto_archivo[] por dbInit
 }
 
 export interface TipoArchivoCreationAttributes

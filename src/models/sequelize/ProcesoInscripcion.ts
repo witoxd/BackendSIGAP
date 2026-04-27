@@ -1,6 +1,8 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+// Proceso de inscripcion, defnira cuando matricular
+// Deberia agregar el update_at???
 interface ProcesoInscripcionAttributes {
   proceso_id: number
   periodo_id: number

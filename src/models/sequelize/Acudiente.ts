@@ -1,6 +1,10 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+
+// Tabla de acudientes
+// Relacion 1:1 con personas
+// Relacionde 1:N con acudiente-estudiante
 interface AcudienteAttributes {
   acudiente_id: number
   persona_id: number

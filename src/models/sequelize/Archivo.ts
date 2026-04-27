@@ -1,7 +1,9 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
-
+// Tabla de Archivos
+// Relacion M:1 con tipos de archivos
+// Deberia agregar el tamaño real del archivo? y si lo hago para que utilizaria ese dato? :|
 interface ArchivosAttributes {
   archivo_id: number
   persona_id: number

@@ -1,7 +1,8 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
-
+// Un profesor podra remaplazar a 1 o mas profesores???
+// Seria bueno o explotacion laboral? le subiran el salario?
 interface ReemplazoProfesorAttributes {
   reemplazo_id: number
   profesor_id: number           

@@ -2,7 +2,7 @@ import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
 
-// ColegioAnterior — historial de instituciones previas
+// ColegioAnterior — historial de instituciones anteriores del estudiante
 // Relación 1:N con estudiantes.
 
 interface ColegioAnteriorAttributes {

@@ -1,6 +1,10 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+
+// Curso.... Definitivamente hay que cambiar esta tabla, puede que sea pocos cambos pero algunos no sirven para eso
+// Porque carajo porque puse que un curso deberia tener descripcion????? bueno errores del pasado y de esto aprendo
+// Relacion 1:N con Matriculas
  interface CursoAttributes {
   curso_id: number
   nombre: string

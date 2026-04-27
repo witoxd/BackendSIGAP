@@ -1,12 +1,16 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+
+// Jornadas, Deberia poner jornadas laborales asi me sentia en el colegio, espero que mi compañero no vea esto..... ni nadie
 interface JornadaAttributes {
   jornada_id: number
   nombre: string
   hora_inicio?: string
   hora_fin?: string
 }
+
+
 
 export interface JornadaCreationAttributes extends Optional<JornadaAttributes, "jornada_id"> {}
 

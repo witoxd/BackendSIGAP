@@ -1,14 +1,8 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
-// ------------------------------------------------------------
-// PeriodoMatricula — controla cuándo está abierto el proceso
-// de matrícula. Solo puede haber UN período activo al mismo
-// tiempo, garantizado por un índice parcial en la BD.
-//
-// El backend resuelve el período activo automáticamente —
-// el cliente nunca envía periodo_id en sus requests.
-// ------------------------------------------------------------
+//Periodo de la Matricula, el tiempo de vida.
+// Por fin me quito esa incertidumbre de que le faltaba algo a matricula
 
 interface PeriodoMatriculaAttributes {
   periodo_id: number

@@ -1,6 +1,8 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+// Agregar funicones para despues
+// Ni los endpoint estan implementados 
 interface PermisoAttributes {
   permiso_id: number
   nombre: string

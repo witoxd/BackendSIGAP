@@ -21,6 +21,7 @@ import { AcudienteEstudiante } from "./AcudienteEstudiante"
 import { Auditoria } from "./Auditoria"
 import { PeriodoMatricula } from "./PeriodoMatricula"
 import { MatriculaArchivo } from "./MatriculaArchivo"
+import { ProcesoInscripcion } from "./ProcesoInscripcion"
 import { FichaEstudiante } from "./FichaEstudiante"
 import { ColegioAnterior } from "./ColegioAnterior"
 import { ViviendaEstudiante } from "./ViviendaEstudiante"
@@ -193,6 +194,9 @@ export const setupAssociations = () => {
   Matricula.hasMany(MatriculaHistorial, { foreignKey: "matricula_id", as: "historial" })
   MatriculaHistorial.belongsTo(Matricula, { foreignKey: "matricula_id", as: "matricula" })
 
+  PeriodoMatricula.hasMany(ProcesoInscripcion, {foreignKey: "periodo_id", as: "periodo"})
+  ProcesoInscripcion.belongsTo(PeriodoMatricula, {foreignKey: "inscripcion_id", as: "inscripcion"})
+
   // ----------------------------------------------------------
   // Archivos
   // ----------------------------------------------------------
@@ -219,15 +223,15 @@ export const setupAssociations = () => {
 
 export const initializeModels = () => {
   setupAssociations()
-  console.log("✅ Sequelize models initialized with associations")
+  console.log(" Sequelize models initialized with associations")
 }
 
 export const syncModels = async (force = false) => {
   try {
     await sequelize.sync({ force, alter: !force })
-    console.log(`✅ Database ${force ? "reset" : "synchronized"} successfully`)
+    console.log(`Database ${force ? "reset" : "synchronized"} successfully`)
   } catch (error) {
-    console.error("❌ Error de syncronozacion de base de datos:", error)
+    console.error("Error de syncronozacion de base de datos:", error)
     throw error
   }
 }
