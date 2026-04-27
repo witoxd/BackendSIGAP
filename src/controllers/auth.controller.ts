@@ -43,7 +43,6 @@ export class AuthController {
 
       res.status(200).json({
         success: true,
-        message: "Contraseña restablecida exitosamente",
         data: req.user,
       })
   })
