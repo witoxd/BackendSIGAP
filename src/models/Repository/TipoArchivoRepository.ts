@@ -1,6 +1,14 @@
 import { query } from "../../config/database"
 import type { TipoArchivoCreationAttributes } from "../sequelize/TipoArchivo"
 import type { ContextoArchivo } from "../sequelize/TipoArchivo"
+import { parsePostgresArray } from "../../utils/parsePostgresArray"
+
+function normalizeTipoArchivo(row: any) {
+  if (!row) return row
+  row.aplica_a     = parsePostgresArray(row.aplica_a)
+  row.requerido_en = parsePostgresArray(row.requerido_en)
+  return row
+}
 
 export class TipoArchivoRepository {
   /**
@@ -10,7 +18,7 @@ export class TipoArchivoRepository {
     const result = await query(
       "SELECT * FROM tipos_archivo WHERE activo = true ORDER BY nombre"
     )
-    return result.rows
+    return result.rows.map(normalizeTipoArchivo)
   }
 
 
@@ -31,7 +39,7 @@ export class TipoArchivoRepository {
       "SELECT * FROM tipos_archivo WHERE tipo_archivo_id = $1",
       [id]
     )
-    return result.rows[0]
+    return normalizeTipoArchivo(result.rows[0])
   }
 
   /**
@@ -42,7 +50,7 @@ export class TipoArchivoRepository {
       "SELECT * FROM tipos_archivo WHERE nombre = $1",
       [nombre]
     )
-    return result.rows[0]
+    return normalizeTipoArchivo(result.rows[0])
   }
 
 
@@ -72,9 +80,9 @@ static async create(
     ],
     client
   )
-  return result.rows[0]
+  return normalizeTipoArchivo(result.rows[0])
 }
- 
+
 // ----------------------------------------------------------
 // update — igual que create, el cast es necesario para
 // los arrays de ENUM.
@@ -113,14 +121,9 @@ static async update(
     values,
     client
   )
-  return result.rows[0]
+  return normalizeTipoArchivo(result.rows[0])
 }
- 
-// ----------------------------------------------------------
-// findByRol — reemplaza el método existente.
-// Ahora filtra por aplica_a (campo ENUM[]) en lugar de string[].
-// La query es idéntica pero el tipo en BD es más seguro.
-// ----------------------------------------------------------
+
 static async findByRol(rol: ContextoArchivo) {
   const result = await query(
     `SELECT * FROM tipos_archivo
@@ -129,25 +132,20 @@ static async findByRol(rol: ContextoArchivo) {
      ORDER BY nombre`,
     [rol]
   )
-  return result.rows
+  return result.rows.map(normalizeTipoArchivo)
 }
- 
-static async findByContexto(contexto: ContextoArchivo): Promise<TipoArchivoCreationAttributes[]>{
+
+static async findByContexto(contexto: ContextoArchivo): Promise<TipoArchivoCreationAttributes[]> {
   const result = await query(
     `SELECT * FROM tipos_archivo
-    WHERE activo = true
-    AND ($1::contexto_archivo = ANY(aplica_a) OR aplica_a IS NULL)
-    ORDER BY nombre`,
+     WHERE activo = true
+       AND ($1::contexto_archivo = ANY(aplica_a) OR aplica_a IS NULL)
+     ORDER BY nombre`,
     [contexto]
   )
-  return result.rows
+  return result.rows.map(normalizeTipoArchivo)
 }
-// ----------------------------------------------------------
-// findRequeridosPor — nuevo método, devuelve solo los tipos
-// que son OBLIGATORIOS en un contexto específico.
-// Usado por MatriculaArchivoRepository.findArchivosRequeridos
-// y por el checklist del frontend.
-// ----------------------------------------------------------
+
 static async findRequeridosPor(contexto: ContextoArchivo) {
   const result = await query(
     `SELECT * FROM tipos_archivo
@@ -156,7 +154,7 @@ static async findRequeridosPor(contexto: ContextoArchivo) {
      ORDER BY nombre`,
     [contexto]
   )
-  return result.rows
+  return result.rows.map(normalizeTipoArchivo)
 }
 
 
@@ -166,28 +164,24 @@ static async findRequeridosPor(contexto: ContextoArchivo) {
    */
   static async hardDelete(id: number, client?: any) {
     const result = await query(
-      `DELETE FROM tipos_archivo 
-       WHERE tipo_archivo_id = $1 
+      `DELETE FROM tipos_archivo
+       WHERE tipo_archivo_id = $1
        RETURNING *`,
       [id],
       client
     )
-    return result.rows[0]
+    return normalizeTipoArchivo(result.rows[0])
   }
-
-  /**
-   * SoftDelete un tipo de archivo
-   */
 
   static async softDelete(id: number, client?: any) {
     const result = await query(
-      `UPDATE tipos_archivo SET activo = false 
-       WHERE tipo_archivo_id = $1 
+      `UPDATE tipos_archivo SET activo = false
+       WHERE tipo_archivo_id = $1
        RETURNING *`,
       [id],
       client
     )
-    return result.rows[0]
+    return normalizeTipoArchivo(result.rows[0])
   }
 
   /**
