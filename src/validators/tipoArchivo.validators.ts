@@ -30,6 +30,22 @@ export const createTipoArchivoHttpValidator: ValidationChain[] = [
     .optional()
     .isBoolean()
     .withMessage("activo debe ser booleano"),
+  body("tipo_archivo.aplica_a")
+    .optional()
+    .isArray()
+    .withMessage("aplica_a debe ser un array"),
+  body("tipo_archivo.aplica_a.*")
+    .optional()
+    .isIn(["estudiante", "profesor", "administrativo", "acudiente", "matricula"])
+    .withMessage("Contexto inválido en aplica_a"),
+  body("tipo_archivo.requerido_en")
+    .optional()
+    .isArray()
+    .withMessage("requerido_en debe ser un array"),
+  body("tipo_archivo.requerido_en.*")
+    .optional()
+    .isIn(["estudiante", "profesor", "administrativo", "acudiente", "matricula"])
+    .withMessage("Contexto inválido en requerido_en"),
 ]
 
 export const updateTipoArchivoHttpValidator: ValidationChain[] = [
@@ -60,6 +76,22 @@ export const updateTipoArchivoHttpValidator: ValidationChain[] = [
     .optional()
     .isBoolean()
     .withMessage("activo debe ser booleano"),
+  body("tipo_archivo.aplica_a")
+    .optional()
+    .isArray()
+    .withMessage("aplica_a debe ser un array"),
+  body("tipo_archivo.aplica_a.*")
+    .optional()
+    .isIn(["estudiante", "profesor", "administrativo", "acudiente", "matricula"])
+    .withMessage("Contexto inválido en aplica_a"),
+  body("tipo_archivo.requerido_en")
+    .optional()
+    .isArray()
+    .withMessage("requerido_en debe ser un array"),
+  body("tipo_archivo.requerido_en.*")
+    .optional()
+    .isIn(["estudiante", "profesor", "administrativo", "acudiente", "matricula"])
+    .withMessage("Contexto inválido en requerido_en"),
 ]
 
 export const tipoArchivoIdValidator: ValidationChain[] = [
