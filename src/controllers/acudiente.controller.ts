@@ -9,6 +9,7 @@ import { validationResult } from "express-validator"
 import { assignToEstudiante } from "../types"
 import { PersonaService } from "../services/persona.service"
 import { asyncHandler } from "../utils/asyncHandler"
+import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
 
 
 
@@ -181,6 +182,23 @@ export class AcudienteController {
    assignToEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
 
     const { assignToEstudiante: AcudienteAssingEstudiante } = req.body as assignToEstudiante
+
+     const Acudiente = await AcudienteRepository.findById(AcudienteAssingEstudiante.acudiente_id)
+
+    if (!Acudiente) {
+      throw new AppError("Acudiente no encontrado", 404)
+    }
+
+    const Estudiante = await EstudianteRepository.findById(AcudienteAssingEstudiante.estudiante_id)
+
+    if (!Estudiante) {
+      throw new AppError("Estudiante no encontrado", 404)
+    }
+
+    if(Acudiente.persona.persona_id === Estudiante.persona.persona_id){
+      throw new AppError("No se puede asignar un estudiante como su propio acudiente", 400)
+    }
+
       const result = await AcudienteRepository.assignToEstudiante(AcudienteAssingEstudiante)
 
       res.status(200).json({
