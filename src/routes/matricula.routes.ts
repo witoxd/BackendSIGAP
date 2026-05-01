@@ -140,7 +140,7 @@ router.get(
 
 router.get(
   "/findMatriculaByEstudiante/estudiante/:estudianteId/Matricula/:matriculaId",
-  param("estudianteId", "matriculaId").isInt({min: 0}).withMessage("IDs invalidos"),
+  param("estudianteId", "matriculaId").isInt({min: 1}).withMessage("IDs invalidos"),
   validate,
   checkPermission(Recurso.MATRICULAS, Accion.READ),
   matriculaController.findMatriculaAndPeriodo.bind(matriculaController)

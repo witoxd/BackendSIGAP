@@ -1,6 +1,7 @@
 import { query, transaction } from "../config/database"
 import type { PaginationParams, PaginatedResponse } from "../types"
 import { NotFoundError, ConflictError, ForbiddenError, DatabaseError } from "../utils/AppError"
+import { parsePostgresArray } from "../utils/parsePostgresArray"
 
 export class UserService {
   // Obtener usuario por ID con información completa
@@ -27,8 +28,8 @@ export class UserService {
       }
 
       const user = result.rows[0]
-      // Excluir contraseña
       delete user.contraseña
+      user.roles = parsePostgresArray(user.roles)
 
       return user
     } catch (error: any) {
@@ -121,7 +122,7 @@ export class UserService {
       const dataResult = await query(dataQuery, [...values, limit, offset])
 
       return {
-        data: dataResult.rows,
+        data: dataResult.rows.map((u: any) => ({ ...u, roles: parsePostgresArray(u.roles) })),
         pagination: {
           page,
           limit,

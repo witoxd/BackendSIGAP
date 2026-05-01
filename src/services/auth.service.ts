@@ -7,27 +7,7 @@ import { UsuarioCreationAttributes } from "../models/sequelize/Usuario"
 import { PersonaCreationAttributes } from "../models/sequelize/Persona"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { UserRepository } from "../models/Repository/UserRepository"
-
-/**
- * Convierte el valor de roles a string[] limpio.
- * El driver pg puede devolver arrays PostgreSQL como:
- *   - string[]: ["admin", "profesor"]  → ya correcto
- *   - string:   "{admin,profesor}"     → necesita parseo
- *   - null/undefined                   → array vacío
- */
-const parsePostgresArray = (value: unknown): string[] => {
-  if (!value) return []
-  if (Array.isArray(value)) return value.filter(Boolean)
-  if (typeof value === "string") {
-    // Formato PostgreSQL: {admin,profesor} o {"admin","profesor"}
-    return value
-      .replace(/^\{|\}$/g, "")
-      .split(",")
-      .map((s) => s.replace(/^"|"$/g, "").trim())
-      .filter(Boolean)
-  }
-  return []
-}
+import { parsePostgresArray } from "../utils/parsePostgresArray"
 export class AuthService {
   // Registrar un nuevo usuario
 
