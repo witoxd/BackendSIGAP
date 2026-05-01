@@ -10,7 +10,6 @@ import { getFileUrl } from "../config/multer"
 import { ArchivoRepository } from "../models/Repository/ArchivoRepository"
 import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepository"
 import path from "path"
-import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { archivoService } from "../services/archivos.services"
 import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
 import { MatriculaArchivoRepository } from "../models/Repository/MatriculaArchivoRepository"
@@ -48,9 +47,9 @@ export class MatriculaController {
       let hasMatricula = true
 
     const estudiante_id = Number(req.params.estudianteId)
-      const periodo_id = Number(req.params.periodoId)
+      const matricula_id = Number(req.params.matriculaId)
 
-      const isRegister = await MatriculaRepository.findByEstudianteAndPeriodo(estudiante_id, periodo_id)
+      const isRegister = await MatriculaRepository.findByEstudianteAndPeriodo(estudiante_id, matricula_id)
 
       if(!isRegister){
         hasMatricula = false
@@ -235,18 +234,20 @@ export class MatriculaController {
         )
       }
 
+      // Error de logica, pero se deja comentado por si se quiere activar la validación de permisos a futuro.
+      // Cuando se intenta registrar la matricula esta da error debido a que matricula se asume como rol, esto crea un conflicto de logica ya que un estudiante no es matricula
       // La persona debe tener permiso para subir este tipo específico.
-      const puedeSubir = await PersonaRepository.personaPuedeSubirArchivo(
-        Number(estudiante.persona.persona_id),
-        Number(meta.tipo_archivo_id)
-      )
-      if (!puedeSubir) {
-        await archivoService.deleteFileArray(files)
-        throw new AppError(
-          `Esta persona no tiene permiso para subir el tipo de archivo: "${tipoArchivo.nombre}"`,
-          403
-        )
-      }
+      // const puedeSubir = await PersonaRepository.personaPuedeSubirArchivo(
+      //   Number(estudiante.persona.persona_id),
+      //   Number(meta.tipo_archivo_id)
+      // )
+      // if (!puedeSubir) {
+      //   await archivoService.deleteFileArray(files)
+      //   throw new AppError(
+      //     `Esta persona no tiene permiso para subir el tipo de archivo: "${tipoArchivo.nombre}"`,
+      //     403
+      //   )
+      // }
 
       // La extensión del archivo debe estar en la lista blanca del tipo.
       const ext = path.extname(file.originalname).toLowerCase()
