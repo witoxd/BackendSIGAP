@@ -74,10 +74,16 @@ const createEnums = async () => {
 // -----------------------------------------------------------------------------
 const createPartialIndexes = async () => {
   // Solo un período de matrícula puede estar activo a la vez
-  // Si intentas activar un segundo, PostgreSQL rechaza el INSERT/UPDATE
   await query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_un_periodo_activo
       ON periodos_matricula(activo)
+      WHERE activo = true;
+  `)
+
+  // Solo un proceso de inscripción puede estar activo a la vez
+  await query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_un_proceso_activo
+      ON procesos_inscripcion(activo)
       WHERE activo = true;
   `)
 
@@ -266,6 +272,76 @@ const createTriggers = async () => {
       EXECUTE FUNCTION fn_verificar_periodo_activo();
   `)
 
+  // ── Trigger: gestión automática de procesos de inscripción ──────────────────
+  //
+  // Se ejecuta BEFORE INSERT OR UPDATE en procesos_inscripcion.
+  // Hace dos cosas:
+  //   1. Si el proceso que se está guardando tiene fecha_fin_inscripcion < hoy
+  //      y activo = true, lo fuerza a activo = false (ya venció).
+  //   2. Si el proceso quedaría activo = true, desactiva cualquier otro proceso
+  //      que ya esté activo (garantía adicional sobre el índice parcial único).
+  //
+  // El índice parcial único (idx_un_proceso_activo) es la primera línea de
+  // defensa; este trigger es la segunda, y además maneja el cierre automático
+  // por vencimiento de fecha.
+  // ---------------------------------------------------------------------------
+  await query(`
+    CREATE OR REPLACE FUNCTION fn_gestionar_proceso_inscripcion()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      -- Cierre automático: si la fecha de fin ya pasó, el proceso no puede
+      -- estar activo independientemente de lo que el usuario haya enviado.
+      IF NEW.fecha_fin_inscripcion < CURRENT_DATE THEN
+        NEW.activo := false;
+      END IF;
+
+      -- Si el proceso queda activo, desactivar cualquier otro proceso activo
+      -- antes de insertar/actualizar para no violar el índice único.
+      IF NEW.activo = true THEN
+        UPDATE procesos_inscripcion
+          SET activo = false
+          WHERE activo = true
+            AND proceso_id IS DISTINCT FROM NEW.proceso_id;
+      END IF;
+
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+  `)
+
+  await query(`
+    DROP TRIGGER IF EXISTS trg_gestionar_proceso_inscripcion ON procesos_inscripcion;
+
+    CREATE TRIGGER trg_gestionar_proceso_inscripcion
+      BEFORE INSERT OR UPDATE ON procesos_inscripcion
+      FOR EACH ROW
+      EXECUTE FUNCTION fn_gestionar_proceso_inscripcion();
+  `)
+
+  // ── Trigger: cierre periódico de procesos vencidos ─────────────────────────
+  //
+  // El trigger anterior cubre INSERT/UPDATE, pero si ninguna operación toca
+  // la tabla mientras un proceso vence, el campo activo quedaría stale.
+  // Esta función se puede llamar desde un endpoint de "housekeeping" o al
+  // arrancar el servidor para cerrar procesos vencidos sin esperar un trigger.
+  // ---------------------------------------------------------------------------
+  await query(`
+    CREATE OR REPLACE FUNCTION fn_cerrar_procesos_vencidos()
+    RETURNS INTEGER AS $$
+    DECLARE
+      v_cerrados INTEGER;
+    BEGIN
+      UPDATE procesos_inscripcion
+        SET activo = false
+        WHERE activo = true
+          AND fecha_fin_inscripcion < CURRENT_DATE;
+
+      GET DIAGNOSTICS v_cerrados = ROW_COUNT;
+      RETURN v_cerrados;
+    END;
+    $$ LANGUAGE plpgsql;
+  `)
+
   console.log("  ✓ Triggers creados")
 }
 
@@ -346,6 +422,22 @@ const createPerformanceIndexes = async () => {
 //   4. Triggers (dependen de las funciones)
 //   5. Índices de performance (al final, no son críticos para integridad)
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// HOUSEKEEPING: cerrar procesos vencidos al arrancar
+//
+// Si el servidor estuvo apagado mientras un proceso de inscripción vencía,
+// el trigger no pudo actuar. Esta llamada lo cierra al inicio del servidor.
+// -----------------------------------------------------------------------------
+const closeExpiredProcesses = async () => {
+  const result = await query(`SELECT fn_cerrar_procesos_vencidos() AS cerrados`)
+  const cerrados = result.rows[0]?.cerrados ?? 0
+  if (cerrados > 0) {
+    console.log(`  ✓ ${cerrados} proceso(s) de inscripción vencido(s) cerrado(s) automáticamente`)
+  } else {
+    console.log("  ✓ Sin procesos de inscripción vencidos pendientes")
+  }
+}
+
 export const initializeDatabase = async () => {
   console.log("🔧 Inicializando configuración avanzada de base de datos...")
 
@@ -357,6 +449,7 @@ export const initializeDatabase = async () => {
     await createViews()
     await createTriggers()
     await createPerformanceIndexes()
+    await closeExpiredProcesses()
 
     console.log("Base de datos inicializada correctamente\n")
   } catch (error) {
