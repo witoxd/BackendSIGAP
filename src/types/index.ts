@@ -125,6 +125,13 @@ export interface CreateAssingProfesorDTO{
 export interface CreateProfesorDTO {
   profesor: ProfesorCreationAttributes
   persona: PersonaCreationAttributes
+  contactos: Omit<ContactoCreationAttributes, "contacto_id" | "persona_id">[]
+  contacto_emergencia: {
+    nombre: string
+    parentesco: string
+    telefono: string
+    celular?: string | null
+  }
 }
 
 export interface UpdateProfesorDTO{

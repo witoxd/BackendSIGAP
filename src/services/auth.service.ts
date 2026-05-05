@@ -367,11 +367,12 @@ export class AuthService {
       const result = await transaction(async (client) => {
         const existingPersona = await PersonaRepository.findByDocumento(persona.numero_documento, client)
 
-        if (existingPersona.rows.length > 0) {
+        if (existingPersona > 0) {
           throw new ConflictError("Ya existe una persona con ese documento")
         }
 
         const personaResult = await PersonaRepository.create(persona, client)
+
         const usuarioResult = await this.createUser(user, personaResult.persona_id, role, client)
 
         return {

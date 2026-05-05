@@ -5,6 +5,7 @@ import { AppError } from "../utils/AppError"
 import { asyncHandler } from "../utils/asyncHandler"
 import { validationResult } from "express-validator"
 import type { CreateProcesoInscripcionDTO, UpdateProcesoInscripcionDTO } from "../types"
+import { query } from "../config/database"
 
 export class ProcesoInscripcionController {
 
@@ -64,11 +65,19 @@ export class ProcesoInscripcionController {
       )
     }
 
+    // Advertir si ya hay un proceso activo (el trigger lo desactivará automáticamente)
+    const activoResult = await query(
+      `SELECT proceso_id, nombre FROM procesos_inscripcion WHERE activo = true LIMIT 1`
+    )
+    const procesoActivoPrevio = activoResult.rows[0] ?? null
+
     const proceso = await ProcesoInscripcionRepository.create(data)
 
     res.status(201).json({
       success: true,
-      message: "Proceso de inscripción creado exitosamente",
+      message: procesoActivoPrevio
+        ? `Proceso creado. El proceso anterior "${procesoActivoPrevio.nombre}" fue desactivado automáticamente.`
+        : "Proceso de inscripción creado exitosamente",
       data: proceso,
     })
   })
