@@ -44,6 +44,15 @@ export class AcudienteController {
     })
   })
 
+  getDetalles = asyncHandler(async (req: Request, res: Response) => {
+    const id = Number(req.params.id)
+    const detalles = await AcudienteRepository.findDetalles(id)
+
+    if (!detalles) throw new AppError("Acudiente no encontrado", 404)
+
+    res.status(200).json({ success: true, data: detalles })
+  })
+
   getAcudientesByEstudiante = asyncHandler(async (req: Request, res: Response) => {
 
     const estudianteId = Number(req.params.id)

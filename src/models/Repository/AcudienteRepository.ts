@@ -165,6 +165,50 @@ export class AcudienteRepository {
     return result.rows[0]
   }
 
+  // Datos completos del acudiente + estudiantes a su cargo en una sola consulta.
+  static async findDetalles(acudienteId: number) {
+    const [baseResult, estudiantesResult] = await Promise.all([
+      query(
+        `SELECT
+          ${PERSONA_FIELDS_JSON},
+          ${ACUDIENTE_FIELDS_JSON}
+        FROM acudientes a
+        INNER JOIN personas p       ON a.persona_id         = p.persona_id
+        LEFT  JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+        WHERE a.acudiente_id = $1`,
+        [acudienteId]
+      ),
+      query(
+        `SELECT
+          json_build_object(
+            'estudiante_id',    e.estudiante_id,
+            'nombres',          p.nombres,
+            'apellido_paterno', p.apellido_paterno,
+            'apellido_materno', p.apellido_materno,
+            'numero_documento', p.numero_documento
+          ) AS estudiante,
+          json_build_object(
+            'tipo_relacion', ae.tipo_relacion,
+            'es_principal',  ae.es_principal
+          ) AS relacion
+        FROM acudiente_estudiante ae
+        INNER JOIN estudiantes e ON ae.estudiante_id = e.estudiante_id
+        INNER JOIN personas    p ON e.persona_id     = p.persona_id
+        WHERE ae.acudiente_id = $1
+        ORDER BY ae.es_principal DESC, p.apellido_paterno`,
+        [acudienteId]
+      ),
+    ])
+
+    const base = baseResult.rows[0]
+    if (!base) return null
+
+    return {
+      ...base,
+      estudiantes: estudiantesResult.rows,
+    }
+  }
+
   static async assignToEstudiante(data: Omit<AcudienteEstudianteCreationAttributes, "acudiente_estudiante_id">) {
     const result = await query(
       `INSERT INTO acudiente_estudiante (estudiante_id, acudiente_id, tipo_relacion, es_principal)
@@ -182,20 +226,31 @@ export class AcudienteRepository {
     return result.rows[0]
   }
 
-  // Obtener acudientes asignados a un estudiante
+  // Obtener acudientes asignados a un estudiante.
+  // Solo los campos que muestra SeccionAcudientes — sin datos biométricos ni registrales.
   static async getAcudientesByEstudiante(estudianteId: number) {
     const result = await query(
       `SELECT
-       ${PERSONA_FIELDS_JSON},
-       ${ACUDIENTE_FIELDS_JSON},
-       ae.tipo_relacion,
-       ae.es_principal
-       FROM acudiente_estudiante ae
-       INNER JOIN acudientes a ON ae.acudiente_id = a.acudiente_id
-       INNER JOIN personas p ON a.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
-       WHERE ae.estudiante_id = $1
-       ORDER BY ae.es_principal DESC, p.apellido_paterno`,
+        json_build_object(
+          'persona_id',        p.persona_id,
+          'nombres',           p.nombres,
+          'apellido_paterno',  p.apellido_paterno,
+          'apellido_materno',  p.apellido_materno,
+          'numero_documento',  p.numero_documento,
+          'tipo_documento',    json_build_object(
+            'tipo_documento_id', td.tipo_documento_id,
+            'nombre_documento',  td.nombre_documento
+          )
+        ) AS persona,
+        ${ACUDIENTE_FIELDS_JSON},
+        ae.tipo_relacion,
+        ae.es_principal
+      FROM acudiente_estudiante ae
+      INNER JOIN acudientes     a  ON ae.acudiente_id      = a.acudiente_id
+      INNER JOIN personas       p  ON a.persona_id         = p.persona_id
+      LEFT  JOIN tipo_documento td ON p.tipo_documento_id  = td.tipo_documento_id
+      WHERE ae.estudiante_id = $1
+      ORDER BY ae.es_principal DESC, p.apellido_paterno`,
       [estudianteId],
     )
     return result.rows

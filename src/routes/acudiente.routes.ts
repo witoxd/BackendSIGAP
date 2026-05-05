@@ -198,6 +198,14 @@ router.get(
   acudienteController.getById.bind(acudienteController),
 )
 
+router.get(
+  "/getDetalles/:id",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.ACUDIENTES, Accion.READ),
+  acudienteController.getDetalles.bind(acudienteController),
+)
+
 /**
  * @swagger
  * /acudientes/searchIndex/{index}:
