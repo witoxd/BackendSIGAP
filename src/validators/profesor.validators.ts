@@ -1,83 +1,116 @@
 import { body, type ValidationChain } from "express-validator"
 
-// HTTP Validators - Validacion de estructura de request
-export const createProfesorHttpValidator: ValidationChain[] = [
-  body("profesor")
-    .isObject()
-    .withMessage("El objeto profesor es requerido"),
-  body("persona")
-    .isObject()
-    .withMessage("El objeto persona es requerido"),
+// ── Campos laborales del profesor ─────────────────────────────────────────────
+
+const profesorFieldsCreate: ValidationChain[] = [
+  body("profesor").isObject().withMessage("El objeto profesor es requerido"),
+
+  body("profesor.cargo").isString().notEmpty().withMessage("El cargo es requerido"),
+  body("profesor.area").isString().notEmpty().withMessage("El área es requerida"),
+  body("profesor.sede").isString().notEmpty().withMessage("La sede es requerida"),
+  body("profesor.tipo_contrato").isString().notEmpty().withMessage("El tipo de contrato es requerido"),
+  body("profesor.grado_escalafon").isString().notEmpty().withMessage("El grado de escalafón es requerido"),
+
   body("profesor.fecha_contratacion")
-    .optional()
-    .isISO8601()
-    .withMessage("La fecha de contratacion debe ser una fecha valida"),
+    .isISO8601().withMessage("La fecha de contratación debe ser una fecha válida"),
+  body("profesor.fecha_nombramiento")
+    .isISO8601().withMessage("La fecha de nombramiento debe ser una fecha válida"),
+  body("profesor.numero_resolucion")
+    .isString().notEmpty().withMessage("El número de resolución es requerido"),
+
+  body("profesor.jornada_id")
+    .isInt({ min: 1 }).withMessage("La jornada es requerida"),
+
   body("profesor.estado")
     .optional()
-    .isIn(["activo", "inactivo"])
-    .withMessage("El estado debe ser activo o inactivo"),
-  // Persona fields
-  body("persona.nombres")
-    .isString()
-    .withMessage("Los nombres deben ser texto")
-    .notEmpty()
-    .withMessage("Los nombres son requeridos"),
-  body("persona.apellido_paterno")
-    .optional()
-    .isString()
-    .withMessage("El apellido paterno debe ser texto"),
-  body("persona.apellido_materno")
-    .optional()
-    .isString()
-    .withMessage("El apellido materno debe ser texto"),
-  body("persona.tipo_documento_id")
-    .isInt({ min: 1 })
-    .withMessage("El tipo de documento es requerido"),
-  body("persona.numero_documento")
-    .isString()
-    .withMessage("El numero de documento debe ser texto")
-    .notEmpty()
-    .withMessage("El numero de documento es requerido"),
-  body("persona.fecha_nacimiento")
-    .isISO8601()
-    .withMessage("La fecha de nacimiento debe ser una fecha valida"),
-  body("persona.genero")
-    .isIn(["Masculino", "Femenino", "Otro"])
-    .withMessage("El genero debe ser Masculino, Femenino u Otro"),
+    .isIn(["activo", "inactivo"]).withMessage("El estado debe ser activo o inactivo"),
+
+  body("profesor.titulo").optional().isString(),
+  body("profesor.posgrado").optional().isString(),
+  body("profesor.perfil_profesional").optional().isString(),
+]
+
+const profesorFieldsUpdate: ValidationChain[] = [
+  body("profesor").optional().isObject(),
+
+  body("profesor.cargo").optional().isString().notEmpty(),
+  body("profesor.area").optional().isString().notEmpty(),
+  body("profesor.sede").optional().isString().notEmpty(),
+  body("profesor.tipo_contrato").optional().isString().notEmpty(),
+  body("profesor.grado_escalafon").optional().isString().notEmpty(),
+  body("profesor.fecha_contratacion").optional().isISO8601(),
+  body("profesor.fecha_nombramiento").optional().isISO8601(),
+  body("profesor.numero_resolucion").optional().isString().notEmpty(),
+  body("profesor.jornada_id").optional().isInt({ min: 1 }),
+  body("profesor.estado").optional().isIn(["activo", "inactivo"]),
+  body("profesor.titulo").optional().isString(),
+  body("profesor.posgrado").optional().isString(),
+  body("profesor.perfil_profesional").optional().isString(),
+]
+
+// ── Persona ───────────────────────────────────────────────────────────────────
+
+const personaFieldsCreate: ValidationChain[] = [
+  body("persona").isObject().withMessage("El objeto persona es requerido"),
+  body("persona.nombres").isString().notEmpty().withMessage("Los nombres son requeridos"),
+  body("persona.apellido_paterno").isString().notEmpty().withMessage("El apellido paterno es requerido"),
+  body("persona.apellido_materno").optional().isString(),
+  body("persona.tipo_documento_id").isInt({ min: 1 }).withMessage("El tipo de documento es requerido"),
+  body("persona.numero_documento").isString().notEmpty().withMessage("El número de documento es requerido"),
+  body("persona.fecha_nacimiento").isISO8601().withMessage("La fecha de nacimiento es requerida"),
+  body("persona.genero").isIn(["Masculino", "Femenino", "Otro"]).withMessage("Género inválido"),
+]
+
+const personaFieldsUpdate: ValidationChain[] = [
+  body("persona").optional().isObject(),
+  body("persona.nombres").optional().isString().notEmpty(),
+  body("persona.apellido_paterno").optional().isString(),
+  body("persona.apellido_materno").optional().isString(),
+  body("persona.numero_documento").optional().isString().notEmpty(),
+]
+
+// ── Contactos ─────────────────────────────────────────────────────────────────
+
+const contactosCreate: ValidationChain[] = [
+  body("contactos")
+    .isArray({ min: 1 }).withMessage("Se requiere al menos un contacto"),
+  body("contactos.*.tipo_contacto")
+    .isIn(["telefono", "celular", "email", "direccion", "otro"])
+    .withMessage("Tipo de contacto inválido"),
+  body("contactos.*.valor")
+    .isString().notEmpty().withMessage("El valor del contacto es requerido"),
+  body("contactos.*.es_principal")
+    .isBoolean().withMessage("es_principal debe ser booleano"),
+]
+
+// ── Contacto de emergencia ────────────────────────────────────────────────────
+
+const contactoEmergenciaCreate: ValidationChain[] = [
+  body("contacto_emergencia")
+    .isObject().withMessage("El contacto de emergencia es requerido"),
+  body("contacto_emergencia.nombre")
+    .isString().notEmpty().withMessage("El nombre del contacto de emergencia es requerido"),
+  body("contacto_emergencia.parentesco")
+    .isString().notEmpty().withMessage("El parentesco es requerido"),
+  body("contacto_emergencia.telefono")
+    .isString().notEmpty().withMessage("El teléfono del contacto de emergencia es requerido"),
+  body("contacto_emergencia.celular").optional().isString(),
+]
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+
+export const createProfesorHttpValidator: ValidationChain[] = [
+  ...personaFieldsCreate,
+  ...profesorFieldsCreate,
+  ...contactosCreate,
+  ...contactoEmergenciaCreate,
 ]
 
 export const updateProfesorHttpValidator: ValidationChain[] = [
-  body("profesor")
-    .optional()
-    .isObject()
-    .withMessage("El objeto profesor debe ser un objeto"),
-  body("persona")
-    .optional()
-    .isObject()
-    .withMessage("El objeto persona debe ser un objeto"),
-  body("profesor.fecha_contratacion")
-    .optional()
-    .isISO8601()
-    .withMessage("La fecha de contratacion debe ser una fecha valida"),
-  body("profesor.estado")
-    .optional()
-    .isIn(["activo", "inactivo"])
-    .withMessage("El estado debe ser activo o inactivo"),
-  // Persona fields (optional for update)
-  body("persona.nombres")
-    .optional()
-    .isString()
-    .withMessage("Los nombres deben ser texto"),
-  body("persona.apellido_paterno")
-    .optional()
-    .isString()
-    .withMessage("El apellido paterno debe ser texto"),
-  body("persona.apellido_materno")
-    .optional()
-    .isString()
-    .withMessage("El apellido materno debe ser texto"),
+  ...personaFieldsUpdate,
+  ...profesorFieldsUpdate,
 ]
 
-// Legacy exports for backward compatibility
+// Legacy
 export const createProfesorValidator = createProfesorHttpValidator
-export const updateProfesorValidator = updateProfesorHttpValidator
+export const updateProfesorValidator  = updateProfesorHttpValidator

@@ -101,7 +101,7 @@ Profesor.init(
     grado_escalafon: {
       type: DataTypes.STRING(20),
       allowNull: true,
-      comment: "Grado del escalafón docente colombiano, ej: 2, 11, 14",
+      comment: "Grado del escalafón docente, ej: 2, 11, 14",
     },
     cargo: {
       type: DataTypes.STRING(100),

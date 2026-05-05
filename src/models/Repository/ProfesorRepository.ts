@@ -185,4 +185,57 @@ static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, clien
     const result = await query("SELECT COUNT(*) FROM profesores")
     return Number.parseInt(result.rows[0].count)
   }
+
+  // Datos completos del profesor para la página de detalles.
+  // Persona + profesor (con jornada_nombre) + contactos de emergencia activos, en paralelo.
+  static async findDetalles(profesorId: number) {
+    const [baseResult, emergenciaResult] = await Promise.all([
+      query(
+        `SELECT
+          ${PERSONA_FIELDS_JSON},
+          json_build_object(
+            'profesor_id',        pr.profesor_id,
+            'estado',             pr.estado,
+            'fecha_contratacion', pr.fecha_contratacion,
+            'fecha_nombramiento', pr.fecha_nombramiento,
+            'numero_resolucion',  pr.numero_resolucion,
+            'sede',               pr.sede,
+            'titulo',             pr.titulo,
+            'perfil_profesional', pr.perfil_profesional,
+            'posgrado',           pr.posgrado,
+            'grado_escalafon',    pr.grado_escalafon,
+            'cargo',              pr.cargo,
+            'area',               pr.area,
+            'tipo_contrato',      pr.tipo_contrato,
+            'jornada_nombre',     j.nombre
+          ) AS profesor
+        FROM profesores pr
+        INNER JOIN personas       p  ON pr.persona_id        = p.persona_id
+        LEFT  JOIN tipo_documento td ON p.tipo_documento_id  = td.tipo_documento_id
+        LEFT  JOIN jornadas       j  ON pr.jornada_id        = j.jornada_id
+        WHERE pr.profesor_id = $1`,
+        [profesorId]
+      ),
+      query(
+        `SELECT
+          contacto_emergencia_id,
+          nombre,
+          parentesco,
+          telefono,
+          celular
+        FROM profesor_contactos_emergencia
+        WHERE profesor_id = $1 AND activo = true
+        ORDER BY contacto_emergencia_id`,
+        [profesorId]
+      ),
+    ])
+
+    const base = baseResult.rows[0]
+    if (!base) return null
+
+    return {
+      ...base,
+      contactos_emergencia: emergenciaResult.rows,
+    }
+  }
 }

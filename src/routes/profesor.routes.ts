@@ -2,13 +2,14 @@ import { Router } from "express"
 import { authenticate } from "../middleware/auth"
 import { checkPermission } from "../middleware/acl"
 import { ProfesorController } from "../controllers/profesor.controller"
-import { 
-  createProfesorHttpValidator, 
-  updateProfesorHttpValidator 
+import contactoEmergenciaRoutes from "./profesorContactoEmergencia.routes"
+import {
+  createProfesorHttpValidator,
+  updateProfesorHttpValidator
 } from "../validators/profesor.validators"
-import { 
-  validateCreateProfesorDomain, 
-  validateUpdateProfesorDomain 
+import {
+  validateCreateProfesorDomain,
+  validateUpdateProfesorDomain
 } from "../validators/domain"
 import { validate } from "../middleware/validate"
 import { param } from "express-validator"
@@ -18,6 +19,9 @@ const router = Router()
 const profesorController = new ProfesorController()
 
 router.use(authenticate)
+
+// Subrutas de contactos de emergencia: /profesores/:profesorId/contactos-emergencia
+router.use("/:profesorId/contactos-emergencia", contactoEmergenciaRoutes)
 
 // =============================================================================
 // SWAGGER — Definición del tag y schemas locales
@@ -143,6 +147,14 @@ router.get(
   validate,
   checkPermission(Recurso.PROFESORES, Accion.READ),
   profesorController.getById.bind(profesorController),
+)
+
+router.get(
+  "/getDetalles/:id",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.PROFESORES, Accion.READ),
+  profesorController.getDetalles.bind(profesorController),
 )
 
 /**
