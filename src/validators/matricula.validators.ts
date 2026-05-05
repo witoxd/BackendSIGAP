@@ -25,6 +25,7 @@ export const createMatriculaHttpValidator: ValidationChain[] = [
 export const updateMatriculaHttpValidator: ValidationChain[] = [
   body("matricula.estudiante_id")
     .optional()
+    .notEmpty()
     .isInt({ min: 1 })
     .withMessage("El ID de estudiante debe ser un numero valido"),
   body("matricula.curso_id")

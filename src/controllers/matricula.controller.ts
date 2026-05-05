@@ -40,6 +40,18 @@ export class MatriculaController {
     res.status(200).json({ success: true, data: matricula })
   })
 
+  getDetalles = asyncHandler(async (req: Request, res: Response) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
+
+    const id = Number(req.params.id)
+    const detalles = await MatriculaRepository.findDetalles(id)
+
+    if (!detalles) throw new AppError("Matrícula no encontrada", 404)
+
+    res.status(200).json({ success: true, data: detalles })
+  })
+
   findMatriculaAndPeriodo = asyncHandler(async (req: Request, res: Response) => {
         const errors = validationResult(req)
     if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
@@ -63,9 +75,22 @@ export class MatriculaController {
   })
 
   getByEstudiante = asyncHandler(async (req: Request, res: Response) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
+
     const estudiante_id = Number(req.params.estudianteId)
+
     const matriculas = await MatriculaRepository.findByEstudiante(estudiante_id)
-    res.status(200).json({ success: true, data: matriculas })
+
+    // Enriquecer cada matrícula con su historial de cambios
+    const matriculasConHistorial = await Promise.all(
+      matriculas.map(async (m: any) => {
+        const historial = await MatriculaRepository.findHistorialByMatricula(m.matricula_id)
+        return { ...m, historial }
+      })
+    )
+
+    res.status(200).json({ success: true, data: matriculasConHistorial })
   })
 
   getByCurso = asyncHandler(async (req: Request, res: Response) => {
@@ -96,6 +121,7 @@ export class MatriculaController {
 
     res.status(201).json({ success: true, data: matricula, message: "Matrícula creada exitosamente" })
   })
+  
 
   // --------------------------------------------------------------------------
   // ProcessMatricula — flujo completo de matrícula con archivos
@@ -362,7 +388,7 @@ export class MatriculaController {
   // Los demás estados (activa, finalizada) se derivan de las fechas.
   // --------------------------------------------------------------------------
   retirar = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id)
+    const id = Number(req.params.matriculaId)
     const { motivo } = req.body
 
     const matricula = await MatriculaRepository.findById(id)

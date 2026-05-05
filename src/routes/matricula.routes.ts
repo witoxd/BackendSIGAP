@@ -139,12 +139,32 @@ router.get(
 )
 
 router.get(
+  "/getDetalles/:id",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.MATRICULAS, Accion.READ),
+  matriculaController.getDetalles.bind(matriculaController),
+)
+
+// Docuemntar despues con swagger
+router.get(
   "/findMatriculaByEstudiante/estudiante/:estudianteId/Matricula/:matriculaId",
   param("estudianteId", "matriculaId").isInt({min: 1}).withMessage("IDs invalidos"),
   validate,
   checkPermission(Recurso.MATRICULAS, Accion.READ),
   matriculaController.findMatriculaAndPeriodo.bind(matriculaController)
 )
+
+// Docuemntar despues con swagger 
+router.get(
+  "/getByEstudiante/:estudianteId",
+  param("estudianteId").isInt({ min: 1 }).withMessage("ID de estudiante invalido"),
+  validate,
+  checkPermission(Recurso.MATRICULAS, Accion.READ),
+  matriculaController.getByEstudiante.bind(matriculaController)
+)
+
+
 /**
  * @swagger
  * /matriculas/create:
@@ -264,6 +284,15 @@ router.put(
   validateUpdateMatriculaDomain,
   checkPermission(Recurso.MATRICULAS, Accion.UPDATE),
   matriculaController.update.bind(matriculaController),
+)
+
+// Docuemntar despues con swagger
+router.put(
+  "/retirar/:matriculaId",
+  param("matriculaId").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.MATRICULAS, Accion.UPDATE),
+  matriculaController.retirar.bind(matriculaController),
 )
 
 /**
