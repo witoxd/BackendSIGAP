@@ -7,6 +7,7 @@ import { Role } from "./Role"
 import { UsuarioRole } from "./UsuarioRole"
 import { Estudiante } from "./Estudiante"
 import { Profesor } from "./Profesor"
+import { ProfesorContactoEmergencia } from "./ProfesorContactoEmergencia"
 import { Administrativo } from "./Administrativo"
 import { Curso } from "./Curso"
 import { Matricula } from "./Matricula"
@@ -170,6 +171,9 @@ export const setupAssociations = () => {
   Jornada.hasMany(Profesor, { foreignKey: "jornada_id", as: "profesores_jornada" })
   Profesor.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
 
+  Profesor.hasMany(ProfesorContactoEmergencia, { foreignKey: "profesor_id", as: "contactos_emergencia"  })
+  ProfesorContactoEmergencia.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor" })
+
   // ----------------------------------------------------------
   // Matrícula
   // ----------------------------------------------------------
@@ -246,6 +250,7 @@ export {
   Estudiante,
   Profesor,
   ReemplazoProfesor,
+  ProfesorContactoEmergencia,
   Administrativo,
   Curso,
   Matricula,
