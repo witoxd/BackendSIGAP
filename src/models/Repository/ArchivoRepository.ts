@@ -103,7 +103,7 @@ export class ArchivoRepository {
       `SELECT a.*
        FROM archivos a INNER JOIN tipos_archivo ta ON a.tipo_archivo_id = ta.tipo_archivo_id
        LEFT JOIN personas p ON a.persona_id = p.persona_id
-       WHERE a.persona_id = $1 AND ta.nombre = 'foto' AND a.activo = true
+       WHERE a.persona_id = $1 AND ta.nombre = 'Foto de Perfil' AND a.activo = true
        ORDER BY a.fecha_carga DESC LIMIT 1`,
       [personaId]
     )

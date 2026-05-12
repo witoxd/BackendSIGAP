@@ -29,7 +29,8 @@ const seedRoles = async (client: any) => {
   for (const role of roles) {
     await query(
       `INSERT INTO roles (nombre, descripcion)
-       VALUES ($1, $2)`,
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
       [role.nombre, role.descripcion],
       client
     )
@@ -159,7 +160,7 @@ const seedJornadas = async (client: any) => {
   ]
 
   for (const jornada of jornadas) {
-    await query(
+     await query(
       `INSERT INTO jornadas (nombre, hora_inicio, hora_fin)
        VALUES ($1, $2, $3)
        ON CONFLICT DO NOTHING`,
@@ -168,7 +169,9 @@ const seedJornadas = async (client: any) => {
     )
   }
 
+
   console.log("  ✓ Jornadas creadas")
+
 }
 
 // -----------------------------------------------------------------------------
@@ -284,7 +287,7 @@ const seedTiposArchivo = async (client: any) => {
       `INSERT INTO tipos_archivo
          (nombre, descripcion, extensiones_permitidas, activo, aplica_a, requerido_en)
        VALUES ($1, $2, $3, true, $4, $5)
-       ON CONFLICT (nombre) DO NOTHING`,
+       ON CONFLICT DO NOTHING`,
       [
         tipo.nombre,
         tipo.descripcion,
@@ -300,33 +303,38 @@ const seedTiposArchivo = async (client: any) => {
 }
 
 // -----------------------------------------------------------------------------
-// CURSOS — grados del sistema educativo colombiano
+// CURSOS — tomando en cuenta la Ley 115 de 1994
 // -----------------------------------------------------------------------------
 const seedCursos = async (client: any) => {
+  // Obtener jornada_id de "Mañana" dinámicamente
+  const jornadaResult = await query(
+    `SELECT jornada_id FROM jornadas WHERE nombre = 'Mañana' LIMIT 1`,
+    [],
+    client
+  )
+  const jornadaId = jornadaResult.rows[0]?.jornada_id
+  if (!jornadaId) throw new Error("Jornada 'Mañana' no encontrada — ejecuta seedJornadas primero")
+
   const cursos = [
-    // Primaria
-    { nombre: "Primero A",   grado: "1" },
-    { nombre: "Primero B",   grado: "1" },
-    { nombre: "Segundo A",   grado: "2" },
-    { nombre: "Tercero A",   grado: "3" },
-    { nombre: "Cuarto A",    grado: "4" },
-    { nombre: "Quinto A",    grado: "5" },
-    // Secundaria
-    { nombre: "Sexto A",     grado: "6" },
-    { nombre: "Séptimo A",   grado: "7" },
-    { nombre: "Octavo A",    grado: "8" },
-    { nombre: "Noveno A",    grado: "9" },
-    // Media
-    { nombre: "Décimo A",    grado: "10" },
-    { nombre: "Undécimo A",  grado: "11" },
+    { grado: "1°",  nivel: "Primaria",    grupo: "A" },
+    { grado: "2°",  nivel: "Primaria",    grupo: "A" },
+    { grado: "3°",  nivel: "Primaria",    grupo: "A" },
+    { grado: "4°",  nivel: "Primaria",    grupo: "A" },
+    { grado: "5°",  nivel: "Primaria",    grupo: "A" },
+    { grado: "6°",  nivel: "Secundaria",  grupo: "A" },
+    { grado: "7°",  nivel: "Secundaria",  grupo: "A" },
+    { grado: "8°",  nivel: "Secundaria",  grupo: "A" },
+    { grado: "9°",  nivel: "Secundaria",  grupo: "A" },
+    { grado: "10°", nivel: "Media",       grupo: "A" },
+    { grado: "11°", nivel: "Media",       grupo: "A" },
   ]
 
   for (const curso of cursos) {
     await query(
-      `INSERT INTO cursos (nombre, grado)
-       VALUES ($1, $2)
+      `INSERT INTO cursos (grado, nivel, grupo, jornada_id, capacidad_maxima)
+       VALUES ($1, $2, $3, $4, 40)
        ON CONFLICT DO NOTHING`,
-      [curso.nombre, curso.grado],
+      [curso.grado, curso.nivel, curso.grupo, jornadaId],
       client
     )
   }
@@ -396,12 +404,22 @@ const seedAdminUser = async (client: any) => {
     )
   }
 
+  // Crear docente del admin
+  const docenteResult = await query(
+    `INSERT INTO docente (persona_id, cargo, estado)
+     VALUES ($1, $2, 'activo')
+     RETURNING docente_id`,
+    [personaId, "Administrador del Sistema"],
+    client
+  )
+  const docenteId = docenteResult.rows[0].docente_id
+
   // Crear registro de administrativo
   await query(
-    `INSERT INTO administrativos (persona_id, cargo, estado)
-     VALUES ($1, $2, $3)
+    `INSERT INTO administrativos (docente_id)
+     VALUES ($1)
      ON CONFLICT DO NOTHING`,
-    [personaId, "Administrador del Sistema", true],
+    [docenteId],
     client
   )
 

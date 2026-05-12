@@ -76,17 +76,26 @@ export type {
 //  ADMINISTRATIVOS TYPES
 // ============================================================================
 
+export interface AdministrativoPayload {
+  cargo?:              string
+  sede?:               string
+  jornada_id?:         number
+  tipo_contrato?:      string
+  estado?:             "activo" | "inactivo"
+  fecha_contratacion?: Date | string
+}
+
 export interface CreateAssingAdministrativoDTO{
   administrativo: AdministrativoCreationAttributes
 }
 
 export interface CreateAdministrativoDTO {
-  administrativo: AdministrativoCreationAttributes
+  administrativo: AdministrativoPayload
   persona: PersonaCreationAttributes
 }
 
 export interface UpdateAdministrativoDTO{
-   administrativo: Partial<Omit<AdministrativoCreationAttributes, "administrador_id">> 
+   administrativo: AdministrativoPayload
    persona: Partial<PersonaCreationAttributes>
 }
 
@@ -118,12 +127,31 @@ export interface assignToEstudiante{
 //  PROFESOR TYPES
 // ============================================================================
 
-export interface CreateAssingProfesorDTO{
+export interface CreateAssingProfesorDTO {
   profesor: ProfesorCreationAttributes
 }
 
+// Payload plano que el controller distribuye entre docente + profesores
+export interface ProfesorPayload {
+  // Campos que van a docente (contratación)
+  cargo?:             string
+  sede?:              string
+  jornada_id?:        number
+  tipo_contrato?:     string
+  estado?:            "activo" | "inactivo"
+  fecha_contratacion?: Date | string
+  // Campos que van a profesores (específicos)
+  fecha_nombramiento?:  Date | string
+  numero_resolucion?:   string
+  grado_escalafon?:     string
+  area?:                string
+  titulo?:              string
+  posgrado?:            string
+  perfil_profesional?:  string
+}
+
 export interface CreateProfesorDTO {
-  profesor: ProfesorCreationAttributes
+  profesor: ProfesorPayload
   persona: PersonaCreationAttributes
   contactos: Omit<ContactoCreationAttributes, "contacto_id" | "persona_id">[]
   contacto_emergencia: {
@@ -134,9 +162,9 @@ export interface CreateProfesorDTO {
   }
 }
 
-export interface UpdateProfesorDTO{
-  profesor: Partial<Omit<ProfesorCreationAttributes, "profesor_id" | "persona_id">> 
-  persona?: Partial<PersonaCreationAttributes>
+export interface UpdateProfesorDTO {
+  profesor?: ProfesorPayload
+  persona?:  Partial<PersonaCreationAttributes>
 }
 
 

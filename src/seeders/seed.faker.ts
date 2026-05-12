@@ -25,6 +25,10 @@ import { faker } from "@faker-js/faker/locale/es"
 
 faker.seed(42) // Seed fijo para reproducibilidad — mismo resultado cada ejecución
 
+const PROFERSOR_FAKER = 100
+const ESTUDIANTE_FAKER = 250
+const ADMINISTRATIVO_FAKER = 50
+
 // -----------------------------------------------------------------------------
 // HELPERS
 // -----------------------------------------------------------------------------
@@ -188,81 +192,103 @@ const crearPersona = async (
 // SEED PROFESORES
 // -----------------------------------------------------------------------------
 const seedProfesores = async (client: any, ids: Awaited<ReturnType<typeof getIds>>) => {
-  console.log("  → Creando 5 profesores...")
+  console.log("  → Creando", PROFERSOR_FAKER, " profesores...")
   const tipoCC = ids.tiposDoc.find(t => t.tipo_documento === "CC")!
 
-  const profesores: any[] = []
+  let creados = 0
 
-  for (let i = 0; i < 5; i++) {
-    const persona = await crearPersona(client, tipoCC.tipo_documento_id)
+  for (let i = 0; i < PROFERSOR_FAKER; i++) {
+    const persona          = await crearPersona(client, tipoCC.tipo_documento_id)
     const fechaContratacion = faker.date.past({ years: 10 })
-    const fechaNombramiento = faker.date.between({
-      from: fechaContratacion,
-      to: new Date(),
-    })
-    const titulo = randomItem(titulos)
-    const area = randomItem(areasProfesor)
-    const tienePosgrado = faker.datatype.boolean(0.6)
+    const fechaNombramiento = faker.date.between({ from: fechaContratacion, to: new Date() })
+    const titulo            = randomItem(titulos)
+    const area              = randomItem(areasProfesor)
+    const tienePosgrado     = faker.datatype.boolean(0.6)
 
-    // await crearUsuario(client, persona.persona_id, persona, ids.roleProfesor)
+    // Insertar en docente (campos compartidos de contratación)
+    const docenteResult = await query(
+      `INSERT INTO docente
+         (persona_id, cargo, sede, jornada_id, tipo_contrato, estado, fecha_contratacion)
+       VALUES ($1, $2, $3, $4, $5, 'activo', $6)
+       ON CONFLICT (persona_id) DO NOTHING
+       RETURNING docente_id`,
+      [
+        persona.persona_id,
+        randomItem(cargosProfesor),
+        randomItem(sedes),
+        randomItem(ids.jornadas).jornada_id,
+        randomItem(tiposContratoProfesor),
+        fechaContratacion.toISOString().split("T")[0],
+      ],
+      client
+    )
+    if (docenteResult.rows.length === 0) continue
+    const docenteId = docenteResult.rows[0].docente_id
 
+    // Insertar en profesores (campos específicos)
     const profResult = await query(
       `INSERT INTO profesores
-         (persona_id, fecha_contratacion, fecha_nombramiento, numero_resolucion,
-          estado, jornada_id, sede, titulo, perfil_profesional, posgrado,
-          grado_escalafon, cargo, area, tipo_contrato)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         (docente_id, fecha_nombramiento, numero_resolucion, titulo,
+          perfil_profesional, posgrado, grado_escalafon, area)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT DO NOTHING
        RETURNING *`,
       [
-        persona.persona_id,
-        fechaContratacion.toISOString().split("T")[0],
+        docenteId,
         fechaNombramiento.toISOString().split("T")[0],
-        `RES-${faker.date.between({ from: fechaNombramiento, to: new Date() }).getFullYear()}-${faker.string.numeric(5)}`,
-        "activo",
-        randomItem(ids.jornadas).jornada_id,
-        randomItem(sedes),
+        `RES-${fechaNombramiento.getFullYear()}-${faker.string.numeric(5)}`,
         titulo,
         faker.lorem.sentences({ min: 1, max: 2 }),
         tienePosgrado ? randomItem(posgrados) : null,
         randomItem(gradosEscalafon),
-        randomItem(cargosProfesor),
         area,
-        randomItem(tiposContratoProfesor),
       ],
       client
     )
 
-    if (profResult.rows.length > 0) profesores.push(profResult.rows[0])
+    if (profResult.rows.length > 0) creados++
   }
 
-  console.log(`  ✓ ${profesores.length} profesores creados`)
-  return profesores
+  console.log(`  ✓ ${creados} profesores creados`)
 }
 
 // -----------------------------------------------------------------------------
 // SEED ADMINISTRATIVOS
 // -----------------------------------------------------------------------------
 const seedAdministrativos = async (client: any, ids: Awaited<ReturnType<typeof getIds>>) => {
-  console.log("  → Creando 3 administrativos...")
+  console.log("  → Creando ", ADMINISTRATIVO_FAKER, " administrativos...")
   const tipoCC = ids.tiposDoc.find(t => t.tipo_documento === "CC")!
 
-  const cargos = ["Secretaria", "Coordinador Académico", "Rector", "Tesorero", "Psicólogo"]
+  const cargosAdmin = ["Secretaria", "Coordinador Académico", "Rector", "Tesorero", "Psicólogo"]
 
-  for (let i = 0; i < 3; i++) {
+  let creados = 0
+  for (let i = 0; i < ADMINISTRATIVO_FAKER; i++) {
     const persona = await crearPersona(client, tipoCC.tipo_documento_id)
-    // await crearUsuario(client, persona.persona_id, persona, ids.roleAdmin)
 
-    await query(
-      `INSERT INTO administrativos (persona_id, cargo, estado)
-       VALUES ($1, $2, $3)
-       ON CONFLICT DO NOTHING`,
-      [persona.persona_id, randomItem(cargos), true],
+    // Insertar en docente (verificar que no exista ya por esta persona)
+    const docenteResult = await query(
+      `INSERT INTO docente (persona_id, cargo, estado)
+       VALUES ($1, $2, 'activo')
+       ON CONFLICT (persona_id) DO NOTHING
+       RETURNING docente_id`,
+      [persona.persona_id, randomItem(cargosAdmin)],
       client
     )
+    if (docenteResult.rows.length === 0) continue
+    const docenteId = docenteResult.rows[0].docente_id
+
+    // Insertar en administrativos
+    await query(
+      `INSERT INTO administrativos (docente_id)
+       VALUES ($1)
+       ON CONFLICT DO NOTHING`,
+      [docenteId],
+      client
+    )
+    creados++
   }
 
-  console.log("  ✓ 3 administrativos creados")
+  console.log(`  ✓ ${creados} administrativos creados`)
 }
 
 // -----------------------------------------------------------------------------
@@ -273,14 +299,14 @@ const seedEstudiantes = async (
   ids: Awaited<ReturnType<typeof getIds>>,
   periodoId: number,
 ) => {
-  console.log("  → Creando 30 estudiantes con ficha, vivienda y acudiente...")
+  console.log("  → Creando ", ESTUDIANTE_FAKER, ", estudiantes con ficha, vivienda y acudiente...")
 
   const tipoCC = ids.tiposDoc.find(t => t.tipo_documento === "CC")!
   const tipoTI = ids.tiposDoc.find(t => t.tipo_documento === "TI")!
 
   const cursosDisponibles = [...ids.cursos]
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < ESTUDIANTE_FAKER; i++) {
     // 1. Persona del estudiante (usa TI para menores)
     const genero  = randomItem(generos)
     const sexo    = genero === "Masculino" ? "male" : "female"
@@ -407,23 +433,20 @@ const seedEstudiantes = async (
       )
     }
 
-    // 7. Matrícula en el período activo
-    const curso    = randomItem(cursosDisponibles)
-    const jornada  = randomItem(ids.jornadas)
+    // 7. Matrícula en el período activo (jornada_id ya no está en matriculas, vive en cursos)
+    const curso = randomItem(cursosDisponibles)
 
-
-      await query(
-        `INSERT INTO matriculas
-           (estudiante_id, curso_id, jornada_id, periodo_id, estado)
-         VALUES ($1,$2,$3,$4,'activa')
-         ON CONFLICT (estudiante_id, periodo_id) DO NOTHING`,
-        [estudiante.estudiante_id, curso.curso_id, jornada.jornada_id, periodoId],
-        client
-      )
+    await query(
+      `INSERT INTO matriculas (estudiante_id, curso_id, periodo_id, estado)
+       VALUES ($1, $2, $3, 'activa')
+       ON CONFLICT (estudiante_id, periodo_id) DO NOTHING`,
+      [estudiante.estudiante_id, curso.curso_id, periodoId],
+      client
+    )
     
   }
 
-  console.log("  ✓ 30 estudiantes creados con ficha, vivienda, acudiente y matrícula")
+  console.log(ESTUDIANTE_FAKER, " estudiantes creados con ficha, vivienda, acudiente y matrícula")
 }
 
 // -----------------------------------------------------------------------------
@@ -472,7 +495,7 @@ const seedPeriodoMatricula = async (client: any): Promise<number> => {
 // ENTRY POINT
 // -----------------------------------------------------------------------------
 const runFakerSeed = async () => {
-  console.log("\n🌱 Ejecutando seed de datos falsos (faker)...\n")
+  console.log("\n Ejecutando seed de datos falsos (faker)...\n")
   console.log("  ℹ  Todos los usuarios tendrán contraseña: Test123!\n")
 
   // Hashear contraseña por defecto una sola vez
@@ -494,11 +517,11 @@ const runFakerSeed = async () => {
       await seedEstudiantes(client, ids, periodoId)
     })
 
-    console.log("\n✅ Seed faker completado")
+    console.log("\n Seed faker completado")
     console.log("   Credenciales de prueba: cualquier usuario / Test123!\n")
     process.exit(0)
   } catch (error) {
-    console.error("\n❌ Error ejecutando seed faker:", error)
+    console.error("\n Error ejecutando seed faker:", error)
     process.exit(1)
   }
 }

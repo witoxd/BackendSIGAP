@@ -144,6 +144,30 @@ const createConstraints = async () => {
     END $$;
   `)
 
+  // Constraint UNIQUE en cursos: no puede haber dos grupos iguales en el mismo grado y jornada
+  await query(`
+    DO $$ BEGIN
+      ALTER TABLE cursos
+        ADD CONSTRAINT uq_curso_grado_grupo_jornada
+        UNIQUE (grado, grupo, jornada_id);
+    EXCEPTION
+      WHEN duplicate_table THEN NULL;
+      WHEN others THEN NULL;
+    END $$;
+  `)
+
+  // Solo un director por curso por período
+  await query(`
+    DO $$ BEGIN
+      ALTER TABLE director_grupo
+        ADD CONSTRAINT uq_director_curso_periodo
+        UNIQUE (curso_id, periodo_id);
+    EXCEPTION
+      WHEN duplicate_table THEN NULL;
+      WHEN others THEN NULL;
+    END $$;
+  `)
+
   console.log("  ✓ Constraints adicionales creados")
 }
 
@@ -170,7 +194,6 @@ const createViews = async () => {
       m.matricula_id,
       m.estudiante_id,
       m.curso_id,
-      m.jornada_id,
       m.periodo_id,
       m.fecha_matricula,
       m.fecha_retiro,
@@ -186,21 +209,27 @@ const createViews = async () => {
         ELSE                                 'inactiva'
       END AS estado_actual,
 
-      -- Estado interno (solo 'vigente' o 'retirada' — lo demás es cálculo)
+      -- Estado interno (solo 'activa' o 'retirada' — lo demás es cálculo)
       m.estado AS estado_raw,
 
-      -- Datos del período para contexto
+      -- Datos del período
       p.anio,
       p.fecha_inicio  AS periodo_fecha_inicio,
       p.fecha_fin     AS periodo_fecha_fin,
       p.activo        AS periodo_activo,
       p.descripcion   AS periodo_descripcion,
+      (p.fecha_fin - CURRENT_DATE) AS dias_restantes_periodo,
 
-      -- Días restantes (negativo = ya venció)
-      (p.fecha_fin - CURRENT_DATE) AS dias_restantes_periodo
+      -- Datos del curso (jornada_id viene del curso, no de la matrícula)
+      c.grado,
+      c.nivel,
+      c.grupo,
+      c.jornada_id,
+      c.capacidad_maxima
 
     FROM matriculas m
-    INNER JOIN periodos_matricula p ON m.periodo_id = p.periodo_id;
+    INNER JOIN periodos_matricula p ON m.periodo_id = p.periodo_id
+    INNER JOIN cursos             c ON m.curso_id   = c.curso_id;
   `)
 
   console.log("  ✓ Vista v_matriculas creada")

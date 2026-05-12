@@ -95,6 +95,14 @@ router.use(authenticate)
  */
 router.get("/getAll", checkPermission(Recurso.CURSOS, Accion.READ), cursoController.getAll.bind(cursoController))
 
+router.get(
+  "/getDetalles/:id",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.CURSOS, Accion.READ),
+  cursoController.getDetalles.bind(cursoController),
+)
+
 /**
  * @swagger
  * /cursos/getById/{id}:
