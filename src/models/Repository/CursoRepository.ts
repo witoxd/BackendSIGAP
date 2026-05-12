@@ -1,49 +1,136 @@
 import { query } from "../../config/database"
 import { CursoCreationAttributes } from "../sequelize/Curso"
 
+const CURSO_FIELDS = `
+  c.curso_id,
+  c.grado,
+  c.nivel,
+  c.grupo,
+  c.jornada_id,
+  j.nombre AS jornada_nombre,
+  c.capacidad_maxima,
+  c.activo
+`
+
 export class CursoRepository {
-  static async findAll(limit = 50, offset = 0) {
-    const result = await query("SELECT curso_id, nombre, grado FROM cursos ORDER BY grado DESC, grado ASC LIMIT $1 OFFSET $2", [limit, offset])
+  static async findAll(limit = 50, offset = 0, soloActivos = false) {
+    const whereClause = soloActivos ? "WHERE c.activo = true" : ""
+    const result = await query(
+      `SELECT ${CURSO_FIELDS}
+       FROM cursos c
+       INNER JOIN jornadas j ON c.jornada_id = j.jornada_id
+       ${whereClause}
+       ORDER BY c.nivel, c.grado, c.grupo
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    )
     return result.rows
   }
 
   static async findById(id: number) {
-    const result = await query("SELECT curso_id, nombre, grado FROM cursos WHERE curso_id = $1", [id])
-    return result.rows[0]
+    const result = await query(
+      `SELECT ${CURSO_FIELDS}
+       FROM cursos c
+       INNER JOIN jornadas j ON c.jornada_id = j.jornada_id
+       WHERE c.curso_id = $1`,
+      [id]
+    )
+    return result.rows[0] ?? null
   }
 
+  static async findDetalles(id: number) {
+    const [cursoResult, directorResult, asignacionesResult] = await Promise.all([
+      query(
+        `SELECT ${CURSO_FIELDS}
+         FROM cursos c
+         INNER JOIN jornadas j ON c.jornada_id = j.jornada_id
+         WHERE c.curso_id = $1`,
+        [id]
+      ),
+      query(
+        `SELECT
+           dg.director_id,
+           dg.periodo_id,
+           pm.anio,
+           pm.descripcion AS periodo_descripcion,
+           p.nombres,
+           p.apellido_paterno,
+           p.apellido_materno,
+           pr.profesor_id
+         FROM director_grupo dg
+         INNER JOIN profesores pr ON dg.profesor_id = pr.profesor_id
+         INNER JOIN personas p    ON pr.persona_id  = p.persona_id
+         INNER JOIN periodos_matricula pm ON dg.periodo_id = pm.periodo_id
+         WHERE dg.curso_id = $1
+         ORDER BY pm.anio DESC`,
+        [id]
+      ),
+      query(
+        `SELECT
+           ad.asignacion_id,
+           ad.periodo_id,
+           ad.materia,
+           ad.horas_semanales,
+           p.nombres,
+           p.apellido_paterno,
+           p.apellido_materno,
+           pr.profesor_id
+         FROM asignacion_docente ad
+         INNER JOIN profesores pr ON ad.profesor_id = pr.profesor_id
+         INNER JOIN personas p    ON pr.persona_id  = p.persona_id
+         WHERE ad.curso_id = $1
+         ORDER BY ad.periodo_id DESC, ad.materia`,
+        [id]
+      ),
+    ])
+
+    const curso = cursoResult.rows[0]
+    if (!curso) return null
+
+    return {
+      ...curso,
+      directores: directorResult.rows,
+      asignaciones: asignacionesResult.rows,
+    }
+  }
 
   static async create(data: Omit<CursoCreationAttributes, "curso_id">, client?: any) {
-    const rsult = await query(
-      `INSERT INTO cursos (nombre, grado)
-       VALUES ($1, $2) RETURNING *`,
+    const result = await query(
+      `INSERT INTO cursos (grado, nivel, grupo, jornada_id, capacidad_maxima, activo)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
       [
-        data.nombre,
-        data.grado
+        data.grado,
+        data.nivel,
+        data.grupo,
+        data.jornada_id,
+        data.capacidad_maxima ?? 40,
+        data.activo ?? true,
       ],
       client
     )
-    return rsult.rows[0]
+    return result.rows[0]
   }
 
   static async update(id: number, data: Partial<CursoCreationAttributes>, client?: any) {
+    const allowed = ["grado", "nivel", "grupo", "jornada_id", "capacidad_maxima", "activo"]
     const fields: string[] = []
-    const values = []
-    let paramCount = 1
+    const values: unknown[] = []
+    let idx = 1
 
-    Object.entries(data).forEach(([key, value]) => {
-      if (key !== "curso_id" && value !== undefined) {
-        fields.push(`${key} = $${paramCount}`)
-        values.push(value)
-        paramCount++
+    for (const key of allowed) {
+      if (key in data && (data as Record<string, unknown>)[key] !== undefined) {
+        fields.push(`${key} = $${idx}`)
+        values.push((data as Record<string, unknown>)[key])
+        idx++
       }
-    })
+    }
 
     if (fields.length === 0) return null
 
     values.push(id)
     const result = await query(
-      `UPDATE cursos SET ${fields.join(", ")} WHERE curso_id = $${paramCount} RETURNING *`,
+      `UPDATE cursos SET ${fields.join(", ")} WHERE curso_id = $${idx} RETURNING *`,
       values,
       client
     )
@@ -51,13 +138,16 @@ export class CursoRepository {
   }
 
   static async delete(id: number) {
-    const result = await query("DELETE FROM cursos WHERE curso_id = $1 RETURNING *", [id])
+    const result = await query(
+      "UPDATE cursos SET activo = false WHERE curso_id = $1 RETURNING *",
+      [id]
+    )
     return result.rows[0]
   }
 
-  static async count() {
-    const result = await query("SELECT COUNT(*) FROM cursos")
+  static async count(soloActivos = false) {
+    const whereClause = soloActivos ? "WHERE activo = true" : ""
+    const result = await query(`SELECT COUNT(*) FROM cursos ${whereClause}`)
     return parseInt(result.rows[0].count, 10)
   }
-
 }

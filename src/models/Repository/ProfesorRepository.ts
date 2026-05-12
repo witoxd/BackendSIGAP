@@ -2,36 +2,53 @@ import { query } from "../../config/database"
 import { ProfesorCreationAttributes } from "../sequelize/Profesor"
 import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 
+// Campos del docente (contratación compartida) + campos específicos del profesor
+const DOCENTE_FIELDS_JSON = `
+  json_build_object(
+    'docente_id',         d.docente_id,
+    'cargo',              d.cargo,
+    'sede',               d.sede,
+    'jornada_id',         d.jornada_id,
+    'jornada_nombre',     j.nombre,
+    'tipo_contrato',      d.tipo_contrato,
+    'estado',             d.estado,
+    'fecha_contratacion', d.fecha_contratacion
+  ) AS docente
+`
+
 const PROFESOR_FIELDS_JSON = `
   json_build_object(
-    'profesor_id', pr.profesor_id,
-    'fecha_contratacion', pr.fecha_contratacion,
+    'profesor_id',        pr.profesor_id,
+    'docente_id',         pr.docente_id,
     'fecha_nombramiento', pr.fecha_nombramiento,
-    'numero_resolucion', pr.numero_resolucion,
-    'estado', pr.estado,
-    'jornada_id', pr.jornada_id,
-    'sede', pr.sede,
-    'titulo', pr.titulo,
+    'numero_resolucion',  pr.numero_resolucion,
+    'titulo',             pr.titulo,
     'perfil_profesional', pr.perfil_profesional,
-    'posgrado', pr.posgrado,
-    'grado_escalafon', pr.grado_escalafon,
-    'cargo', pr.cargo,
-    'area', pr.area,
-    'tipo_contrato', pr.tipo_contrato
+    'posgrado',           pr.posgrado,
+    'grado_escalafon',    pr.grado_escalafon,
+    'area',               pr.area
   ) AS profesor
 `
 
-export class ProfesorRepository  {
+const JOINS = `
+  FROM profesores pr
+  INNER JOIN docente d    ON pr.docente_id        = d.docente_id
+  INNER JOIN personas p   ON d.persona_id         = p.persona_id
+  LEFT  JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+  LEFT  JOIN jornadas j   ON d.jornada_id         = j.jornada_id
+`
+
+export class ProfesorRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
       `SELECT
-      ${PERSONA_FIELDS_JSON},
-      ${PROFESOR_FIELDS_JSON}
-       FROM profesores pr
-       INNER JOIN personas p ON pr.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
-       ORDER BY pr.profesor_id LIMIT $1 OFFSET $2`,
-      [limit, offset],
+       ${PERSONA_FIELDS_JSON},
+       ${DOCENTE_FIELDS_JSON},
+       ${PROFESOR_FIELDS_JSON}
+       ${JOINS}
+       ORDER BY pr.profesor_id
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
     )
     return result.rows
   }
@@ -40,79 +57,67 @@ export class ProfesorRepository  {
     const result = await query(
       `SELECT
        ${PERSONA_FIELDS_JSON},
+       ${DOCENTE_FIELDS_JSON},
        ${PROFESOR_FIELDS_JSON}
-       FROM profesores pr
-       INNER JOIN personas p ON pr.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+       ${JOINS}
        WHERE pr.profesor_id = $1`,
-      [id],
+      [id]
     )
-    return result.rows[0]
+    return result.rows[0] ?? null
   }
 
   static async findByPersonaId(personaId: number) {
     const result = await query(
       `SELECT
        ${PERSONA_FIELDS_JSON},
+       ${DOCENTE_FIELDS_JSON},
        ${PROFESOR_FIELDS_JSON}
-       FROM profesores pr
-       INNER JOIN personas p ON pr.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
-       WHERE pr.persona_id = $1`,
-      [personaId])
+       ${JOINS}
+       WHERE d.persona_id = $1`,
+      [personaId]
+    )
+    return result.rows[0] ?? null
+  }
+
+  static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, client?: any) {
+    const result = await query(
+      `INSERT INTO profesores (docente_id, fecha_nombramiento, numero_resolucion, titulo, perfil_profesional, posgrado, grado_escalafon, area)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        data.docente_id,
+        data.fecha_nombramiento ?? null,
+        data.numero_resolucion ?? null,
+        data.titulo ?? null,
+        data.perfil_profesional ?? null,
+        data.posgrado ?? null,
+        data.grado_escalafon ?? null,
+        data.area ?? null,
+      ],
+      client
+    )
     return result.rows[0]
   }
 
-  
-
-static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, client?: any) {
-  const result = await query(
-    `INSERT INTO profesores 
-       (persona_id, fecha_contratacion, fecha_nombramiento, numero_resolucion,
-        estado, jornada_id, sede, titulo, perfil_profesional, posgrado,
-        grado_escalafon, cargo, area, tipo_contrato)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-     RETURNING *`,
-    [
-      data.persona_id,
-      data.fecha_contratacion || new Date(),
-      data.fecha_nombramiento ?? null,
-      data.numero_resolucion ?? null,
-      data.estado || "activo",
-      data.jornada_id,
-      data.sede,
-      data.titulo,
-      data.perfil_profesional,
-      data.posgrado,
-      data.grado_escalafon,
-      data.cargo,
-      data.area,
-      data.tipo_contrato,
-    ],
-    client
-  )
-  return result.rows[0]
-}
-
-
   static async update(id: number, data: Partial<ProfesorCreationAttributes>, client?: any) {
+    const allowed = ["fecha_nombramiento", "numero_resolucion", "titulo", "perfil_profesional", "posgrado", "grado_escalafon", "area"]
     const fields: string[] = []
-    const values = []
-    let paramCount = 1
+    const values: unknown[] = []
+    let idx = 1
 
-    Object.entries(data).forEach(([key, value]) => {
-      if (key !== "profesor_id" && key !== "fecha_contratacion" && value !== undefined) {
-        fields.push(`${key} = $${paramCount}`)
-        values.push(value)
-        paramCount++
+    for (const key of allowed) {
+      if (key in data && (data as Record<string, unknown>)[key] !== undefined) {
+        fields.push(`${key} = $${idx}`)
+        values.push((data as Record<string, unknown>)[key])
+        idx++
       }
-    })
+    }
 
     if (fields.length === 0) return null
 
     values.push(id)
     const result = await query(
-      `UPDATE profesores SET ${fields.join(", ")} WHERE profesor_id = $${paramCount} RETURNING *`,
+      `UPDATE profesores SET ${fields.join(", ")} WHERE profesor_id = $${idx} RETURNING *`,
       values,
       client
     )
@@ -130,8 +135,9 @@ static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, clien
          SELECT $1::text AS q, $2::boolean AS is_documento
        )
        SELECT
-      ${PERSONA_FIELDS_JSON},
-      ${PROFESOR_FIELDS_JSON},
+       ${PERSONA_FIELDS_JSON},
+       ${DOCENTE_FIELDS_JSON},
+       ${PROFESOR_FIELDS_JSON},
          CASE
            WHEN input.is_documento THEN
              CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END
@@ -145,9 +151,7 @@ static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, clien
                plainto_tsquery('spanish', input.q)
              )
          END AS rank
-       FROM profesores pr
-       INNER JOIN personas p ON pr.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id,
+       ${JOINS},
        input
        WHERE (
          input.is_documento = true
@@ -171,7 +175,7 @@ static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, clien
        )
        ORDER BY rank DESC, p.apellido_paterno, p.apellido_materno, p.nombres
        LIMIT $3`,
-      [normalizedIndex, isDocumento, limit],
+      [normalizedIndex, isDocumento, limit]
     )
     return result.rows
   }
@@ -186,46 +190,41 @@ static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, clien
     return Number.parseInt(result.rows[0].count)
   }
 
-  // Datos completos del profesor para la página de detalles.
-  // Persona + profesor (con jornada_nombre) + contactos de emergencia activos, en paralelo.
   static async findDetalles(profesorId: number) {
     const [baseResult, emergenciaResult] = await Promise.all([
       query(
         `SELECT
           ${PERSONA_FIELDS_JSON},
           json_build_object(
+            'docente_id',         d.docente_id,
+            'cargo',              d.cargo,
+            'sede',               d.sede,
+            'jornada_id',         d.jornada_id,
+            'jornada_nombre',     j.nombre,
+            'tipo_contrato',      d.tipo_contrato,
+            'estado',             d.estado,
+            'fecha_contratacion', d.fecha_contratacion
+          ) AS docente,
+          json_build_object(
             'profesor_id',        pr.profesor_id,
-            'estado',             pr.estado,
-            'fecha_contratacion', pr.fecha_contratacion,
+            'docente_id',         pr.docente_id,
             'fecha_nombramiento', pr.fecha_nombramiento,
             'numero_resolucion',  pr.numero_resolucion,
-            'sede',               pr.sede,
             'titulo',             pr.titulo,
             'perfil_profesional', pr.perfil_profesional,
             'posgrado',           pr.posgrado,
             'grado_escalafon',    pr.grado_escalafon,
-            'cargo',              pr.cargo,
-            'area',               pr.area,
-            'tipo_contrato',      pr.tipo_contrato,
-            'jornada_nombre',     j.nombre
+            'area',               pr.area
           ) AS profesor
-        FROM profesores pr
-        INNER JOIN personas       p  ON pr.persona_id        = p.persona_id
-        LEFT  JOIN tipo_documento td ON p.tipo_documento_id  = td.tipo_documento_id
-        LEFT  JOIN jornadas       j  ON pr.jornada_id        = j.jornada_id
-        WHERE pr.profesor_id = $1`,
+         ${JOINS}
+         WHERE pr.profesor_id = $1`,
         [profesorId]
       ),
       query(
-        `SELECT
-          contacto_emergencia_id,
-          nombre,
-          parentesco,
-          telefono,
-          celular
-        FROM profesor_contactos_emergencia
-        WHERE profesor_id = $1 AND activo = true
-        ORDER BY contacto_emergencia_id`,
+        `SELECT contacto_emergencia_id, nombre, parentesco, telefono, celular
+         FROM profesor_contactos_emergencia
+         WHERE profesor_id = $1 AND activo = true
+         ORDER BY contacto_emergencia_id`,
         [profesorId]
       ),
     ])

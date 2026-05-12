@@ -2,26 +2,19 @@ import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
 interface AdministrativoAttributes {
-  // Administrativos, incompleta todavia (Pedir fichero de administrativos a profesora rosa)
-  // Relacion 1:1 con perosnas
   administrativo_id: number
-  persona_id: number
-  cargo: string
-  fecha_contratacion: Date 
-  estado: boolean
+  docente_id:        number
 }
 
-export interface AdministrativoCreationAttributes extends Optional<AdministrativoAttributes, "administrativo_id" | "persona_id"> {}
+export interface AdministrativoCreationAttributes
+  extends Optional<AdministrativoAttributes, "administrativo_id"> {}
 
- export class Administrativo
+export class Administrativo
   extends Model<AdministrativoAttributes, AdministrativoCreationAttributes>
   implements AdministrativoAttributes
 {
   public administrativo_id!: number
-  public persona_id!: number
-  public cargo!: string
-  public fecha_contratacion!: Date
-  public estado!: boolean
+  public docente_id!:        number
 }
 
 export const AdministrativoInit = Administrativo.init(
@@ -31,36 +24,16 @@ export const AdministrativoInit = Administrativo.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    persona_id: {
+    docente_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       unique: true,
-      references: {
-        model: "personas",
-        key: "persona_id",
-      },
-    },
-    cargo: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      validate: {
-        notEmpty: true,
-      },
-    },
-    fecha_contratacion: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
-    },
-    estado: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true,
+      references: { model: "docente", key: "docente_id" },
     },
   },
   {
     sequelize,
     tableName: "administrativos",
     timestamps: false,
-  },
+  }
 )

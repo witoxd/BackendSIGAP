@@ -2,26 +2,45 @@ import { query } from "../../config/database"
 import { AdministrativoCreationAttributes } from "../sequelize/Administrativo"
 import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 
+const DOCENTE_FIELDS_JSON = `
+  json_build_object(
+    'docente_id',         d.docente_id,
+    'cargo',              d.cargo,
+    'sede',               d.sede,
+    'jornada_id',         d.jornada_id,
+    'jornada_nombre',     j.nombre,
+    'tipo_contrato',      d.tipo_contrato,
+    'estado',             d.estado,
+    'fecha_contratacion', d.fecha_contratacion
+  ) AS docente
+`
+
 const ADMINISTRATIVO_FIELDS_JSON = `
-       json_build_object(
-         'administrativo_id', a.administrativo_id,
-         'cargo', a.cargo,
-         'fecha_contratacion', a.fecha_contratacion,
-         'estado', a.estado
-       ) AS administrativo
-        `
+  json_build_object(
+    'administrativo_id', a.administrativo_id,
+    'docente_id',        a.docente_id
+  ) AS administrativo
+`
+
+const JOINS = `
+  FROM administrativos a
+  INNER JOIN docente d    ON a.docente_id          = d.docente_id
+  INNER JOIN personas p   ON d.persona_id           = p.persona_id
+  LEFT  JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+  LEFT  JOIN jornadas j   ON d.jornada_id            = j.jornada_id
+`
 
 export class AdministrativoRepository {
   static async findAll(limit = 50, offset = 0) {
     const result = await query(
       `SELECT
        ${PERSONA_FIELDS_JSON},
+       ${DOCENTE_FIELDS_JSON},
        ${ADMINISTRATIVO_FIELDS_JSON}
-       FROM administrativos a
-       INNER JOIN personas p ON a.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
-       ORDER BY a.administrativo_id LIMIT $1 OFFSET $2`,
-      [limit, offset],
+       ${JOINS}
+       ORDER BY a.administrativo_id
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
     )
     return result.rows
   }
@@ -30,28 +49,26 @@ export class AdministrativoRepository {
     const result = await query(
       `SELECT
        ${PERSONA_FIELDS_JSON},
+       ${DOCENTE_FIELDS_JSON},
        ${ADMINISTRATIVO_FIELDS_JSON}
-       FROM administrativos a
-       INNER JOIN personas p ON a.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+       ${JOINS}
        WHERE a.administrativo_id = $1`,
-      [id],
+      [id]
     )
-    return result.rows[0]
+    return result.rows[0] ?? null
   }
 
   static async findByPersonaId(personaId: number) {
     const result = await query(
       `SELECT
        ${PERSONA_FIELDS_JSON},
+       ${DOCENTE_FIELDS_JSON},
        ${ADMINISTRATIVO_FIELDS_JSON}
-       FROM administrativos a
-       INNER JOIN personas p ON a.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
-       WHERE a.persona_id = $1`,
-      [personaId],
+       ${JOINS}
+       WHERE d.persona_id = $1`,
+      [personaId]
     )
-    return result.rows[0]
+    return result.rows[0] ?? null
   }
 
   static async SearchIndex(index: string, limit = 50) {
@@ -66,7 +83,8 @@ export class AdministrativoRepository {
        )
        SELECT
        ${PERSONA_FIELDS_JSON},
-       ${ADMINISTRATIVO_FIELDS_JSON}
+       ${DOCENTE_FIELDS_JSON},
+       ${ADMINISTRATIVO_FIELDS_JSON},
          CASE
            WHEN input.is_documento THEN
              CASE WHEN p.numero_documento = input.q THEN 1 ELSE 0 END
@@ -80,9 +98,7 @@ export class AdministrativoRepository {
                plainto_tsquery('spanish', input.q)
              )
          END AS rank
-       FROM administrativos a
-       INNER JOIN personas p ON a.persona_id = p.persona_id
-       LEFT JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id,
+       ${JOINS},
        input
        WHERE (
          input.is_documento = true
@@ -106,47 +122,26 @@ export class AdministrativoRepository {
        )
        ORDER BY rank DESC, p.apellido_paterno, p.apellido_materno, p.nombres
        LIMIT $3`,
-      [normalizedIndex, isDocumento, limit],
+      [normalizedIndex, isDocumento, limit]
     )
     return result.rows
   }
 
   static async create(data: Omit<AdministrativoCreationAttributes, "administrativo_id">, client?: any) {
     const result = await query(
-      `INSERT INTO administrativos (persona_id , cargo, fecha_contratacion, estado)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [data.persona_id, data.cargo, data.fecha_contratacion || new Date(), data.estado || true],
-      client
-    )
-    return result.rows[0]
-  }
-
-  static async update(id: number, data: Partial<AdministrativoCreationAttributes>, client?: any) {
-    const fields: string[] = []
-    const values: any[] = []
-    let paramCount = 1
-
-    Object.entries(data).forEach(([key, value]) => {
-      if (key !== "administrativo_id" && key !== "fecha_contratacion" && value !== undefined) {
-        fields.push(`${key} = $${paramCount}`)
-        values.push(value)
-        paramCount++
-      }
-    })
-
-    if (fields.length === 0) return null
-
-    values.push(id)
-    const result = await query(
-      `UPDATE administrativos SET ${fields.join(", ")} WHERE administrativo_id = $${paramCount} RETURNING *`,
-      values,
+      `INSERT INTO administrativos (docente_id)
+       VALUES ($1) RETURNING *`,
+      [data.docente_id],
       client
     )
     return result.rows[0]
   }
 
   static async delete(id: number) {
-    const result = await query(`DELETE FROM administrativos WHERE administrativo_id = $1 RETURNING *`, [id])
+    const result = await query(
+      `DELETE FROM administrativos WHERE administrativo_id = $1 RETURNING *`,
+      [id]
+    )
     return result.rows[0]
   }
 

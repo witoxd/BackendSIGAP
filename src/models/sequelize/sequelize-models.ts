@@ -29,6 +29,9 @@ import { ViviendaEstudiante } from "./ViviendaEstudiante"
 import { TipoArchivo } from "./TipoArchivo"
 import { ReemplazoProfesor } from "./ReemplazoProfesor"
 import { MatriculaHistorial } from "./MatriculaHistorial"
+import { DirectorGrupo } from "./DirectorGrupo"
+import { AsignacionDocente } from "./AsignacionDocente"
+import { Docente } from "./Docente"
 
 export const setupAssociations = () => {
 
@@ -42,14 +45,24 @@ export const setupAssociations = () => {
   Persona.hasOne(Estudiante, { foreignKey: "persona_id", as: "estudiante" })
   Estudiante.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
 
-  Persona.hasOne(Profesor, { foreignKey: "persona_id", as: "profesor" })
-  Profesor.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
-
-  Persona.hasOne(Administrativo, { foreignKey: "persona_id", as: "administrativo" })
-  Administrativo.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
-
   Persona.hasOne(Acudiente, { foreignKey: "persona_id", as: "acudiente" })
   Acudiente.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
+
+  // ----------------------------------------------------------
+  // Docente — nodo central del personal de la institución
+  // ----------------------------------------------------------
+
+  Persona.hasOne(Docente, { foreignKey: "persona_id", as: "docente" })
+  Docente.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
+
+  Docente.hasOne(Profesor, { foreignKey: "docente_id", as: "profesor" })
+  Profesor.belongsTo(Docente, { foreignKey: "docente_id", as: "docente" })
+
+  Docente.hasOne(Administrativo, { foreignKey: "docente_id", as: "administrativo" })
+  Administrativo.belongsTo(Docente, { foreignKey: "docente_id", as: "docente" })
+
+  Jornada.hasMany(Docente, { foreignKey: "jornada_id", as: "docentes_jornada" })
+  Docente.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
 
   Persona.hasMany(Archivos, { foreignKey: "persona_id", as: "archivos" })
   Archivos.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
@@ -168,23 +181,58 @@ export const setupAssociations = () => {
   ReemplazoProfesor.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor_reemplazante" })
   ReemplazoProfesor.belongsTo(Profesor, { foreignKey: "reemplaza_a_profesor_id", as: "profesor_reemplazado" })
 
-  Jornada.hasMany(Profesor, { foreignKey: "jornada_id", as: "profesores_jornada" })
-  Profesor.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
-
   Profesor.hasMany(ProfesorContactoEmergencia, { foreignKey: "profesor_id", as: "contactos_emergencia"  })
   ProfesorContactoEmergencia.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor" })
+
+  // ----------------------------------------------------------
+  // Curso
+  // ----------------------------------------------------------
+
+  // Jornada (1:N) — jornada_id vive en cursos, no en matriculas
+  Jornada.hasMany(Curso, { foreignKey: "jornada_id", as: "cursos" })
+  Curso.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
+
+  // Profesores asignados (N:M via asignacion_docente)
+  Curso.belongsToMany(Profesor, {
+    through: AsignacionDocente,
+    foreignKey: "curso_id",
+    otherKey: "profesor_id",
+    as: "profesores_asignados",
+  })
+  Profesor.belongsToMany(Curso, {
+    through: AsignacionDocente,
+    foreignKey: "profesor_id",
+    otherKey: "curso_id",
+    as: "cursos_asignados",
+  })
+
+  // DirectorGrupo (1:N) — un curso puede tener un director por período
+  Curso.hasMany(DirectorGrupo, { foreignKey: "curso_id", as: "directores" })
+  DirectorGrupo.belongsTo(Curso, { foreignKey: "curso_id", as: "curso" })
+
+  PeriodoMatricula.hasMany(DirectorGrupo, { foreignKey: "periodo_id", as: "directores" })
+  DirectorGrupo.belongsTo(PeriodoMatricula, { foreignKey: "periodo_id", as: "periodo" })
+
+  Profesor.hasMany(DirectorGrupo, { foreignKey: "profesor_id", as: "direcciones_grupo" })
+  DirectorGrupo.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor" })
+
+  // AsignacionDocente directas (para queries con campos propios como materia/horas)
+  Curso.hasMany(AsignacionDocente, { foreignKey: "curso_id", as: "asignaciones" })
+  AsignacionDocente.belongsTo(Curso, { foreignKey: "curso_id", as: "curso" })
+
+  Profesor.hasMany(AsignacionDocente, { foreignKey: "profesor_id", as: "asignaciones_docente" })
+  AsignacionDocente.belongsTo(Profesor, { foreignKey: "profesor_id", as: "profesor" })
+
+  PeriodoMatricula.hasMany(AsignacionDocente, { foreignKey: "periodo_id", as: "asignaciones" })
+  AsignacionDocente.belongsTo(PeriodoMatricula, { foreignKey: "periodo_id", as: "periodo" })
 
   // ----------------------------------------------------------
   // Matrícula
   // ----------------------------------------------------------
 
-  // Curso (1:N) - un curso puede tener muchas matriculas, asi es como se referenciara año y curso
+  // Curso (1:N) - un curso puede tener muchas matriculas
   Curso.hasMany(Matricula, { foreignKey: "curso_id", as: "matriculas" })
   Matricula.belongsTo(Curso, { foreignKey: "curso_id", as: "curso" })
-
-  // Jornada (1:N) - una jornada puede tener muchas amtriculas pero una matricula solo puede estar en una jornada
-  Jornada.hasMany(Matricula, { foreignKey: "jornada_id", as: "matriculas" })
-  Matricula.belongsTo(Jornada, { foreignKey: "jornada_id", as: "jornada" })
 
   // Antes matricula necesitaba un profesor (Error de diseño, se penso que se le asignaria un profesor a un estudiante)
   // Profesor.hasMany(Matricula, { foreignKey: "profesor_id", as: "matriculas" })
@@ -266,5 +314,8 @@ export {
   FichaEstudiante,
   ColegioAnterior,
   ViviendaEstudiante,
-  MatriculaHistorial
+  MatriculaHistorial,
+  DirectorGrupo,
+  AsignacionDocente,
+  Docente,
 }

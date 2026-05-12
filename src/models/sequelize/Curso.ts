@@ -1,24 +1,32 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
+export type NivelEducativo = "Preescolar" | "Primaria" | "Secundaria" | "Media"
 
-// Curso.... Definitivamente hay que cambiar esta tabla, puede que sea pocos cambos pero algunos no sirven para eso
-// Porque carajo porque puse que un curso deberia tener descripcion????? bueno errores del pasado y de esto aprendo
-// Relacion 1:N con Matriculas
- interface CursoAttributes {
-  curso_id: number
-  nombre: string
-  grado: string
-  descripcion?: string
+interface CursoAttributes {
+  curso_id:         number
+  grado:            string
+  nivel:            NivelEducativo
+  grupo:            string
+  jornada_id:       number
+  capacidad_maxima: number
+  activo:           boolean
 }
 
-export interface CursoCreationAttributes extends Optional<CursoAttributes, "curso_id" | "descripcion" |  "nombre"> { }
+export interface CursoCreationAttributes
+  extends Optional<CursoAttributes, "curso_id" | "capacidad_maxima" | "activo"> {}
 
-export class Curso extends Model<CursoAttributes, CursoCreationAttributes> implements CursoAttributes {
-  public curso_id!: number
-  public nombre!: string
-  public descripcion?: string
-  public grado!: string
+export class Curso
+  extends Model<CursoAttributes, CursoCreationAttributes>
+  implements CursoAttributes
+{
+  public curso_id!:         number
+  public grado!:            string
+  public nivel!:            NivelEducativo
+  public grupo!:            string
+  public jornada_id!:       number
+  public capacidad_maxima!: number
+  public activo!:           boolean
 }
 
 Curso.init(
@@ -28,21 +36,46 @@ Curso.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    nombre: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-      validate: {
-        notEmpty: true,
-      },
-    },
     grado: {
       type: DataTypes.STRING(20),
       allowNull: false,
-    }
+      comment: "Transición, 1, 2, ... 11",
+    },
+    nivel: {
+      type: DataTypes.ENUM("Preescolar", "Primaria", "Secundaria", "Media"),
+      allowNull: false,
+    },
+    grupo: {
+      type: DataTypes.STRING(10),
+      allowNull: false,
+      comment: "A, B, C ...",
+    },
+    jornada_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "jornadas", key: "jornada_id" },
+    },
+    capacidad_maxima: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 40,
+    },
+    activo: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
   },
   {
     sequelize,
     tableName: "cursos",
     timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ["grado", "grupo", "jornada_id"],
+        name: "uq_curso_grado_grupo_jornada",
+      },
+    ],
   }
 )

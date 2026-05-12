@@ -1,45 +1,34 @@
 import { DataTypes, Model, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
-
-// Falta agregar el contacto de familiar
-
 interface ProfesorAttributes {
-  profesor_id: number
-  persona_id: number
-  fecha_contratacion: Date
+  profesor_id:        number
+  docente_id:         number
   fecha_nombramiento?: Date
-  numero_resolucion?: string
-  estado: "activo" | "inactivo"
-  jornada_id?: number
-  sede?: string
-  titulo?: string
+  numero_resolucion?:  string
+  titulo?:             string
   perfil_profesional?: string
-  posgrado?: string
-  grado_escalafon?: string
-  cargo?: string
-  area?: string
-  tipo_contrato?: string
+  posgrado?:           string
+  grado_escalafon?:    string
+  area?:               string
 }
 
-export interface ProfesorCreationAttributes extends Optional<ProfesorAttributes, "profesor_id" | "estado"> { }
+export interface ProfesorCreationAttributes
+  extends Optional<ProfesorAttributes, "profesor_id" | "fecha_nombramiento" | "numero_resolucion" | "titulo" | "perfil_profesional" | "posgrado" | "grado_escalafon" | "area"> {}
 
-export class Profesor extends Model<ProfesorAttributes, ProfesorCreationAttributes> implements ProfesorAttributes {
-  public profesor_id!: number
-  public persona_id!: number
-  public fecha_contratacion!: Date
-  public fecha_nombramiento!: Date
-  public numero_resolucion!: string 
-  public jornada_id!: number
-  public estado!: "activo" | "inactivo"
-  public sede!: string
-  public titulo?: string
-  public perfil_profesional?: string 
-  public posgrado?: string
-  public grado_escalafon?: string
-  public cargo?: string
-  public area?: string 
-  public tipo_contrato?: string
+export class Profesor
+  extends Model<ProfesorAttributes, ProfesorCreationAttributes>
+  implements ProfesorAttributes
+{
+  public profesor_id!:         number
+  public docente_id!:          number
+  public fecha_nombramiento?:  Date
+  public numero_resolucion?:   string
+  public titulo?:              string
+  public perfil_profesional?:  string
+  public posgrado?:            string
+  public grado_escalafon?:     string
+  public area?:                string
 }
 
 Profesor.init(
@@ -49,40 +38,17 @@ Profesor.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    persona_id: {
+    docente_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       unique: true,
-      references: {
-        model: "personas",
-        key: "persona_id",
-      },
-    },
-    fecha_contratacion: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: sequelize.literal("CURRENT_TIMESTAMP")
-    },
-    estado: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: "activo"
+      references: { model: "docente", key: "docente_id" },
     },
     fecha_nombramiento: {
       type: DataTypes.DATEONLY,
       allowNull: true,
     },
     numero_resolucion: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-      comment: "N° de resolución de nombramiento",
-    },
-    jornada_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: { model: "jornadas", key: "jornada_id" },
-    },
-    sede: {
       type: DataTypes.STRING(100),
       allowNull: true,
     },
@@ -101,26 +67,15 @@ Profesor.init(
     grado_escalafon: {
       type: DataTypes.STRING(20),
       allowNull: true,
-      comment: "Grado del escalafón docente, ej: 2, 11, 14",
-    },
-    cargo: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
     },
     area: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      comment: "Área de enseñanza: Matemáticas, Ciencias, etc.",
     },
-    tipo_contrato: {
-      type: DataTypes.STRING(80),
-      allowNull: true,
-      comment: "Ej: Provisional, En propiedad, OPS",
-    }
   },
   {
     sequelize,
     tableName: "profesores",
     timestamps: false,
-  },
+  }
 )

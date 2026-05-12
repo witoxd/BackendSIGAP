@@ -10,9 +10,10 @@ export class CursoController{
   getAll = asyncHandler(async (req: Request, res: Response) => {
   const limit = Number.parseInt(req.query.limit as string) || 50
   const offset = Number.parseInt(req.query.offset as string) || 0
+  const soloActivos = req.query.activos === "true"
 
-  const cursos = await CursoRepository.findAll(limit, offset)
-  const total = await CursoRepository.count()
+  const cursos = await CursoRepository.findAll(limit, offset, soloActivos)
+  const total = await CursoRepository.count(soloActivos)
 
   res.status(200).json({
     success: true,
@@ -40,15 +41,14 @@ export class CursoController{
   })
 })
 
-//  async getByProfesor (req: Request, res: Response) {
-//   const profesor_id = Number(req.params.id)
-//   const cursos = await CursoRepository.findByProfesor(profesor_id)
+  getDetalles = asyncHandler(async (req: Request, res: Response) => {
+    const id = Number(req.params.id)
+    const curso = await CursoRepository.findDetalles(id)
 
-//   res.status(200).json({
-//     success: true,
-//     data: cursos,
-//   })
-// }
+    if (!curso) throw new AppError("Curso no encontrado", 404)
+
+    res.status(200).json({ success: true, data: curso })
+  })
 
   create = asyncHandler(async (req: Request, res: Response)  => {
 

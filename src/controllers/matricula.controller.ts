@@ -190,9 +190,9 @@ export class MatriculaController {
       throw new AppError("No se encontró un estudiante asociado a esa persona", 404)
     }
 
-    if (!matriculaData.curso_id || !matriculaData.jornada_id) {
+    if (!matriculaData.curso_id) {
       await archivoService.deleteFileArray(files)
-      throw new AppError("Se requieren curso_id y jornada_id para crear la matrícula", 400)
+      throw new AppError("Se requiere curso_id para crear la matrícula", 400)
     }
 
     // ------------------------------------------------------------------
@@ -325,7 +325,6 @@ export class MatriculaController {
             {
               estudiante_id: estudiante.estudiante.estudiante_id,
               curso_id: Number(matriculaData.curso_id),
-              jornada_id: Number(matriculaData.jornada_id),
               periodo_id: periodoActivo.periodo_id,
               estado: "activa" as any,
             },

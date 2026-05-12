@@ -1,5 +1,6 @@
 import type { Request, Response } from "express"
 import { ProfesorRepository } from "../models/Repository/ProfesorRepository"
+import { DocenteRepository } from "../models/Repository/DocenteRepository"
 import { ProfesorContactoEmergenciaRepository } from "../models/Repository/ProfesorContactoEmergenciaRepository"
 import { ContactoRepository } from "../models/Repository/ContactoRepository"
 import { AppError } from "../utils/AppError"
@@ -9,7 +10,6 @@ import { CreateProfesorDTO, UpdateProfesorDTO } from "../types"
 import { transaction } from "../config/database"
 import { PersonaService } from "../services/persona.service"
 import { asyncHandler } from "../utils/asyncHandler"
-
 
 export class ProfesorController {
 
@@ -40,8 +40,8 @@ export class ProfesorController {
   })
 
   SearchIndex = asyncHandler(async (req: Request, res: Response) => {
-    const limit  = Number.parseInt(req.query.limit as string) || 50
-    const index  = req.params.index as string
+    const limit = Number.parseInt(req.query.limit as string) || 50
+    const index = req.params.index as string
 
     if (!index) throw new AppError("Parámetro index requerido", 400)
 
@@ -55,7 +55,7 @@ export class ProfesorController {
     })
   })
 
-  // Crea persona + profesor + contactos + contacto de emergencia en una sola transacción.
+  // Crea persona + docente + profesor + contactos + contacto de emergencia en una sola transacción.
   create = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
@@ -67,21 +67,64 @@ export class ProfesorController {
       contacto_emergencia: emergenciaData,
     } = req.body as CreateProfesorDTO
 
-    if (!contactosData.length) {
-      throw new AppError("Se requiere al menos un contacto", 400)
-    }
-    if (!emergenciaData) {
-      throw new AppError("El contacto de emergencia es requerido", 400)
-    }
+    if (!contactosData.length) throw new AppError("Se requiere al menos un contacto", 400)
+    if (!emergenciaData)       throw new AppError("El contacto de emergencia es requerido", 400)
 
     const result = await transaction(async (client) => {
       const persona = await PersonaService.validateOrCreatePersona(personaData, client)
 
-      const existingProfesor = await ProfesorRepository.findByPersonaId(persona.persona_id)
-      if (existingProfesor) throw new AppError("Esta persona ya es profesor", 409)
+      const existingDocente = await DocenteRepository.findByPersonaId(persona.persona_id)
+      if (existingDocente) {
+        // La persona ya tiene docente — verificar que no sea ya profesor
+        const existingProfesor = await ProfesorRepository.findByPersonaId(persona.persona_id)
+        if (existingProfesor) throw new AppError("Esta persona ya está registrada como profesor", 409)
+
+        // Crear solo el registro de profesor con el docente_id existente
+        const profesor = await ProfesorRepository.create(
+          {
+            docente_id:         existingDocente.docente_id,
+            fecha_nombramiento: profesorData.fecha_nombramiento ? new Date(profesorData.fecha_nombramiento) : undefined,
+            numero_resolucion:  profesorData.numero_resolucion,
+            grado_escalafon:    profesorData.grado_escalafon,
+            area:               profesorData.area,
+            titulo:             profesorData.titulo,
+            posgrado:           profesorData.posgrado,
+            perfil_profesional: profesorData.perfil_profesional,
+          },
+          client
+        )
+        const emergencia = await ProfesorContactoEmergenciaRepository.create(
+          { ...emergenciaData, profesor_id: profesor.profesor_id },
+          client
+        )
+        return { persona, docente: existingDocente, profesor, emergencia }
+      }
+
+      // Caso normal: crear docente + profesor
+      const docente = await DocenteRepository.create(
+        {
+          persona_id:         persona.persona_id,
+          cargo:              profesorData.cargo,
+          sede:               profesorData.sede,
+          jornada_id:         profesorData.jornada_id,
+          tipo_contrato:      profesorData.tipo_contrato,
+          estado:             profesorData.estado ?? "activo",
+          fecha_contratacion: profesorData.fecha_contratacion ? new Date(profesorData.fecha_contratacion) : undefined,
+        },
+        client
+      )
 
       const profesor = await ProfesorRepository.create(
-        { ...profesorData, persona_id: persona.persona_id },
+        {
+          docente_id:         docente.docente_id,
+          fecha_nombramiento: profesorData.fecha_nombramiento ? new Date(profesorData.fecha_nombramiento) : undefined,
+          numero_resolucion:  profesorData.numero_resolucion,
+          grado_escalafon:    profesorData.grado_escalafon,
+          area:               profesorData.area,
+          titulo:             profesorData.titulo,
+          posgrado:           profesorData.posgrado,
+          perfil_profesional: profesorData.perfil_profesional,
+        },
         client
       )
 
@@ -95,7 +138,7 @@ export class ProfesorController {
         client
       )
 
-      return { persona, profesor, emergencia }
+      return { persona, docente, profesor, emergencia }
     })
 
     res.status(201).json({
@@ -110,8 +153,8 @@ export class ProfesorController {
     if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
 
     const profesorId = Number(req.params.id)
-    const existingProfesor = await ProfesorRepository.findById(profesorId)
-    if (!existingProfesor) throw new AppError("No existe este profesor", 404)
+    const existing = await ProfesorRepository.findDetalles(profesorId)
+    if (!existing) throw new AppError("No existe este profesor", 404)
 
     const { persona: personaData, profesor: profesorData } = req.body as UpdateProfesorDTO
 
@@ -119,15 +162,30 @@ export class ProfesorController {
       if (personaData) {
         if (personaData.numero_documento) {
           const conflicto = await PersonaRepository.findByDocumento(personaData.numero_documento)
-          if (conflicto && conflicto.persona_id !== existingProfesor.persona_id) {
+          if (conflicto && conflicto.persona_id !== existing.persona.persona_id) {
             throw new AppError("Ya existe otra persona con ese documento", 409)
           }
         }
-        await PersonaRepository.update(existingProfesor.persona_id, personaData, client)
+        await PersonaRepository.update(existing.persona.persona_id, personaData, client)
       }
 
       if (profesorData) {
-        await ProfesorRepository.update(profesorId, profesorData, client)
+        // Campos de docente
+        const docenteFields = ["cargo", "sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
+        const docenteUpdate: Record<string, unknown> = {}
+        const profesorUpdate: Record<string, unknown> = {}
+
+        for (const [key, value] of Object.entries(profesorData)) {
+          if (docenteFields.includes(key)) docenteUpdate[key] = value
+          else profesorUpdate[key] = value
+        }
+
+        if (Object.keys(docenteUpdate).length > 0) {
+          await DocenteRepository.update(existing.docente.docente_id, docenteUpdate as any, client)
+        }
+        if (Object.keys(profesorUpdate).length > 0) {
+          await ProfesorRepository.update(profesorId, profesorUpdate as any, client)
+        }
       }
     })
 

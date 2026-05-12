@@ -25,8 +25,8 @@ export class MatriculaRepository {
        p.nombres,
        p.apellido_paterno,
        p.apellido_materno,
-       c.nombre AS curso_nombre,
-       c.grado,
+       c.grado AS curso_nombre,
+       c.grupo AS curso_grupo,
        e.estudiante_id,
        j.nombre AS jornada_nombre
 
@@ -53,8 +53,8 @@ export class MatriculaRepository {
        p.nombres,
        p.apellido_paterno,
        p.apellido_materno,
-       c.nombre AS curso_nombre,
-       c.grado
+       c.grado AS curso_nombre,
+       c.grupo AS curso_grupo,
      FROM v_matriculas vm
      INNER JOIN estudiantes e ON vm.estudiante_id = e.estudiante_id
      INNER JOIN personas p    ON e.persona_id     = p.persona_id
@@ -86,8 +86,8 @@ export class MatriculaRepository {
     const result = await query(
       `SELECT
         ${PREVIEWS_V_MATRICULA_FIELDS_SQL("vm")},
-        c.nombre  AS curso_nombre,
-        c.grado,
+        c.grado  AS curso_nombre,
+        c.grupo  AS curso_grupo,
         j.nombre  AS jornada_nombre
       FROM v_matriculas vm
       INNER JOIN cursos   c ON vm.curso_id   = c.curso_id
@@ -107,8 +107,8 @@ export class MatriculaRepository {
     const result = await query(
       `SELECT
         mh.historial_id,
-        ca.nombre  AS curso_anterior_nombre,
-        cn.nombre  AS curso_nuevo_nombre,
+        ca.grado  AS curso_anterior_nombre,
+        cn.grado  AS curso_nuevo_nombre,
         ja.nombre  AS jornada_anterior_nombre,
         jn.nombre  AS jornada_nuevo_nombre,
         mh.estado_anterior,
@@ -137,13 +137,12 @@ export class MatriculaRepository {
   static async create(data: Omit<MatriculaCreationAttributes, "matricula_id" | "anio_egreso">, client?: any) {
     const result = await query(
       `INSERT INTO matriculas
-       (estudiante_id, curso_id, jornada_id, periodo_id, estado)
-     VALUES ($1, $2, $3, $4, $5)
+       (estudiante_id, curso_id, periodo_id, estado)
+     VALUES ($1, $2, $3, $4)
      RETURNING *`,
       [
         data.estudiante_id,
         data.curso_id,
-        data.jornada_id,
         data.periodo_id,
         "activa"
       ],
@@ -182,7 +181,8 @@ export class MatriculaRepository {
        vm.*,
        p.nombres,
        p.apellido_paterno,
-       c.nombre AS curso_nombre
+       c.grado AS curso_nombre,
+       c.grupo AS curso_grupo
      FROM v_matriculas vm
      INNER JOIN estudiantes e ON vm.estudiante_id = e.estudiante_id
      INNER JOIN personas p    ON e.persona_id     = p.persona_id
@@ -259,7 +259,6 @@ export class MatriculaRepository {
   // ----------------------------------------------------------
   static async findDetalles(matriculaId: number) {
     const [baseResult, archivosResult, requeridosResult, historialResult] = await Promise.all([
-      // 1. Datos base
       query(
         `SELECT
           vm.estado_actual,
@@ -268,8 +267,8 @@ export class MatriculaRepository {
           vm.motivo_retiro,
           vm.anio,
           json_build_object(
-            'nombre', c.nombre,
-            'grado',  c.grado
+            'nombre', c.grado,
+            'grado',  c.grupo
           ) AS curso,
           json_build_object(
             'nombre',      j.nombre,
@@ -341,8 +340,8 @@ export class MatriculaRepository {
       // 4. Historial de cambios
       query(
         `SELECT
-          ca.nombre  AS curso_anterior_nombre,
-          cn.nombre  AS curso_nuevo_nombre,
+          ca.grado  AS curso_anterior_nombre,
+          cn.grado  AS curso_nuevo_nombre,
           ja.nombre  AS jornada_anterior_nombre,
           jn.nombre  AS jornada_nuevo_nombre,
           mh.estado_anterior,
@@ -384,16 +383,14 @@ export class MatriculaRepository {
   ) {
     await query(
       `INSERT INTO matriculas_historial
-       (matricula_id, curso_id_anterior, jornada_id_anterior, estado_anterior,
-        curso_id_nuevo, jornada_id_nuevo, estado_nuevo, modificado_por, motivo_cambio)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+       (matricula_id, curso_id_anterior, estado_anterior,
+        curso_id_nuevo, estado_nuevo, modificado_por, motivo_cambio)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         matriculaActual.matricula_id,
         matriculaActual.curso_id,
-        matriculaActual.jornada_id,
         matriculaActual.estado_raw ?? matriculaActual.estado,
         datosNuevos.curso_id ?? matriculaActual.curso_id,
-        datosNuevos.jornada_id ?? matriculaActual.jornada_id,
         datosNuevos.estado ?? matriculaActual.estado_raw ?? matriculaActual.estado,
         modificadoPor ?? null,
         motivoCambio ?? null,
