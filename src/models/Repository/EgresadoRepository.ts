@@ -10,9 +10,9 @@ export class EgresadoRepository {
           'egresado_id', eg.egresado_id,
           'fecha_grado', eg.fecha_grado,
           'estudiante', json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
        )
      ) AS egresado
        FROM egresados eg
@@ -33,11 +33,11 @@ export class EgresadoRepository {
           'egresado_id', eg.egresado_id,
           'fecha_grado', eg.fecha_grado,
           'estudiante', json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
        )
-     ) AS egresado,
+     ) AS egresado
        FROM egresados eg
        INNER JOIN estudiantes e ON eg.estudiante_id = e.estudiante_id
        INNER JOIN personas p ON e.persona_id = p.persona_id
@@ -56,9 +56,9 @@ export class EgresadoRepository {
           'egresado_id', eg.egresado_id,
           'fecha_grado', eg.fecha_grado,
           'estudiante', json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
        )
      ) AS egresado
       FROM egresados eg
@@ -77,9 +77,9 @@ export class EgresadoRepository {
           'egresado_id', eg.egresado_id,
           'fecha_grado', eg.fecha_grado,
           'estudiante', json_build_object(
-         'estudiante_id', a.estudiante_id,
-         'fecha_ingreso', a.fecha_ingreso,
-         'estado', a.estado
+         'estudiante_id', e.estudiante_id,
+         'fecha_ingreso', e.fecha_ingreso,
+         'estado', e.estado
        )
      ) AS egresado
        FROM egresados eg

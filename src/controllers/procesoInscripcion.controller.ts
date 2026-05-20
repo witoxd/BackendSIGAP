@@ -49,6 +49,7 @@ export class ProcesoInscripcionController {
 
     const periodo = await PeriodoMatriculaRepository.findById(data.periodo_id)
     if (!periodo) throw new AppError("Período de matrícula no encontrado", 404)
+    if (!periodo.activo) throw new AppError("No se pueden crear procesos en un período inactivo", 400)
 
     if (new Date(data.fecha_fin_inscripcion) < new Date(data.fecha_inicio_inscripcion)) {
       throw new AppError("La fecha de fin no puede ser anterior a la fecha de inicio", 400)

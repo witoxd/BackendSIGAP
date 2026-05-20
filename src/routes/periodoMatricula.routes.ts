@@ -246,6 +246,7 @@ router.get(
 router.post(
   "/create",
   isAdmin,
+  checkPermission(Recurso.MATRICULAS, Accion.CREATE),
   createPeriodoMatriculaHttpValidator,
   validate,
   periodoController.create
@@ -300,6 +301,7 @@ router.post(
 router.put(
   "/update/:id",
   isAdmin,
+  checkPermission(Recurso.MATRICULAS, Accion.UPDATE),
   periodoMatriculaIdValidator,
   updatePeriodoMatriculaHttpValidator,
   validate,
@@ -343,6 +345,7 @@ router.put(
 router.patch(
   "/activar/:id",
   isAdmin,
+  checkPermission(Recurso.MATRICULAS, Accion.UPDATE),
   periodoMatriculaIdValidator,
   validate,
   periodoController.activar
@@ -382,6 +385,7 @@ router.patch(
 router.patch(
   "/desactivar/:id",
   isAdmin,
+  checkPermission(Recurso.MATRICULAS, Accion.UPDATE),
   periodoMatriculaIdValidator,
   validate,
   periodoController.desactivar
@@ -421,6 +425,7 @@ router.patch(
 router.delete(
   "/delete/:id",
   isAdmin,
+  checkPermission(Recurso.MATRICULAS, Accion.DELETE),
   periodoMatriculaIdValidator,
   validate,
   periodoController.delete

@@ -56,6 +56,7 @@ router.get(
 router.post(
   "/create",
   isAdmin,
+  checkPermission(Recurso.MATRICULAS, Accion.CREATE),
   createProcesoInscripcionValidator,
   validate,
   controller.create
@@ -64,6 +65,7 @@ router.post(
 router.put(
   "/update/:id",
   isAdmin,
+  checkPermission(Recurso.MATRICULAS, Accion.UPDATE),
   procesoInscripcionIdValidator,
   updateProcesoInscripcionValidator,
   validate,
@@ -73,6 +75,7 @@ router.put(
 router.delete(
   "/delete/:id",
   isAdmin,
+  checkPermission(Recurso.MATRICULAS, Accion.DELETE),
   procesoInscripcionIdValidator,
   validate,
   controller.delete
