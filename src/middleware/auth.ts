@@ -14,13 +14,16 @@ declare global {
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization
+    // Leer desde cookie httpOnly; fallback a Bearer header para herramientas como Swagger
+    const token: string | undefined =
+      req.cookies?.sigap_access ??
+      (req.headers.authorization?.startsWith("Bearer ")
+        ? req.headers.authorization.substring(7)
+        : undefined)
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!token) {
       throw new UnauthorizedError("Token no proporcionado")
     }
-
-    const token = authHeader.substring(7)
 
     if (!process.env.JWT_SECRET) {
       throw new Error("JWT_SECRET no configurado")

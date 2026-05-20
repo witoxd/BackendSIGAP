@@ -1,9 +1,11 @@
 import { Router } from "express"
 import { UserController } from "../controllers/user.controller"
 import { authenticate, isAdmin, isSelfOrAdmin } from "../middleware/auth"
+import { checkPermission } from "../middleware/acl"
 import { searchValidator, idValidator } from "../utils/validators"
 import { validate } from "../middleware/validate"
 import { param } from "express-validator"
+import { Recurso, Accion } from "../types"
 
 const router = Router()
 const userController = new UserController()
@@ -67,6 +69,7 @@ router.use(authenticate)
  */
 // Buscar usuarios (cualquier usuario autenticado)
 router.get("/search",
+  checkPermission(Recurso.USUARIOS, Accion.READ),
   searchValidator,
   validate,
   userController.searchUsers.bind(userController))

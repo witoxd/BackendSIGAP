@@ -3,6 +3,7 @@ import cors from "cors"
 import helmet from "helmet"
 import compression from "compression"
 import morgan from "morgan"
+import cookieParser from "cookie-parser"
 import dotenv from "dotenv"
 import chalk from "chalk"
 import figlet from "figlet"
@@ -39,6 +40,9 @@ app.use(
     credentials: true,
   }),
 )
+
+// Cookie parser (necesario para httpOnly cookies de autenticación)
+app.use(cookieParser())
 
 // Body parser
 app.use(express.json({ limit: "10mb" }))

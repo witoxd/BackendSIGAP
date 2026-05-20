@@ -33,7 +33,7 @@ yarn-error.log*
 # config extra
 API_DOCUMENTATION.md
 components.json
-
+CLAUDE.md
 
 # typescript
 *.tsbuildinfo

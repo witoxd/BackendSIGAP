@@ -246,6 +246,10 @@ router.post("/login",
   validate,
   authController.login.bind(authController))
 
+router.post("/refresh", authController.refresh.bind(authController))
+
+router.post("/logout", authenticate, authController.logout.bind(authController))
+
 /**
  * @swagger
  * /auth/me:

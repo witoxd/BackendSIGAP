@@ -32,6 +32,7 @@ import { MatriculaHistorial } from "./MatriculaHistorial"
 import { DirectorGrupo } from "./DirectorGrupo"
 import { AsignacionDocente } from "./AsignacionDocente"
 import { Docente } from "./Docente"
+import { RefreshToken } from "./RefreshToken"
 
 export const setupAssociations = () => {
 
@@ -271,6 +272,13 @@ export const setupAssociations = () => {
 
   Usuario.hasMany(Auditoria, { foreignKey: "usuario_id", as: "auditorias" })
   Auditoria.belongsTo(Usuario, { foreignKey: "usuario_id", as: "usuario" })
+
+  // ----------------------------------------------------------
+  // Refresh Tokens
+  // ----------------------------------------------------------
+
+  Usuario.hasMany(RefreshToken, { foreignKey: "usuario_id", as: "refresh_tokens" })
+  RefreshToken.belongsTo(Usuario, { foreignKey: "usuario_id", as: "usuario" })
 }
 
 export const initializeModels = () => {
@@ -318,4 +326,5 @@ export {
   DirectorGrupo,
   AsignacionDocente,
   Docente,
+  RefreshToken,
 }

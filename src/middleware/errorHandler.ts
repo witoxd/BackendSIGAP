@@ -2,13 +2,19 @@ import type { Request, Response, NextFunction } from "express"
 import { AppError } from "../utils/AppError"
 
 export const errorHandler = (err: Error | AppError, req: Request, res: Response, next: NextFunction) => {
-  // Log del error
+  const SENSITIVE_FIELDS = ["contraseña", "password", "currentPassword", "newPassword", "token"]
+  const safeBody = req.body ? Object.fromEntries(
+    Object.entries(req.body).map(([k, v]) =>
+      SENSITIVE_FIELDS.includes(k) ? [k, "[REDACTED]"] : [k, v]
+    )
+  ) : {}
+
   console.error("Error:", {
     message: err.message,
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
     url: req.url,
     method: req.method,
-    body: req.body,
+    body: safeBody,
     timestamp: new Date().toISOString(),
   })
 

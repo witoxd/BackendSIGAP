@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
+import crypto from "crypto"
 import { query, transaction } from "../config/database"
 import { type JwtPayload, RoleType } from "../types"
 import { ConflictError, UnauthorizedError, NotFoundError, DatabaseError } from "../utils/AppError"
@@ -245,8 +246,11 @@ export class AuthService {
         roles: user.roles || [],
       })
 
+      const refreshToken = await this.createRefreshToken(user.usuario_id)
+
       return {
-        token,
+        accessToken: token,
+        refreshToken,
         user: {
           id: user.usuario_id,
           personaId: user.persona_id,
@@ -264,18 +268,84 @@ export class AuthService {
     }
   }
 
-  // Generar token JWT
+  // Generar access token JWT (corta duración)
   private generateToken(payload: JwtPayload): string {
     const secret = process.env.JWT_SECRET
     if (!secret) {
       throw new Error("JWT_SECRET no configurado")
     }
+    const expiresIn = process.env.JWT_EXPIRES_IN ?? "15m"
+    return jwt.sign(payload, secret, { expiresIn } as any)
+  }
 
-    const expiresIn = process.env.JWT_EXPIRES_IN ?? "7d"
+  // Crear y persistir un refresh token opaco en BD
+  private async createRefreshToken(usuarioId: number): Promise<string> {
+    const token = crypto.randomBytes(64).toString("hex")
+    const refreshDays = parseInt(process.env.JWT_REFRESH_EXPIRES_DAYS ?? "30", 10)
+    const expiresAt = new Date(Date.now() + refreshDays * 24 * 60 * 60 * 1000)
 
-    return jwt.sign(payload, secret, {
-      expiresIn,
-    } as any)
+    await query(
+      `INSERT INTO refresh_tokens (usuario_id, token, expires_at) VALUES ($1, $2, $3)`,
+      [usuarioId, token, expiresAt],
+    )
+    return token
+  }
+
+  // Rotar refresh token: valida el actual, lo revoca y emite uno nuevo junto al access token
+  async refreshAccessToken(refreshToken: string) {
+    const result = await query(
+      `SELECT rt.token_id, rt.usuario_id, rt.expires_at, rt.revoked,
+              u.email, u.persona_id, u.activo,
+              COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL), ARRAY[]::enum_roles_nombre[]) AS roles
+       FROM refresh_tokens rt
+       JOIN usuarios u ON rt.usuario_id = u.usuario_id
+       LEFT JOIN usuarios_role ur ON u.usuario_id = ur.usuario_id
+       LEFT JOIN roles r ON ur.role_id = r.role_id
+       WHERE rt.token = $1
+       GROUP BY rt.token_id, rt.usuario_id, rt.expires_at, rt.revoked,
+                u.email, u.persona_id, u.activo`,
+      [refreshToken],
+    )
+
+    if (result.rows.length === 0) {
+      throw new UnauthorizedError("Refresh token inválido")
+    }
+
+    const row = result.rows[0]
+
+    if (row.revoked) {
+      throw new UnauthorizedError("Refresh token revocado")
+    }
+
+    if (new Date(row.expires_at) < new Date()) {
+      throw new UnauthorizedError("Refresh token expirado")
+    }
+
+    if (!row.activo) {
+      throw new UnauthorizedError("Usuario inactivo")
+    }
+
+    // Revocar el token usado (rotación) y emitir uno nuevo
+    await query(`UPDATE refresh_tokens SET revoked = true WHERE token_id = $1`, [row.token_id])
+
+    const roles = parsePostgresArray(row.roles)
+    const newAccessToken = this.generateToken({
+      userId: row.usuario_id,
+      personaId: row.persona_id,
+      email: row.email,
+      roles,
+    })
+    const newRefreshToken = await this.createRefreshToken(row.usuario_id)
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken }
+  }
+
+  // Revocar todos los refresh tokens de un usuario (logout)
+  async revokeAllRefreshTokens(usuarioId: number) {
+    await query(
+      `UPDATE refresh_tokens SET revoked = true WHERE usuario_id = $1 AND revoked = false`,
+      [usuarioId],
+    )
   }
 
   // Cambiar contraseña
