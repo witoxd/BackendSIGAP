@@ -54,12 +54,12 @@ export class MatriculaRepository {
        p.apellido_paterno,
        p.apellido_materno,
        c.grado AS curso_nombre,
-       c.grupo AS curso_grupo,
-     FROM v_matriculas vm
-     INNER JOIN estudiantes e ON vm.estudiante_id = e.estudiante_id
-     INNER JOIN personas p    ON e.persona_id     = p.persona_id
-     INNER JOIN cursos c      ON vm.curso_id      = c.curso_id
-     WHERE vm.matricula_id = $1`,
+       c.grupo AS curso_grupo
+FROM v_matriculas vm
+INNER JOIN estudiantes e ON vm.estudiante_id = e.estudiante_id
+INNER JOIN personas p    ON e.persona_id     = p.persona_id
+INNER JOIN cursos c      ON vm.curso_id      = c.curso_id
+WHERE vm.matricula_id = $1`,
       [id]
     )
     return result.rows[0] ?? null
@@ -258,7 +258,7 @@ export class MatriculaRepository {
   //   4. Historial de cambios
   // ----------------------------------------------------------
   static async findDetalles(matriculaId: number) {
-    const [baseResult, archivosResult, requeridosResult, historialResult] = await Promise.all([
+    const [baseResult, archivosResult, requeridosResult, historialResult, sancionesResult] = await Promise.all([
       query(
         `SELECT
           vm.estado_actual,
@@ -266,6 +266,8 @@ export class MatriculaRepository {
           vm.fecha_retiro,
           vm.motivo_retiro,
           vm.anio,
+          vm.curso_id,
+          vm.jornada_id,
           json_build_object(
             'nombre', c.grado,
             'grado',  c.grupo
@@ -297,7 +299,7 @@ export class MatriculaRepository {
         [matriculaId]
       ),
 
-      // 2. Archivos entregados
+      // 2. Archivos entregados — solo tipos que aplican a 'matricula'
       query(
         `SELECT
           a.nombre,
@@ -332,14 +334,15 @@ export class MatriculaRepository {
         ) ma ON ta.tipo_archivo_id = ma.tipo_archivo_id
         LEFT JOIN archivos a ON ma.archivo_id = a.archivo_id
         WHERE ta.activo = true
-          AND 'matricula' = ANY(ta.requerido_en)
+          AND 'matricula' = ANY(ta.aplica_a)
         ORDER BY entregado ASC, ta.nombre`,
         [matriculaId]
       ),
 
-      // 4. Historial de cambios
+      // 4. Historial de cambios de la matrícula
       query(
         `SELECT
+          mh.historial_id,
           ca.grado  AS curso_anterior_nombre,
           cn.grado  AS curso_nuevo_nombre,
           ja.nombre  AS jornada_anterior_nombre,
@@ -359,6 +362,27 @@ export class MatriculaRepository {
         ORDER BY mh.modificado_en ASC`,
         [matriculaId]
       ),
+
+      // 5. Sanciones disciplinarias del estudiante que se solapan con el período de esta matrícula
+      query(
+        `SELECT
+          s.suspension_id,
+          s.motivo,
+          s.fecha_inicio,
+          s.fecha_fin,
+          'suspension' AS tipo,
+          u.username   AS registrado_por,
+          CURRENT_DATE BETWEEN s.fecha_inicio AND s.fecha_fin AS vigente
+        FROM matriculas m
+        INNER JOIN periodos_matricula pm ON m.periodo_id = pm.periodo_id
+        INNER JOIN suspensiones s ON s.estudiante_id = m.estudiante_id
+          AND s.fecha_inicio <= pm.fecha_fin
+          AND s.fecha_fin    >= pm.fecha_inicio
+        LEFT JOIN usuarios u ON s.creado_por = u.usuario_id
+        WHERE m.matricula_id = $1
+        ORDER BY s.fecha_inicio ASC`,
+        [matriculaId]
+      ),
     ])
 
     const base = baseResult.rows[0]
@@ -366,9 +390,10 @@ export class MatriculaRepository {
 
     return {
       ...base,
-      archivos:           archivosResult.rows,
+      archivos: archivosResult.rows,
       archivos_requeridos: requeridosResult.rows,
-      historial:          historialResult.rows,
+      historial: historialResult.rows,
+      sanciones: sancionesResult.rows,
     }
   }
 
@@ -381,16 +406,31 @@ export class MatriculaRepository {
     motivoCambio?: string,
     client?: any
   ) {
+    const cursoidNuevo = datosNuevos.curso_id ?? matriculaActual.curso_id
+
+    // Si el curso cambia, obtener la jornada del nuevo curso
+    let jornadaIdNuevo = matriculaActual.jornada_id
+    if (datosNuevos.curso_id && datosNuevos.curso_id !== matriculaActual.curso_id) {
+      const cursoRes = await query(
+        `SELECT jornada_id FROM cursos WHERE curso_id = $1`,
+        [datosNuevos.curso_id],
+        client
+      )
+      if (cursoRes.rows[0]) jornadaIdNuevo = cursoRes.rows[0].jornada_id
+    }
+
     await query(
       `INSERT INTO matriculas_historial
-       (matricula_id, curso_id_anterior, estado_anterior,
-        curso_id_nuevo, estado_nuevo, modificado_por, motivo_cambio)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         (matricula_id, curso_id_anterior, jornada_id_anterior, estado_anterior,
+          curso_id_nuevo, jornada_id_nuevo, estado_nuevo, modificado_por, motivo_cambio)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         matriculaActual.matricula_id,
         matriculaActual.curso_id,
+        matriculaActual.jornada_id,
         matriculaActual.estado_raw ?? matriculaActual.estado,
-        datosNuevos.curso_id ?? matriculaActual.curso_id,
+        cursoidNuevo,
+        jornadaIdNuevo,
         datosNuevos.estado ?? matriculaActual.estado_raw ?? matriculaActual.estado,
         modificadoPor ?? null,
         motivoCambio ?? null,
