@@ -1,6 +1,6 @@
 import { query } from "../../config/database"
 import type { UsuarioCreationAttributes } from "../sequelize/Usuario"
-import bcrypt from "bcryptjs"
+import bcrypt from "bcryptjs" // solo usado en verifyPassword y updatePassword
 
 export class UserRepository {
   static async findAll(limit = 50, offset = 0) {
@@ -42,11 +42,11 @@ export class UserRepository {
   }
 
   static async create(data: Omit<UsuarioCreationAttributes, "usuario_id" | "fecha_creacion" | "activo">, client?: any) {
-    const hashedPassword = await bcrypt.hash(data.contraseña, 10)
+    // La contraseña ya llega hasheada desde AuthService.createUser — no volver a hashear
     const result = await query(
       `INSERT INTO usuarios (persona_id, username, email, contraseña, activo)
        VALUES ($1, $2, $3, $4, true) RETURNING *`,
-      [data.persona_id, data.username, data.email, hashedPassword],
+      [data.persona_id, data.username, data.email, data.contraseña],
       client
     )
     return result.rows[0]
