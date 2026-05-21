@@ -33,6 +33,7 @@ import { DirectorGrupo } from "./DirectorGrupo"
 import { AsignacionDocente } from "./AsignacionDocente"
 import { Docente } from "./Docente"
 import { RefreshToken } from "./RefreshToken"
+import { Suspension } from "./Suspension"
 
 export const setupAssociations = () => {
 
@@ -123,6 +124,10 @@ export const setupAssociations = () => {
   // Egresado (1:1)
   Estudiante.hasOne(Egresado, { foreignKey: "estudiante_id", as: "egresado" })
   Egresado.belongsTo(Estudiante, { foreignKey: "estudiante_id", as: "estudiante" })
+
+  // Suspensiones (1:N)
+  Estudiante.hasMany(Suspension, { foreignKey: "estudiante_id", as: "suspensiones" })
+  Suspension.belongsTo(Estudiante, { foreignKey: "estudiante_id", as: "estudiante" })
 
   // Acudientes (N:M a través de AcudienteEstudiante)
   Estudiante.belongsToMany(Acudiente, {
@@ -327,4 +332,5 @@ export {
   AsignacionDocente,
   Docente,
   RefreshToken,
+  Suspension,
 }

@@ -79,6 +79,29 @@ export class DirectorGrupoRepository {
     return result.rows[0]
   }
 
+  static async findByProfesor(profesorId: number) {
+    const result = await query(
+      `SELECT
+         dg.director_id,
+         dg.curso_id,
+         dg.periodo_id,
+         dg.profesor_id,
+         c.grado,
+         c.nivel,
+         c.grupo,
+         pm.anio,
+         pm.descripcion AS periodo_descripcion,
+         pm.activo      AS periodo_activo
+       FROM director_grupo dg
+       INNER JOIN cursos c              ON dg.curso_id   = c.curso_id
+       INNER JOIN periodos_matricula pm ON dg.periodo_id = pm.periodo_id
+       WHERE dg.profesor_id = $1
+       ORDER BY pm.anio DESC, c.grado, c.grupo`,
+      [profesorId]
+    )
+    return result.rows
+  }
+
   static async delete(id: number) {
     const result = await query(
       "DELETE FROM director_grupo WHERE director_id = $1 RETURNING *",

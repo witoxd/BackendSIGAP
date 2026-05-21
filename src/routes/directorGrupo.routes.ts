@@ -12,6 +12,14 @@ const ctrl = new DirectorGrupoController()
 router.use(authenticate)
 
 router.get(
+  "/profesor/:profesorId",
+  param("profesorId").isInt({ min: 1 }),
+  validate,
+  checkPermission(Recurso.PROFESORES, Accion.READ),
+  ctrl.getByProfesor.bind(ctrl),
+)
+
+router.get(
   "/curso/:cursoId",
   param("cursoId").isInt({ min: 1 }),
   validate,

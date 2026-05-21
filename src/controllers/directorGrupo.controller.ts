@@ -5,6 +5,12 @@ import { validationResult } from "express-validator"
 import { asyncHandler } from "../utils/asyncHandler"
 
 export class DirectorGrupoController {
+  getByProfesor = asyncHandler(async (req: Request, res: Response) => {
+    const profesorId = Number(req.params.profesorId)
+    const directores = await DirectorGrupoRepository.findByProfesor(profesorId)
+    res.status(200).json({ success: true, data: directores })
+  })
+
   getByCurso = asyncHandler(async (req: Request, res: Response) => {
     const cursoId = Number(req.params.cursoId)
     const directores = await DirectorGrupoRepository.findByCurso(cursoId)
