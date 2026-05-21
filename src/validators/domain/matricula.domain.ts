@@ -10,8 +10,7 @@ export const validateCreateMatriculaDomain = async (
   try {
     const {matricula: MatriculaData} = req.body
 
-    // Validacion dominio con Sequelize (NO DB)
-    await Matricula.build(MatriculaData).validate()
+    await Matricula.build(MatriculaData).validate({skip: ["estudiante_id", "periodo_id"]})
 
     return next()
   } catch (error) {
@@ -38,7 +37,9 @@ export const validateUpdateMatriculaDomain = async (
   try {
     const {matricula: MatriculaData} = req.body
 
-    await Matricula.build(MatriculaData).validate({ skip: ["estudiante_id", "curso_id", "profesor_id", "jornada_id"] })
+    await Matricula.build(MatriculaData).validate({
+      skip: ["estudiante_id", "curso_id", "periodo_id", "fecha_matricula", "estado", "profesor_id", "jornada_id"],
+    })
 
     return next()
   } catch (error) {
