@@ -414,19 +414,20 @@ export class MatriculaController {
     const { matricula: matriculaData } = req.body as UpdateMatriculaDTO
     const userId = req.user!.userId
 
-    // Obtener estado actual ANTES de modificar — necesario para el historial
     const matriculaActual = await MatriculaRepository.findById(id)
     if (!matriculaActual) throw new AppError("Matrícula no encontrada", 404)
 
-      const PeriodoMatricula = await PeriodoMatriculaRepository.findById(matriculaActual.periodo_id)
+    const estadoActual = matriculaActual.estado_raw ?? matriculaActual.estado
+    if (estadoActual === "retirada" || estadoActual === "finalizada") {
+      throw new AppError(`No se puede modificar una matrícula en estado "${estadoActual}"`, 409)
+    }
 
-  
-      if (PeriodoMatricula && PeriodoMatricula.estado_raw === "retirada"){
-        throw new AppError("No se pueden modificar matriculas de periodos cerrados", 400)
-      }
+    const PeriodoMatricula = await PeriodoMatriculaRepository.findById(matriculaActual.periodo_id)
+    if (PeriodoMatricula && PeriodoMatricula.estado_raw === "retirada") {
+      throw new AppError("No se pueden modificar matrículas de períodos cerrados", 400)
+    }
 
     const matricula = await transaction(async (client) => {
-      // 1. Guardar snapshot del estado anterior
       await MatriculaRepository.registrarHistorial(
         matriculaActual,
         matriculaData,
@@ -434,7 +435,6 @@ export class MatriculaController {
         req.body.motivo_cambio,
         client
       )
-      // 2. Aplicar el cambio
       return await MatriculaRepository.update(id, matriculaData, client)
     })
 
