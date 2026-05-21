@@ -3,11 +3,33 @@ import { query } from "../../config/database"
 import type { EstudianteCreationAttributes } from "../sequelize/Estudiante"
 import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 
+const ESTADO_EFECTIVO_SQL = `
+  CASE
+    WHEN e.estado = 'graduado'   THEN 'egresado'
+    WHEN e.estado = 'expulsado'  THEN 'expulsado'
+    WHEN EXISTS (
+      SELECT 1 FROM suspensiones s
+      WHERE s.estudiante_id = e.estudiante_id
+        AND CURRENT_DATE BETWEEN s.fecha_inicio AND s.fecha_fin
+    ) THEN 'suspendido'
+    WHEN EXISTS (
+      SELECT 1 FROM matriculas m
+      INNER JOIN periodos_matricula pm ON m.periodo_id = pm.periodo_id
+      WHERE m.estudiante_id = e.estudiante_id
+        AND m.estado = 'activa'
+        AND pm.activo = true
+        AND CURRENT_DATE BETWEEN pm.fecha_inicio AND pm.fecha_fin
+    ) THEN 'activo'
+    ELSE 'inactivo'
+  END
+`
+
 const ESTUDIANTE_FIELDS_JSON = `
        json_build_object(
          'estudiante_id', e.estudiante_id,
          'fecha_ingreso', e.fecha_ingreso,
-         'estado', e.estado
+         'estado', e.estado,
+         'estado_efectivo', (${ESTADO_EFECTIVO_SQL})
        ) AS estudiante
         `
 export class EstudianteRepository {
