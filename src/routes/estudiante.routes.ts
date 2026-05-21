@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { authenticate } from "../middleware/auth"
+import { authenticate, isAdmin } from "../middleware/auth"
 import { checkPermission } from "../middleware/acl"
 import { EstudianteController } from "../controllers/estudiante.controller"
 import {
@@ -582,6 +582,59 @@ router.delete(
   validate,
   checkPermission(Recurso.ESTUDIANTES, Accion.DELETE),
   estudianteController.delete.bind(estudianteController),
+)
+
+// =============================================================================
+// ACCIONES DE ESTADO
+// =============================================================================
+
+router.post(
+  "/:id/suspender",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.ESTUDIANTES, Accion.UPDATE),
+  estudianteController.suspender.bind(estudianteController),
+)
+
+router.post(
+  "/:id/expulsar",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.ESTUDIANTES, Accion.UPDATE),
+  estudianteController.expulsar.bind(estudianteController),
+)
+
+router.patch(
+  "/:id/reactivar",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  isAdmin,
+  estudianteController.reactivar.bind(estudianteController),
+)
+
+router.post(
+  "/:id/egresar",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.ESTUDIANTES, Accion.UPDATE),
+  estudianteController.egresar.bind(estudianteController),
+)
+
+router.get(
+  "/:id/suspensiones",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.ESTUDIANTES, Accion.READ),
+  estudianteController.getSuspensiones.bind(estudianteController),
+)
+
+router.delete(
+  "/:id/suspensiones/:suspensionId",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  param("suspensionId").isInt({ min: 1 }).withMessage("ID de suspensión invalido"),
+  validate,
+  isAdmin,
+  estudianteController.deleteSuspension.bind(estudianteController),
 )
 
 export default router

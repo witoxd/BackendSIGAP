@@ -3,6 +3,9 @@ import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
 import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
+import { EgresadoRepository } from "../models/Repository/EgresadoRepository"
+import { SuspensionRepository } from "../models/Repository/SuspensionRepository"
+import { MatriculaRepository } from "../models/Repository/MatriculaRepository"
 import { CreateEstudianteDTO, UpdateEstudianteDTO } from "../types"
 import { transaction } from "../config/database"
 import { asyncHandler } from "../utils/asyncHandler"
@@ -206,7 +209,138 @@ export class EstudianteController {
     res.status(200).json({
       success: true,
       data: estudiantes,
-    })  
+    })
   })
-  
+
+  // -------------------------------------------------------------------------
+  // suspender — crea una suspensión temporal. No persiste estado en estudiante.
+  // -------------------------------------------------------------------------
+  suspender = asyncHandler(async (req: Request, res: Response) => {
+    const estudianteId = Number(req.params.id)
+    const { motivo, fecha_inicio, fecha_fin } = req.body
+
+    if (!motivo || !fecha_inicio || !fecha_fin) {
+      throw new AppError("motivo, fecha_inicio y fecha_fin son requeridos", 400)
+    }
+    if (new Date(fecha_fin) <= new Date(fecha_inicio)) {
+      throw new AppError("fecha_fin debe ser posterior a fecha_inicio", 400)
+    }
+
+    const estudiante = await EstudianteRepository.findById(estudianteId)
+    if (!estudiante) throw new AppError("Estudiante no encontrado", 404)
+
+    const estadoActual = estudiante.estudiante.estado
+    if (estadoActual === "expulsado") throw new AppError("No se puede suspender a un estudiante expulsado", 409)
+    if (estadoActual === "graduado")  throw new AppError("No se puede suspender a un estudiante egresado", 409)
+
+    const suspension = await SuspensionRepository.create({
+      estudiante_id: estudianteId,
+      motivo,
+      fecha_inicio,
+      fecha_fin,
+      creado_por: req.user?.userId ?? null,
+    })
+
+    res.status(201).json({ success: true, message: "Suspensión registrada", data: suspension })
+  })
+
+  // -------------------------------------------------------------------------
+  // expulsar — marca estado=expulsado y retira la matrícula activa si existe.
+  // -------------------------------------------------------------------------
+  expulsar = asyncHandler(async (req: Request, res: Response) => {
+    const estudianteId = Number(req.params.id)
+    const { motivo } = req.body
+
+    if (!motivo) throw new AppError("motivo es requerido", 400)
+
+    const estudiante = await EstudianteRepository.findById(estudianteId)
+    if (!estudiante) throw new AppError("Estudiante no encontrado", 404)
+
+    const estadoActual = estudiante.estudiante.estado
+    if (estadoActual === "expulsado") throw new AppError("El estudiante ya está expulsado", 409)
+    if (estadoActual === "graduado")  throw new AppError("No se puede expulsar a un estudiante egresado", 409)
+
+    await transaction(async (client) => {
+      // Retirar matrícula activa si existe
+      const matriculas = await MatriculaRepository.findByEstudiante(estudianteId)
+      const activa = matriculas.find((m: any) => m.estado_actual === "activa")
+      if (activa) {
+        await MatriculaRepository.retirar(activa.matricula_id, `Expulsión: ${motivo}`, client)
+      }
+      await EstudianteRepository.update(estudianteId, { estado: "expulsado" }, client)
+    })
+
+    res.status(200).json({ success: true, message: "Estudiante expulsado" })
+  })
+
+  // -------------------------------------------------------------------------
+  // reactivar — revierte expulsión (solo admin). Vuelve a estado activo/inactivo.
+  // -------------------------------------------------------------------------
+  reactivar = asyncHandler(async (req: Request, res: Response) => {
+    const estudianteId = Number(req.params.id)
+
+    const estudiante = await EstudianteRepository.findById(estudianteId)
+    if (!estudiante) throw new AppError("Estudiante no encontrado", 404)
+
+    if (estudiante.estudiante.estado !== "expulsado") {
+      throw new AppError("Solo se puede reactivar un estudiante expulsado", 409)
+    }
+
+    await EstudianteRepository.update(estudianteId, { estado: "activo" })
+
+    res.status(200).json({ success: true, message: "Expulsión revertida, estudiante reactivado" })
+  })
+
+  // -------------------------------------------------------------------------
+  // egresar — crea registro en egresados y cambia estado a graduado.
+  // -------------------------------------------------------------------------
+  egresar = asyncHandler(async (req: Request, res: Response) => {
+    const estudianteId = Number(req.params.id)
+    const { fecha_grado } = req.body
+
+    const estudiante = await EstudianteRepository.findById(estudianteId)
+    if (!estudiante) throw new AppError("Estudiante no encontrado", 404)
+
+    const estadoActual = estudiante.estudiante.estado
+    if (estadoActual === "graduado")  throw new AppError("El estudiante ya está egresado", 409)
+    if (estadoActual === "expulsado") throw new AppError("No se puede egresar a un estudiante expulsado", 409)
+
+    const yaEgresado = await EgresadoRepository.findByEstudianteId(estudianteId)
+    if (yaEgresado) throw new AppError("Ya existe un registro de egresado para este estudiante", 409)
+
+    const egresado = await transaction(async (client) => {
+      // Retirar matrícula activa si existe
+      const matriculas = await MatriculaRepository.findByEstudiante(estudianteId)
+      const activa = matriculas.find((m: any) => m.estado_actual === "activa")
+      if (activa) {
+        await MatriculaRepository.retirar(activa.matricula_id, "Egresado", client)
+      }
+      return EgresadoRepository.create(
+        { estudiante_id: estudianteId, fecha_grado: fecha_grado || new Date() },
+        client
+      )
+    })
+
+    res.status(201).json({ success: true, message: "Estudiante egresado exitosamente", data: egresado })
+  })
+
+  // -------------------------------------------------------------------------
+  // getSuspensiones — lista todas las suspensiones de un estudiante.
+  // -------------------------------------------------------------------------
+  getSuspensiones = asyncHandler(async (req: Request, res: Response) => {
+    const estudianteId = Number(req.params.id)
+    const suspensiones = await SuspensionRepository.findByEstudiante(estudianteId)
+    res.status(200).json({ success: true, data: suspensiones })
+  })
+
+  // -------------------------------------------------------------------------
+  // deleteSuspension — elimina una suspensión específica.
+  // -------------------------------------------------------------------------
+  deleteSuspension = asyncHandler(async (req: Request, res: Response) => {
+    const suspensionId = Number(req.params.suspensionId)
+    const deleted = await SuspensionRepository.delete(suspensionId)
+    if (!deleted) throw new AppError("Suspensión no encontrada", 404)
+    res.status(200).json({ success: true, message: "Suspensión eliminada" })
+  })
+
 }
