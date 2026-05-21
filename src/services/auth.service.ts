@@ -175,19 +175,31 @@ export class AuthService {
     try {
       switch (role) {
         case RoleType.ADMIN:
-        case RoleType.ADMINISTRATIVO:
-          await client.query(
-            "INSERT INTO administrativos (persona_id, cargo) VALUES ($1, 'gestor')",
+        case RoleType.ADMINISTRATIVO: {
+          // administrativos requiere docente_id — crear docente primero
+          const docenteResult = await client.query(
+            "INSERT INTO docente (persona_id, cargo, estado) VALUES ($1, 'gestor', 'activo') RETURNING docente_id",
             [personaId],
           )
+          await client.query(
+            "INSERT INTO administrativos (docente_id) VALUES ($1)",
+            [docenteResult.rows[0].docente_id],
+          )
           break
+        }
 
-        case RoleType.PROFESOR:
-          await client.query(
-            "INSERT INTO profesores (persona_id) VALUES ($1)",
+        case RoleType.PROFESOR: {
+          // profesores requiere docente_id — crear docente primero
+          const docenteResult = await client.query(
+            "INSERT INTO docente (persona_id, estado) VALUES ($1, 'activo') RETURNING docente_id",
             [personaId],
           )
+          await client.query(
+            "INSERT INTO profesores (docente_id) VALUES ($1)",
+            [docenteResult.rows[0].docente_id],
+          )
           break
+        }
 
         case RoleType.ESTUDIANTE:
           // El registro de estudiante se gestiona mediante el flujo de matrícula
@@ -437,7 +449,7 @@ export class AuthService {
       const result = await transaction(async (client) => {
         const existingPersona = await PersonaRepository.findByDocumento(persona.numero_documento, client)
 
-        if (existingPersona > 0) {
+        if (existingPersona) {
           throw new ConflictError("Ya existe una persona con ese documento")
         }
 
@@ -466,13 +478,18 @@ export class AuthService {
   // Restablecer contraseña al número de documento (para casos de olvido de contraseña)
   async resetPasswordByDefaultDocument(personaId: number){
     try {
-      const persona = await PersonaRepository.findById(personaId)
-      if (!persona) {
+      const row = await PersonaRepository.findById(personaId)
+      if (!row) {
         throw new NotFoundError("Persona no encontrada")
       }
 
-      const defaultPassword = persona.numero_documento
-      const hashedPassword = await bcrypt.hash(defaultPassword, 12)
+      // findById usa PERSONA_FIELDS_JSON que envuelve los datos en { persona: {...} }
+      const numero_documento: string = row.persona?.numero_documento ?? row.numero_documento
+      if (!numero_documento) {
+        throw new NotFoundError("No se pudo obtener el número de documento de la persona")
+      }
+
+      const hashedPassword = await bcrypt.hash(numero_documento, 12)
 
       const result = await query("UPDATE usuarios SET contraseña = $1 WHERE persona_id = $2 RETURNING *", [hashedPassword, personaId])
 

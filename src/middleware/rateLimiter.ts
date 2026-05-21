@@ -19,7 +19,7 @@ export const rateLimiter = rateLimit({
 // Rate limiter más estricto para autenticación
 export const authRateLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 15 minutos
-  max: 5, // 5 intentos
+  max: 100, // 100 intentos
   message: {
     success: false,
     message: "Demasiados intentos de inicio de sesión. Por favor, intente nuevamente en 5 minutos.",

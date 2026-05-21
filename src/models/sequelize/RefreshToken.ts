@@ -1,4 +1,4 @@
-import { DataTypes, Model, type Optional } from "sequelize"
+import { DataTypes, Model, Sequelize, type Optional } from "sequelize"
 import { sequelize } from "../../config/database"
 
 interface RefreshTokenAttributes {
@@ -49,7 +49,7 @@ RefreshToken.init(
     },
     created_at: {
       type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
+      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
     revoked: {
       type: DataTypes.BOOLEAN,

@@ -105,8 +105,8 @@ export class UserService {
 
       // Query para obtener datos
       const dataQuery = `
-        SELECT 
-          u.usuario_id, u.username, u.email, u.activo, u.fecha_creacion,
+        SELECT
+          u.usuario_id, u.persona_id, u.username, u.email, u.activo, u.fecha_creacion,
           p.nombres, p.apellido_paterno, p.apellido_materno, td.tipo_documento, p.numero_documento,
           ARRAY_AGG(DISTINCT r.nombre) as roles
         FROM usuarios u
@@ -115,7 +115,7 @@ export class UserService {
         LEFT JOIN usuarios_role ur ON u.usuario_id = ur.usuario_id
         LEFT JOIN roles r ON ur.role_id = r.role_id
         ${whereClause}
-        GROUP BY u.usuario_id, p.nombres, p.apellido_paterno, p.apellido_materno, p.numero_documento, td.tipo_documento
+        GROUP BY u.usuario_id, p.persona_id, p.nombres, p.apellido_paterno, p.apellido_materno, p.numero_documento, td.tipo_documento
         LIMIT $${paramCount} OFFSET $${paramCount + 1}
       `
 
