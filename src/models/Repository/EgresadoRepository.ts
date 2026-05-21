@@ -93,6 +93,11 @@ export class EgresadoRepository {
   }
 
   static async create(data: Omit<EgresadoCreationAttributes, "egresado_id">, client?: any) {
+    await query(
+      `UPDATE estudiantes SET estado = 'graduado' WHERE estudiante_id = $1`,
+      [data.estudiante_id],
+      client
+    )
     const result = await query(
       `INSERT INTO egresados (estudiante_id, fecha_grado)
        VALUES ($1, $2) RETURNING *`,
