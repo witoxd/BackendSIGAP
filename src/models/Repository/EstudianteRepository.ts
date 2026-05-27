@@ -154,7 +154,7 @@ export class EstudianteRepository {
     const result = await query(
       `INSERT INTO estudiantes (persona_id, fecha_ingreso, estado)
        VALUES ($1, $2, $3) RETURNING *`,
-      [data.persona_id, data.fecha_ingreso || new Date(), data.estado || "activo"],
+      [data.persona_id, data.fecha_ingreso || new Date(), data.estado || "inactivo"],
       client
     )
     return result.rows[0]

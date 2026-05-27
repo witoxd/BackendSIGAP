@@ -21,7 +21,8 @@ export class AsignacionDocenteRepository {
          p.apellido_materno
        FROM asignacion_docente ad
        INNER JOIN profesores pr ON ad.profesor_id = pr.profesor_id
-       INNER JOIN personas p    ON pr.persona_id  = p.persona_id
+       INNER JOIN docente d     ON pr.docente_id  = d.docente_id
+       INNER JOIN personas p    ON d.persona_id   = p.persona_id
        INNER JOIN periodos_matricula pm ON ad.periodo_id = pm.periodo_id
        WHERE ad.curso_id = $1 ${whereExtra}
        ORDER BY ad.materia`,

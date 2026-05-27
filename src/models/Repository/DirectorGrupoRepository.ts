@@ -17,8 +17,9 @@ export class DirectorGrupoRepository {
          p.apellido_materno,
          p.numero_documento
        FROM director_grupo dg
-       INNER JOIN profesores pr ON dg.profesor_id = pr.profesor_id
-       INNER JOIN personas p    ON pr.persona_id  = p.persona_id
+       INNER JOIN profesores pr ON dg.profesor_id  = pr.profesor_id
+       INNER JOIN docente d     ON pr.docente_id   = d.docente_id
+       INNER JOIN personas p    ON d.persona_id    = p.persona_id
        INNER JOIN periodos_matricula pm ON dg.periodo_id = pm.periodo_id
        WHERE dg.curso_id = $1
        ORDER BY pm.anio DESC`,
@@ -43,7 +44,8 @@ export class DirectorGrupoRepository {
        FROM director_grupo dg
        INNER JOIN cursos c       ON dg.curso_id   = c.curso_id
        INNER JOIN profesores pr  ON dg.profesor_id = pr.profesor_id
-       INNER JOIN personas p     ON pr.persona_id  = p.persona_id
+       INNER JOIN docente d      ON pr.docente_id  = d.docente_id
+       INNER JOIN personas p     ON d.persona_id   = p.persona_id
        WHERE dg.periodo_id = $1
        ORDER BY c.grado, c.grupo`,
       [periodoId]

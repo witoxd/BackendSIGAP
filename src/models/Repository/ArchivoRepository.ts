@@ -50,9 +50,12 @@ export class ArchivoRepository {
         a.descripcion,
         a.asignado_por,
         a.fecha_carga,
-        a.activo
-        FROM archivos a WHERE persona_id = $1 AND activo = true
-       ORDER BY fecha_carga DESC`, [personaId])
+        a.activo,
+        (ma.matricula_id IS NOT NULL) AS es_de_matricula
+        FROM archivos a
+        LEFT JOIN matricula_archivos ma ON ma.archivo_id = a.archivo_id
+        WHERE a.persona_id = $1 AND a.activo = true
+       ORDER BY a.fecha_carga DESC`, [personaId])
     return result.rows
   }
 
@@ -106,7 +109,7 @@ export class ArchivoRepository {
        WHERE a.persona_id = $1 AND ta.nombre = 'Foto de Perfil' AND a.activo = true
        ORDER BY a.fecha_carga DESC LIMIT 1`,
       [personaId]
-    )
+    ) 
     return result.rows[0]
   }
 
@@ -189,9 +192,17 @@ export class ArchivoRepository {
 
   static async softDelete(id: number){
     await query(
-      `UPDATE archivos SET activo = false WHETE archivo_id = $1 RETURNING *`,
+      `UPDATE archivos SET activo = false WHERE archivo_id = $1`,
       [id]
     )
+  }
+
+  static async isDeMatricula(archivoId: number): Promise<boolean> {
+    const result = await query(
+      `SELECT 1 FROM matricula_archivos WHERE archivo_id = $1 LIMIT 1`,
+      [archivoId]
+    )
+    return result.rowCount > 0
   }
   static async delete(id: number) {
     const result = await query("DELETE FROM archivos WHERE archivo_id = $1 RETURNING *", [id])

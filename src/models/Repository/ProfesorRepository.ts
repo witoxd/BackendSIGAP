@@ -2,40 +2,44 @@ import { query } from "../../config/database"
 import { ProfesorCreationAttributes } from "../sequelize/Profesor"
 import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 
-// Campos del docente (contratación compartida) + campos específicos del profesor
 const DOCENTE_FIELDS_JSON = `
   json_build_object(
-    'docente_id',         d.docente_id,
-    'cargo',              d.cargo,
-    'sede',               d.sede,
-    'jornada_id',         d.jornada_id,
-    'jornada_nombre',     j.nombre,
-    'tipo_contrato',      d.tipo_contrato,
-    'estado',             d.estado,
-    'fecha_contratacion', d.fecha_contratacion
+    'docente_id',           d.docente_id,
+    'sede',                 d.sede,
+    'jornada_id',           d.jornada_id,
+    'jornada_nombre',       j.nombre,
+    'tipo_contrato',        d.tipo_contrato,
+    'estado',               d.estado,
+    'fecha_contratacion',   d.fecha_contratacion,
+    'decreto_id',           d.decreto_id,
+    'decreto_codigo',       dec.codigo,
+    'decreto_nombre',       dec.nombre,
+    'titulo',               d.titulo,
+    'area',                 d.area,
+    'posgrado',             d.posgrado,
+    'grado_escalafon_id',   d.grado_escalafon_id,
+    'grado_escalafon_codigo', ge.codigo,
+    'fecha_nombramiento',   d.fecha_nombramiento,
+    'numero_resolucion',    d.numero_resolucion,
+    'perfil_profesional',   d.perfil_profesional
   ) AS docente
 `
 
 const PROFESOR_FIELDS_JSON = `
   json_build_object(
-    'profesor_id',        pr.profesor_id,
-    'docente_id',         pr.docente_id,
-    'fecha_nombramiento', pr.fecha_nombramiento,
-    'numero_resolucion',  pr.numero_resolucion,
-    'titulo',             pr.titulo,
-    'perfil_profesional', pr.perfil_profesional,
-    'posgrado',           pr.posgrado,
-    'grado_escalafon',    pr.grado_escalafon,
-    'area',               pr.area
+    'profesor_id', pr.profesor_id,
+    'docente_id',  pr.docente_id
   ) AS profesor
 `
 
 const JOINS = `
   FROM profesores pr
-  INNER JOIN docente d    ON pr.docente_id        = d.docente_id
-  INNER JOIN personas p   ON d.persona_id         = p.persona_id
-  LEFT  JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
-  LEFT  JOIN jornadas j   ON d.jornada_id         = j.jornada_id
+  INNER JOIN docente d         ON pr.docente_id        = d.docente_id
+  INNER JOIN personas p        ON d.persona_id         = p.persona_id
+  LEFT  JOIN tipo_documento td ON p.tipo_documento_id  = td.tipo_documento_id
+  LEFT  JOIN jornadas j        ON d.jornada_id         = j.jornada_id
+  LEFT  JOIN decretos dec      ON d.decreto_id         = dec.decreto_id
+  LEFT  JOIN grados_escalafon ge ON d.grado_escalafon_id = ge.grado_id
 `
 
 export class ProfesorRepository {
@@ -81,47 +85,16 @@ export class ProfesorRepository {
 
   static async create(data: Omit<ProfesorCreationAttributes, "profesor_id">, client?: any) {
     const result = await query(
-      `INSERT INTO profesores (docente_id, fecha_nombramiento, numero_resolucion, titulo, perfil_profesional, posgrado, grado_escalafon, area)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
-      [
-        data.docente_id,
-        data.fecha_nombramiento ?? null,
-        data.numero_resolucion ?? null,
-        data.titulo ?? null,
-        data.perfil_profesional ?? null,
-        data.posgrado ?? null,
-        data.grado_escalafon ?? null,
-        data.area ?? null,
-      ],
+      `INSERT INTO profesores (docente_id) VALUES ($1) RETURNING *`,
+      [data.docente_id],
       client
     )
     return result.rows[0]
   }
 
-  static async update(id: number, data: Partial<ProfesorCreationAttributes>, client?: any) {
-    const allowed = ["fecha_nombramiento", "numero_resolucion", "titulo", "perfil_profesional", "posgrado", "grado_escalafon", "area"]
-    const fields: string[] = []
-    const values: unknown[] = []
-    let idx = 1
-
-    for (const key of allowed) {
-      if (key in data && (data as Record<string, unknown>)[key] !== undefined) {
-        fields.push(`${key} = $${idx}`)
-        values.push((data as Record<string, unknown>)[key])
-        idx++
-      }
-    }
-
-    if (fields.length === 0) return null
-
-    values.push(id)
-    const result = await query(
-      `UPDATE profesores SET ${fields.join(", ")} WHERE profesor_id = $${idx} RETURNING *`,
-      values,
-      client
-    )
-    return result.rows[0]
+  static async update(_id: number, _data: Partial<ProfesorCreationAttributes>, _client?: any) {
+    // La tabla profesores ya no tiene campos propios — los campos académicos están en docente
+    return null
   }
 
   static async SearchIndex(index: string, limit = 50) {
@@ -196,25 +169,28 @@ export class ProfesorRepository {
         `SELECT
           ${PERSONA_FIELDS_JSON},
           json_build_object(
-            'docente_id',         d.docente_id,
-            'cargo',              d.cargo,
-            'sede',               d.sede,
-            'jornada_id',         d.jornada_id,
-            'jornada_nombre',     j.nombre,
-            'tipo_contrato',      d.tipo_contrato,
-            'estado',             d.estado,
-            'fecha_contratacion', d.fecha_contratacion
+            'docente_id',             d.docente_id,
+            'sede',                   d.sede,
+            'jornada_id',             d.jornada_id,
+            'jornada_nombre',         j.nombre,
+            'tipo_contrato',          d.tipo_contrato,
+            'estado',                 d.estado,
+            'fecha_contratacion',     d.fecha_contratacion,
+            'decreto_id',             d.decreto_id,
+            'decreto_codigo',         dec.codigo,
+            'decreto_nombre',         dec.nombre,
+            'titulo',                 d.titulo,
+            'area',                   d.area,
+            'posgrado',               d.posgrado,
+            'grado_escalafon_id',     d.grado_escalafon_id,
+            'grado_escalafon_codigo', ge.codigo,
+            'fecha_nombramiento',     d.fecha_nombramiento,
+            'numero_resolucion',      d.numero_resolucion,
+            'perfil_profesional',     d.perfil_profesional
           ) AS docente,
           json_build_object(
-            'profesor_id',        pr.profesor_id,
-            'docente_id',         pr.docente_id,
-            'fecha_nombramiento', pr.fecha_nombramiento,
-            'numero_resolucion',  pr.numero_resolucion,
-            'titulo',             pr.titulo,
-            'perfil_profesional', pr.perfil_profesional,
-            'posgrado',           pr.posgrado,
-            'grado_escalafon',    pr.grado_escalafon,
-            'area',               pr.area
+            'profesor_id', pr.profesor_id,
+            'docente_id',  pr.docente_id
           ) AS profesor
          ${JOINS}
          WHERE pr.profesor_id = $1`,

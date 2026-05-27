@@ -26,17 +26,24 @@ export class DocenteRepository {
 
   static async create(data: Omit<DocenteCreationAttributes, "docente_id">, client?: any) {
     const result = await query(
-      `INSERT INTO docente (persona_id, cargo, sede, jornada_id, tipo_contrato, estado, fecha_contratacion)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO docente (persona_id, sede, jornada_id, tipo_contrato, estado, fecha_contratacion, decreto_id, titulo, area, posgrado, grado_escalafon_id, fecha_nombramiento, numero_resolucion, perfil_profesional)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         data.persona_id,
-        data.cargo ?? null,
         data.sede ?? null,
         data.jornada_id ?? null,
         data.tipo_contrato ?? null,
         data.estado ?? "activo",
         data.fecha_contratacion ?? new Date(),
+        data.decreto_id ?? null,
+        data.titulo ?? null,
+        data.area ?? null,
+        data.posgrado ?? null,
+        data.grado_escalafon_id ?? null,
+        data.fecha_nombramiento ?? null,
+        data.numero_resolucion ?? null,
+        data.perfil_profesional ?? null,
       ],
       client
     )
@@ -44,7 +51,7 @@ export class DocenteRepository {
   }
 
   static async update(docenteId: number, data: Partial<Omit<DocenteCreationAttributes, "docente_id" | "persona_id">>, client?: any) {
-    const allowed = ["cargo", "sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
+    const allowed = ["sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion", "decreto_id", "titulo", "area", "posgrado", "grado_escalafon_id", "fecha_nombramiento", "numero_resolucion", "perfil_profesional"]
     const fields: string[] = []
     const values: unknown[] = []
     let idx = 1

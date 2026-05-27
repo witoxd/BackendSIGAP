@@ -214,6 +214,49 @@ WHERE vm.matricula_id = $1`,
     return result.rows
   }
 
+  static async findByCursoFiltrado(
+    cursoId: number,
+    opts: { periodo_id?: number; estado?: string } = {}
+  ) {
+    const conditions: string[] = ["vm.curso_id = $1"]
+    const values: any[] = [cursoId]
+    let idx = 2
+
+    if (opts.periodo_id) {
+      conditions.push(`vm.periodo_id = $${idx++}`)
+      values.push(opts.periodo_id)
+    }
+    if (opts.estado) {
+      conditions.push(`vm.estado_actual = $${idx++}`)
+      values.push(opts.estado)
+    }
+
+    const where = conditions.join(" AND ")
+    const result = await query(
+      `SELECT
+        vm.matricula_id,
+        vm.estudiante_id,
+        vm.estado_actual,
+        vm.fecha_matricula,
+        vm.anio,
+        vm.periodo_id,
+        vm.periodo_descripcion,
+        p.nombres,
+        p.apellido_paterno,
+        p.apellido_materno,
+        p.numero_documento,
+        td.nombre_documento AS tipo_documento
+      FROM v_matriculas vm
+      INNER JOIN estudiantes   e  ON vm.estudiante_id    = e.estudiante_id
+      INNER JOIN personas      p  ON e.persona_id        = p.persona_id
+      LEFT  JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+      WHERE ${where}
+      ORDER BY p.apellido_paterno, p.nombres`,
+      values,
+    )
+    return result.rows
+  }
+
 
   static async update(id: number, Data: Partial<MatriculaCreationAttributes>, client?: any) {
     const fields: string[] = []
@@ -283,6 +326,7 @@ WHERE vm.matricula_id = $1`,
             'fecha_fin',    vm.periodo_fecha_fin
           ) AS periodo,
           json_build_object(
+            'estudiante_id',    e.estudiante_id,
             'nombres',          p.nombres,
             'apellido_paterno', p.apellido_paterno,
             'apellido_materno', p.apellido_materno,
@@ -299,9 +343,10 @@ WHERE vm.matricula_id = $1`,
         [matriculaId]
       ),
 
-      // 2. Archivos entregados — solo tipos que aplican a 'matricula'
+      // 2. Archivos opcionales — excluye los tipos que son requeridos en 'matricula'
       query(
         `SELECT
+          a.archivo_id,
           a.nombre,
           a.url_archivo,
           a.descripcion,
@@ -310,9 +355,10 @@ WHERE vm.matricula_id = $1`,
             'nombre', ta.nombre
           ) AS tipo_archivo
         FROM matricula_archivos ma
-        INNER JOIN archivos      a  ON ma.archivo_id      = a.archivo_id
-        INNER JOIN tipos_archivo ta ON a.tipo_archivo_id  = ta.tipo_archivo_id
+        INNER JOIN archivos      a  ON ma.archivo_id     = a.archivo_id
+        INNER JOIN tipos_archivo ta ON a.tipo_archivo_id = ta.tipo_archivo_id
         WHERE ma.matricula_id = $1
+          AND NOT ('matricula' = ANY(ta.requerido_en))
         ORDER BY ta.nombre, ma.fecha_asociacion`,
         [matriculaId]
       ),
@@ -323,6 +369,7 @@ WHERE vm.matricula_id = $1`,
           ta.nombre,
           ta.descripcion,
           CASE WHEN ma.id IS NOT NULL THEN true ELSE false END AS entregado,
+          a.archivo_id,
           a.url_archivo,
           a.fecha_carga
         FROM tipos_archivo ta

@@ -5,7 +5,6 @@ import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 const DOCENTE_FIELDS_JSON = `
   json_build_object(
     'docente_id',         d.docente_id,
-    'cargo',              d.cargo,
     'sede',               d.sede,
     'jornada_id',         d.jornada_id,
     'jornada_nombre',     j.nombre,
@@ -18,16 +17,19 @@ const DOCENTE_FIELDS_JSON = `
 const ADMINISTRATIVO_FIELDS_JSON = `
   json_build_object(
     'administrativo_id', a.administrativo_id,
-    'docente_id',        a.docente_id
+    'docente_id',        a.docente_id,
+    'cargo',             a.cargo
   ) AS administrativo
 `
 
 const JOINS = `
   FROM administrativos a
-  INNER JOIN docente d    ON a.docente_id          = d.docente_id
-  INNER JOIN personas p   ON d.persona_id           = p.persona_id
-  LEFT  JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
-  LEFT  JOIN jornadas j   ON d.jornada_id            = j.jornada_id
+  INNER JOIN docente d         ON a.docente_id          = d.docente_id
+  INNER JOIN personas p        ON d.persona_id           = p.persona_id
+  LEFT  JOIN tipo_documento td ON p.tipo_documento_id    = td.tipo_documento_id
+  LEFT  JOIN jornadas j        ON d.jornada_id           = j.jornada_id
+  LEFT  JOIN decretos dec      ON d.decreto_id           = dec.decreto_id
+  LEFT  JOIN grados_escalafon ge ON d.grado_escalafon_id = ge.grado_id
 `
 
 export class AdministrativoRepository {
@@ -129,9 +131,18 @@ export class AdministrativoRepository {
 
   static async create(data: Omit<AdministrativoCreationAttributes, "administrativo_id">, client?: any) {
     const result = await query(
-      `INSERT INTO administrativos (docente_id)
-       VALUES ($1) RETURNING *`,
-      [data.docente_id],
+      `INSERT INTO administrativos (docente_id, cargo) VALUES ($1, $2) RETURNING *`,
+      [data.docente_id, data.cargo ?? null],
+      client
+    )
+    return result.rows[0]
+  }
+
+  static async update(administrativoId: number, data: Pick<AdministrativoCreationAttributes, "cargo">, client?: any) {
+    if (data.cargo === undefined) return null
+    const result = await query(
+      `UPDATE administrativos SET cargo = $1 WHERE administrativo_id = $2 RETURNING *`,
+      [data.cargo, administrativoId],
       client
     )
     return result.rows[0]

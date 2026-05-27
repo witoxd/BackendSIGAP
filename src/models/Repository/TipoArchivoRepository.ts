@@ -5,8 +5,9 @@ import { parsePostgresArray } from "../../utils/parsePostgresArray"
 
 function normalizeTipoArchivo(row: any) {
   if (!row) return row
-  row.aplica_a     = parsePostgresArray(row.aplica_a)
-  row.requerido_en = parsePostgresArray(row.requerido_en)
+  row.aplica_a              = parsePostgresArray(row.aplica_a)
+  row.requerido_en          = parsePostgresArray(row.requerido_en)
+  row.extensiones_permitidas = parsePostgresArray(row.extensiones_permitidas)
   return row
 }
 
@@ -197,6 +198,32 @@ static async findRequeridosPor(contexto: ContextoArchivo) {
   /**
    * Verificar si una extensión es permitida para un tipo de archivo
    */
+  /**
+   * Devuelve los tipos de archivo (excluyendo excludeId) que ya tienen
+   * alguna de las extensiones de imagen reservadas.
+   * Se usa para impedir que más de un tipo tenga extensiones de imagen.
+   */
+  static async findConflictoImagenes(extensiones: string[], excludeId?: number): Promise<any[]> {
+    const candidatas = extensiones
+      .map((e) => e.toLowerCase().replace(/^\./, ""))
+      .filter((e) => ['jpg', 'jpeg', 'png', 'webp'].includes(e))
+
+    if (candidatas.length === 0) return []
+
+    // Construye variantes con y sin punto para el overlap
+    const variantes = candidatas.flatMap((e) => [e, `.${e}`])
+
+    const result = await query(
+      `SELECT tipo_archivo_id, nombre
+       FROM tipos_archivo
+       WHERE activo = true
+         AND extensiones_permitidas && $1
+         ${excludeId !== undefined ? "AND tipo_archivo_id <> $2" : ""}`,
+      excludeId !== undefined ? [variantes, excludeId] : [variantes]
+    )
+    return result.rows
+  }
+
   static async isExtensionAllowed(tipoArchivoId: number, extension: string): Promise<boolean> {
     const result = await query(
       `SELECT extensiones_permitidas FROM tipos_archivo 

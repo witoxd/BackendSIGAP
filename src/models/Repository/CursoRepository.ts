@@ -53,6 +53,7 @@ export class CursoRepository {
            dg.periodo_id,
            pm.anio,
            pm.descripcion AS periodo_descripcion,
+           pm.activo AS periodo_activo,
            p.nombres,
            p.apellido_paterno,
            p.apellido_materno,
