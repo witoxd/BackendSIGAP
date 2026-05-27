@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import crypto from "crypto"
+import { randomUUID } from "crypto"
 import { query, transaction } from "../config/database"
 import { type JwtPayload, RoleType } from "../types"
 import { ConflictError, UnauthorizedError, NotFoundError, DatabaseError } from "../utils/AppError"
@@ -215,7 +216,7 @@ export class AuthService {
   }
 
   // Login
-  async login(email: string, contraseña: string) {
+  async login(username: string, contraseña: string, ipAddress?: string, userAgent?: string) {
     try {
       // Buscar usuario con sus roles
       const result = await query(
@@ -225,9 +226,9 @@ export class AuthService {
         FROM usuarios u
         LEFT JOIN usuarios_role ur ON u.usuario_id = ur.usuario_id
         LEFT JOIN roles r ON ur.role_id = r.role_id
-        WHERE u.email = $1
+        WHERE u.username = $1
         GROUP BY u.usuario_id`,
-        [email],
+        [username],
       )
 
       if (result.rows.length === 0) {
@@ -238,27 +239,36 @@ export class AuthService {
 
       user.roles = parsePostgresArray(user.roles)
 
-      // Verificar si el usuario está activo
       if (!user.activo) {
         throw new UnauthorizedError("Usuario inactivo. Contacte al administrador.")
       }
 
-      // Verificar contraseña
       const isPasswordValid = await bcrypt.compare(contraseña, user.contraseña)
 
       if (!isPasswordValid) {
         throw new UnauthorizedError("Credenciales inválidas")
       }
 
-      // Generar token JWT
       const token = this.generateToken({
         userId: user.usuario_id,
         personaId: user.persona_id,
+        username: user.username,
         email: user.email,
         roles: user.roles || [],
       })
 
-      const refreshToken = await this.createRefreshToken(user.usuario_id)
+      // Nueva familia para esta sesión
+      const familia = randomUUID()
+      const { token: refreshToken } = await this.createRefreshToken(user.usuario_id, familia)
+
+      // Registrar sesión para auditoría
+      await query(
+        `INSERT INTO sesiones (usuario_id, familia, ip_address, user_agent) VALUES ($1, $2, $3, $4)`,
+        [user.usuario_id, familia, ipAddress ?? null, userAgent ?? null],
+      )
+
+      // Limpieza pasiva: eliminar tokens ya revocados y expirados
+      await this.cleanExpiredTokens()
 
       return {
         accessToken: token,
@@ -291,31 +301,33 @@ export class AuthService {
   }
 
   // Crear y persistir un refresh token opaco en BD
-  private async createRefreshToken(usuarioId: number): Promise<string> {
+  // familia: UUID compartido por toda la cadena de rotación de una sesión
+  private async createRefreshToken(usuarioId: number, familia: string): Promise<{ token: string; familia: string }> {
     const token = crypto.randomBytes(64).toString("hex")
     const refreshDays = parseInt(process.env.JWT_REFRESH_EXPIRES_DAYS ?? "30", 10)
     const expiresAt = new Date(Date.now() + refreshDays * 24 * 60 * 60 * 1000)
 
     await query(
-      `INSERT INTO refresh_tokens (usuario_id, token, expires_at) VALUES ($1, $2, $3)`,
-      [usuarioId, token, expiresAt],
+      `INSERT INTO refresh_tokens (usuario_id, token, familia, expires_at) VALUES ($1, $2, $3, $4)`,
+      [usuarioId, token, familia, expiresAt],
     )
-    return token
+    return { token, familia }
   }
 
   // Rotar refresh token: valida el actual, lo revoca y emite uno nuevo junto al access token
+  // Si el token ya fue revocado → detección de robo → revoca toda la familia
   async refreshAccessToken(refreshToken: string) {
     const result = await query(
-      `SELECT rt.token_id, rt.usuario_id, rt.expires_at, rt.revoked,
-              u.email, u.persona_id, u.activo,
+      `SELECT rt.token_id, rt.usuario_id, rt.expires_at, rt.revoked, rt.familia,
+              u.username, u.email, u.persona_id, u.activo,
               COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL), ARRAY[]::enum_roles_nombre[]) AS roles
        FROM refresh_tokens rt
        JOIN usuarios u ON rt.usuario_id = u.usuario_id
        LEFT JOIN usuarios_role ur ON u.usuario_id = ur.usuario_id
        LEFT JOIN roles r ON ur.role_id = r.role_id
        WHERE rt.token = $1
-       GROUP BY rt.token_id, rt.usuario_id, rt.expires_at, rt.revoked,
-                u.email, u.persona_id, u.activo`,
+       GROUP BY rt.token_id, rt.usuario_id, rt.expires_at, rt.revoked, rt.familia,
+                u.username, u.email, u.persona_id, u.activo`,
       [refreshToken],
     )
 
@@ -325,8 +337,17 @@ export class AuthService {
 
     const row = result.rows[0]
 
+    // Token ya revocado = posible robo → invalidar toda la familia y cerrar sesión
     if (row.revoked) {
-      throw new UnauthorizedError("Refresh token revocado")
+      await query(
+        `UPDATE refresh_tokens SET revoked = true WHERE familia = $1`,
+        [row.familia],
+      )
+      await query(
+        `UPDATE sesiones SET estado = 'revocada_por_robo', fecha_cierre = NOW() WHERE familia = $1 AND estado = 'activa'`,
+        [row.familia],
+      )
+      throw new UnauthorizedError("Sesión inválida. Por seguridad inicie sesión nuevamente.")
     }
 
     if (new Date(row.expires_at) < new Date()) {
@@ -337,17 +358,18 @@ export class AuthService {
       throw new UnauthorizedError("Usuario inactivo")
     }
 
-    // Revocar el token usado (rotación) y emitir uno nuevo
+    // Revocar el token actual y emitir uno nuevo con la misma familia
     await query(`UPDATE refresh_tokens SET revoked = true WHERE token_id = $1`, [row.token_id])
 
     const roles = parsePostgresArray(row.roles)
     const newAccessToken = this.generateToken({
       userId: row.usuario_id,
       personaId: row.persona_id,
+      username: row.username,
       email: row.email,
       roles,
     })
-    const newRefreshToken = await this.createRefreshToken(row.usuario_id)
+    const { token: newRefreshToken } = await this.createRefreshToken(row.usuario_id, row.familia)
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken }
   }
@@ -357,6 +379,18 @@ export class AuthService {
     await query(
       `UPDATE refresh_tokens SET revoked = true WHERE usuario_id = $1 AND revoked = false`,
       [usuarioId],
+    )
+    await query(
+      `UPDATE sesiones SET estado = 'cerrada', fecha_cierre = NOW() WHERE usuario_id = $1 AND estado = 'activa'`,
+      [usuarioId],
+    )
+  }
+
+  // Eliminar tokens ya revocados y expirados (limpieza pasiva, se llama en cada login)
+  private async cleanExpiredTokens() {
+    await query(
+      `DELETE FROM refresh_tokens WHERE revoked = true AND expires_at < NOW()`,
+      [],
     )
   }
 
@@ -415,7 +449,7 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(user.contraseña, 12)
 
       // Creacion de usuario
-      const usuarioResult = await UserRepository.create({ ...user, contraseña: hashedPassword }, client)
+      const usuarioResult = await UserRepository.create({ ...user, contraseña: hashedPassword, persona_id:  personaID}, client)
 
       // Si usuario se creo, entonces se le asigna un rol (si no se creo, no se asigna rol y se devuelve error)
       // En este punto, si no se creo el usuario y se le intenta dar un rol, se lanzara un error pero esto ya seria un error de estructura
@@ -454,6 +488,8 @@ export class AuthService {
         }
 
         const personaResult = await PersonaRepository.create(persona, client)
+
+        console.log("Id de persoan creada: ", personaResult.persona_id)
 
         const usuarioResult = await this.createUser(user, personaResult.persona_id, role, client)
 
