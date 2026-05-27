@@ -149,6 +149,83 @@ const seedRolePermisos = async (client: any) => {
 }
 
 // -----------------------------------------------------------------------------
+// DECRETOS Y GRADOS DE ESCALAFÓN
+// -----------------------------------------------------------------------------
+const seedDecretosYGrados = async (client: any) => {
+  const decretos = [
+    { codigo: "2277", nombre: "Decreto 2277 de 1979", descripcion: "Estatuto docente antiguo" },
+    { codigo: "1278", nombre: "Decreto 1278 de 2002", descripcion: "Estatuto de profesionalización docente" },
+  ]
+
+  for (const d of decretos) {
+    await query(
+      `INSERT INTO decretos (codigo, nombre, descripcion) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+      [d.codigo, d.nombre, d.descripcion],
+      client
+    )
+  }
+
+  const decreto2277Result = await query(`SELECT decreto_id FROM decretos WHERE codigo = '2277' LIMIT 1`, [], client)
+  const decreto1278Result = await query(`SELECT decreto_id FROM decretos WHERE codigo = '1278' LIMIT 1`, [], client)
+  const id2277 = decreto2277Result.rows[0]?.decreto_id
+  const id1278 = decreto1278Result.rows[0]?.decreto_id
+
+  if (id2277) {
+    const grados2277 = [
+      { codigo: "A",  descripcion: "Grado transitorio A",  orden: 1 },
+      { codigo: "B",  descripcion: "Grado transitorio B",  orden: 2 },
+      { codigo: "1",  descripcion: "Grado 1",              orden: 3 },
+      { codigo: "2",  descripcion: "Grado 2",              orden: 4 },
+      { codigo: "3",  descripcion: "Grado 3",              orden: 5 },
+      { codigo: "4",  descripcion: "Grado 4",              orden: 6 },
+      { codigo: "5",  descripcion: "Grado 5",              orden: 7 },
+      { codigo: "6",  descripcion: "Grado 6",              orden: 8 },
+      { codigo: "7",  descripcion: "Grado 7",              orden: 9 },
+      { codigo: "8",  descripcion: "Grado 8",              orden: 10 },
+      { codigo: "9",  descripcion: "Grado 9",              orden: 11 },
+      { codigo: "10", descripcion: "Grado 10",             orden: 12 },
+      { codigo: "11", descripcion: "Grado 11",             orden: 13 },
+      { codigo: "12", descripcion: "Grado 12",             orden: 14 },
+      { codigo: "13", descripcion: "Grado 13",             orden: 15 },
+      { codigo: "14", descripcion: "Grado 14",             orden: 16 },
+    ]
+    for (const g of grados2277) {
+      await query(
+        `INSERT INTO grados_escalafon (decreto_id, codigo, descripcion, orden) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+        [id2277, g.codigo, g.descripcion, g.orden],
+        client
+      )
+    }
+  }
+
+  if (id1278) {
+    const grados1278 = [
+      { codigo: "1A", descripcion: "Nivel 1 — Categoría A", orden: 1 },
+      { codigo: "1B", descripcion: "Nivel 1 — Categoría B", orden: 2 },
+      { codigo: "1C", descripcion: "Nivel 1 — Categoría C", orden: 3 },
+      { codigo: "1D", descripcion: "Nivel 1 — Categoría D", orden: 4 },
+      { codigo: "2A", descripcion: "Nivel 2 — Categoría A", orden: 5 },
+      { codigo: "2B", descripcion: "Nivel 2 — Categoría B", orden: 6 },
+      { codigo: "2C", descripcion: "Nivel 2 — Categoría C", orden: 7 },
+      { codigo: "2D", descripcion: "Nivel 2 — Categoría D", orden: 8 },
+      { codigo: "3A", descripcion: "Nivel 3 — Categoría A", orden: 9 },
+      { codigo: "3B", descripcion: "Nivel 3 — Categoría B", orden: 10 },
+      { codigo: "3C", descripcion: "Nivel 3 — Categoría C", orden: 11 },
+      { codigo: "3D", descripcion: "Nivel 3 — Categoría D", orden: 12 },
+    ]
+    for (const g of grados1278) {
+      await query(
+        `INSERT INTO grados_escalafon (decreto_id, codigo, descripcion, orden) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+        [id1278, g.codigo, g.descripcion, g.orden],
+        client
+      )
+    }
+  }
+
+  console.log("  ✓ Decretos y grados de escalafón creados")
+}
+
+// -----------------------------------------------------------------------------
 // JORNADAS
 // -----------------------------------------------------------------------------
 const seedJornadas = async (client: any) => {
@@ -406,20 +483,20 @@ const seedAdminUser = async (client: any) => {
 
   // Crear docente del admin
   const docenteResult = await query(
-    `INSERT INTO docente (persona_id, cargo, estado)
-     VALUES ($1, $2, 'activo')
+    `INSERT INTO docente (persona_id, estado)
+     VALUES ($1, 'activo')
      RETURNING docente_id`,
-    [personaId, "Administrador del Sistema"],
+    [personaId],
     client
   )
   const docenteId = docenteResult.rows[0].docente_id
 
-  // Crear registro de administrativo
+  // Crear registro de administrativo con cargo
   await query(
-    `INSERT INTO administrativos (docente_id)
-     VALUES ($1)
+    `INSERT INTO administrativos (docente_id, cargo)
+     VALUES ($1, $2)
      ON CONFLICT DO NOTHING`,
-    [docenteId],
+    [docenteId, "Administrador del Sistema"],
     client
   )
 
@@ -439,6 +516,7 @@ const runDefaultSeed = async () => {
       await seedRoles(client)
       await seedPermisos(client)
       await seedRolePermisos(client)
+      await seedDecretosYGrados(client)
       await seedJornadas(client)
       await seedTiposDocumento(client)
       await seedTiposArchivo(client)

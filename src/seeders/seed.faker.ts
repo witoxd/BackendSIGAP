@@ -1,527 +1,1017 @@
 import { query, transaction } from "../config/database"
-import bcrypt from "bcryptjs"
 import { faker } from "@faker-js/faker/locale/es"
 
 // =============================================================================
-// SEED FAKER — datos falsos para desarrollo y pruebas
+// SEED FAKER — datos realistas para desarrollo y pruebas
 //
-// Genera datos realistas en español usando @faker-js/faker.
-// Depende de seed.default.ts — corre ese primero.
-//
-// Lo que crea:
-//   - 5 profesores con usuario y persona
-//   - 3 administrativos con usuario y persona
-//   - 30 estudiantes con usuario, persona, acudiente, ficha y vivienda
-//   - 1 período de matrícula activo para el año actual
-//   - Matrículas para todos los estudiantes
+// Depende de seed.default.ts — ejecutar ese primero.
+// Idempotente: limpia todos los datos de ejecuciones anteriores antes de insertar.
 //
 // Uso:
-//   npx ts-node src/seeds/seed.faker.ts
-//   o: npm run seed:faker
-//
-// Instalación de dependencia:
-//   npm install --save-dev @faker-js/faker
+//   npm run seed:FakeData
 // =============================================================================
 
-faker.seed(42) // Seed fijo para reproducibilidad — mismo resultado cada ejecución
+faker.seed(42)
 
-const PROFERSOR_FAKER = 100
-const ESTUDIANTE_FAKER = 250
-const ADMINISTRATIVO_FAKER = 50
+// ============================================================
+// CONFIGURACIÓN — ajusta estas constantes antes de ejecutar
+// ============================================================
+const CONFIG = {
+  SEED:                     42,
+  NUM_ESTUDIANTES:          80,
+  NUM_PROFESORES:           15,
+  NUM_ADMINISTRATIVOS:      5,
+  ANIO_INICIO:              2020,
+  ANIO_FIN:                 2024,
+  GRADOS_INICIALES:         ["6°", "7°", "8°", "9°"],   // grados posibles al ingresar
+  GRUPOS:                   ["A"],                        // grupos disponibles en seed.default
+  PCT_HERMANOS:             0.20,                         // fracción de estudiantes que comparten acudiente
+  PROB_REPROBADO:           0.12,
+  PROB_RETIRADO:            0.05,
+  PROB_TRASLADADO:          0.03,
+  PROB_EXPULSADO:           0.02,
+  PROB_SUSPENSION:          0.18,
+  MAX_SUSPENSIONES:         3,
+  COLEGIOS_PREVIOS_MAX:     3,
+  CONTACTOS_EMERGENCIA_MAX: 2,
+} as const
 
-// -----------------------------------------------------------------------------
-// HELPERS
-// -----------------------------------------------------------------------------
+// ============================================================
+// TIPOS INTERNOS
+// ============================================================
+type ResultadoAnio = "promovido" | "reprobado" | "retirado" | "trasladado" | "expulsado"
 
-const gruposSanguineos = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
-const generos          = ["Masculino", "Femenino"] as const
-const tiposTransporte  = ["Bus", "Moto", "A pie", "Bicicleta", "Carro particular"]
-const eps              = ["Sura", "Sanitas", "Nueva EPS", "Compensar", "Coosalud", "Cajacopi"]
-const credos           = ["Católico", "Cristiano", "Evangélico", "Ninguno", "Otro"]
-const gruposEtnicos    = ["Mestizo", "Afrocolombiano", "Indígena", "Ninguno"]
-const sedes            = ["Principal", "Sede Norte", "Sede Sur", "Sede Rural", "Sede Centro"]
-const titulos          = [
+interface TramoMatricula {
+  anio:          number
+  grado:         string
+  resultado:     ResultadoAnio
+  matricula_id?: number
+}
+
+interface EstudianteGenerado {
+  estudiante_id: number
+  persona_id:    number
+  apellido_p:    string
+  tramos:        TramoMatricula[]
+  estado_final:  "activo" | "inactivo" | "graduado" | "suspendido" | "expulsado"
+}
+
+interface AcudienteGenerado {
+  acudiente_id:  number
+  persona_id:    number
+  apellido_p:    string
+}
+
+interface ProfesorGenerado {
+  profesor_id: number
+  docente_id:  number
+}
+
+// ============================================================
+// CATÁLOGOS LOCALES
+// ============================================================
+const GRADOS_ORDEN = ["1°", "2°", "3°", "4°", "5°", "6°", "7°", "8°", "9°", "10°", "11°"]
+
+const GRUPOS_SANGUINEOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+const GENEROS           = ["Masculino", "Femenino"] as const
+const TIPOS_TRANSPORTE  = ["Bus", "Moto", "A pie", "Bicicleta", "Carro particular"]
+const EPS               = ["Sura", "Sanitas", "Nueva EPS", "Compensar", "Coosalud", "Cajacopi"]
+const CREDOS            = ["Católico", "Cristiano", "Evangélico", "Ninguno", "Otro"]
+const GRUPOS_ETNICOS    = ["Mestizo", "Afrocolombiano", "Indígena", "Wayuu", "Ninguno"]
+const SEDES             = ["Principal", "Sede Norte", "Sede Sur"]
+const MUNICIPIOS_CO     = [
+  "Riohacha", "Maicao", "Uribia", "Manaure", "Fonseca",
+  "Barranquilla", "Cartagena", "Santa Marta", "Valledupar", "Montería",
+]
+const TITULOS_DOCENTE   = [
   "Licenciatura en Matemáticas",
   "Licenciatura en Lengua Castellana",
   "Licenciatura en Ciencias Naturales",
   "Licenciatura en Ciencias Sociales",
   "Licenciatura en Educación Física",
   "Licenciatura en Inglés",
-  "Licenciatura en Preescolar",
+  "Licenciatura en Informática",
 ]
-const posgrados        = [
+const POSGRADOS_DOCENTE = [
   "Especialización en Pedagogía",
   "Especialización en Evaluación Educativa",
   "Maestría en Educación",
   "Maestría en Gestión Educativa",
-  "Especialización en TIC para la Enseñanza",
 ]
-const gradosEscalafon  = ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "14"]
-const cargosProfesor   = ["Docente de aula", "Director de grupo", "Coordinador de área"]
-const areasProfesor    = [
-  "Matemáticas",
-  "Lengua Castellana",
-  "Ciencias Naturales",
-  "Ciencias Sociales",
-  "Inglés",
-  "Educación Física",
-  "Tecnología e Informática",
-  "Artística",
+const MATERIAS          = [
+  "Matemáticas", "Lengua Castellana", "Ciencias Naturales",
+  "Ciencias Sociales", "Inglés", "Educación Física",
+  "Tecnología e Informática", "Artística", "Ética y Valores", "Religión",
 ]
-const tiposContratoProfesor = ["En propiedad", "Provisional", "Temporal", "Cátedra"]
+const AREAS_DOCENTE     = [
+  "Matemáticas", "Lengua Castellana", "Ciencias Naturales",
+  "Ciencias Sociales", "Inglés", "Educación Física",
+  "Tecnología e Informática", "Artística",
+]
+const TIPOS_CONTRATO    = ["En propiedad", "Provisional", "Temporal", "Cátedra"]
+const CARGOS_ADMIN      = ["Secretaria", "Coordinador Académico", "Rector", "Tesorero", "Psicólogo"]
+const PARENTESCOS_ACUDIENTE = ["Padre", "Madre", "Abuelo", "Abuela", "Tío", "Tía", "Hermano mayor"]
+const PARENTESCOS_CONTACTO  = ["Cónyuge", "Hijo/a", "Hermano/a", "Madre", "Padre", "Amigo cercano"]
+const NIVEL_ESTUDIO     = ["Primaria", "Bachillerato", "Técnico", "Tecnólogo", "Universitario"]
+const MATERIALES_PAREDES = ["Ladrillo", "Bloque", "Madera", "Bahareque", "Adobe"]
+const MATERIALES_TECHO   = ["Zinc", "Concreto", "Palma", "Eternit", "Teja"]
+const MATERIALES_PISOS   = ["Cerámica", "Cemento", "Madera", "Baldosa", "Tierra"]
+const MOTIVOS_SUSPENSION = [
+  "Agresión física a compañero",
+  "Falta grave de disciplina",
+  "Daño a bienes del colegio",
+  "Incumplimiento reglamento escolar",
+  "Actitud irrespetuosa hacia docente",
+]
 
-const randomItem = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
-// Genera un número de documento
-const generarDocumento = (tipo: "CC" | "TI" | "RC"): string => {
-  if (tipo === "CC") return faker.string.numeric({ length: { min: 8, max: 10 } })
-  if (tipo === "TI") return faker.string.numeric({ length: 10 })
-  return faker.string.numeric({ length: 11 })
+// ============================================================
+// HELPERS
+// ============================================================
+const pick = <T>(arr: readonly T[]): T => arr[Math.floor(faker.number.float() * arr.length)]
+
+const celularColombia = (): string =>
+  `3${faker.number.int({ min: 0, max: 2 })}${faker.string.numeric(8)}`
+
+const telefonoColombia = (): string =>
+  `(605) ${faker.string.numeric(7)}`
+
+const siguienteGrado = (grado: string): string | null => {
+  const idx = GRADOS_ORDEN.indexOf(grado)
+  if (idx === -1 || idx === GRADOS_ORDEN.length - 1) return null
+  return GRADOS_ORDEN[idx + 1]
 }
 
+const calcularResultadoAnio = (): ResultadoAnio => {
+  const r = faker.number.float()
+  if (r < CONFIG.PROB_EXPULSADO)                                                      return "expulsado"
+  if (r < CONFIG.PROB_EXPULSADO + CONFIG.PROB_RETIRADO)                               return "retirado"
+  if (r < CONFIG.PROB_EXPULSADO + CONFIG.PROB_RETIRADO + CONFIG.PROB_TRASLADADO)      return "trasladado"
+  if (r < CONFIG.PROB_EXPULSADO + CONFIG.PROB_RETIRADO + CONFIG.PROB_TRASLADADO + CONFIG.PROB_REPROBADO) return "reprobado"
+  return "promovido"
+}
 
-// -----------------------------------------------------------------------------
-// OBTENER IDs de tablas ya pobladas por seed.default
-// -----------------------------------------------------------------------------
-const getIds = async (client: any) => {
-  const [tiposDoc, jornadas, cursos, roleProfesor, roleEstudiante, roleAdmin] =
-    await Promise.all([
-      query(`SELECT tipo_documento_id, tipo_documento FROM tipo_documento`, [], client),
-      query(`SELECT jornada_id FROM jornadas`, [], client),
-      query(`SELECT curso_id FROM cursos ORDER BY grado`, [], client),
-      query(`SELECT role_id FROM roles WHERE nombre = 'profesor'`, [], client),
-      query(`SELECT role_id FROM roles WHERE nombre = 'estudiante'`, [], client),
-      query(`SELECT role_id FROM roles WHERE nombre = 'administrativo'`, [], client),
-    ])
+const generarDocumentoCC = (): string => faker.string.numeric({ length: { min: 8, max: 10 } })
+const generarDocumentoTI = (): string => faker.string.numeric({ length: 10 })
 
-  return {
-    tiposDoc:       tiposDoc.rows         as { tipo_documento_id: number; tipo_documento: string }[],
-    jornadas:       jornadas.rows         as { jornada_id: number }[],
-    cursos:         cursos.rows           as { curso_id: number }[],
-    roleProfesor:   roleProfesor.rows[0]?.role_id as number,
-    roleEstudiante: roleEstudiante.rows[0]?.role_id as number,
-    roleAdmin:      roleAdmin.rows[0]?.role_id as number,
+// ============================================================
+// FASE 0 — LIMPIEZA (idempotencia)
+// ============================================================
+const limpiarDatos = async (client: any): Promise<void> => {
+  console.log("  → Limpiando datos de ejecuciones anteriores...")
+
+  // Orden inverso a las FK: primero los hijos, luego los padres
+  const tablas = [
+    "reemplazos_profesor",
+    "asignacion_docente",
+    "director_grupo",
+    "suspensiones",
+    "egresados",
+    "matriculas_historial",
+    "matriculas",
+    "colegios_anteriores",
+    "ficha_estudiante",
+    "vivienda_estudiante",
+    "acudiente_estudiante",
+    "acudientes",
+    "estudiantes",
+    "profesor_contactos_emergencia",
+    "profesores",
+    "administrativos",
+    "docente",
+    "procesos_inscripcion",
+    "periodos_matricula",
+    "contactos",
+  ]
+
+  for (const tabla of tablas) {
+    await query(`DELETE FROM ${tabla}`, [], client)
   }
-}
 
-// -----------------------------------------------------------------------------
-// CREAR PERSONA — base de todos los roles
-// -----------------------------------------------------------------------------
-const crearPersona = async (
-  client: any,
-  tipoDocId: number,
-  overrides: Partial<{
-    nombres:    string
-    apellido_p: string
-    apellido_m: string
-    genero:     "Masculino" | "Femenino"
-    doc:        string
-  }> = {}
-) => {
-  const genero    = overrides.genero    || randomItem(generos)
-  const sexo      = genero === "Masculino" ? "male" : "female"
-  const nombres   = overrides.nombres   ?? faker.person.firstName(sexo)
-  const apellidoP = overrides.apellido_p ?? faker.person.lastName()
-  const apellidoM = overrides.apellido_m ?? faker.person.lastName()
-  const doc       = overrides.doc       ?? generarDocumento("CC")
+  // Deshabilitar trigger de validación de período activo para poder insertar
+  // matrículas históricas (años anteriores al actual)
+  await query(`ALTER TABLE matriculas DISABLE TRIGGER trg_verificar_periodo_activo`, [], client)
 
-  const result = await query(
-    `INSERT INTO personas
-       (nombres, apellido_paterno, apellido_materno, tipo_documento_id, numero_documento,
-        fecha_nacimiento, genero, grupo_sanguineo, grupo_etnico, credo_religioso,
-        lugar_nacimiento, expedida_en)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-     ON CONFLICT (numero_documento) DO UPDATE
-       SET nombres = EXCLUDED.nombres
-     RETURNING *`,
-    [
-      nombres, apellidoP, apellidoM, tipoDocId, doc,
-      faker.date.birthdate({ min: 20, max: 60, mode: "age" }).toISOString().split("T")[0],
-      genero,
-      randomItem(gruposSanguineos),
-      randomItem(gruposEtnicos),
-      randomItem(credos),
-      faker.location.city(),
-      faker.location.city(),
-    ],
+  // Personas: conservar solo la del admin
+  await query(
+    `DELETE FROM personas
+     WHERE persona_id NOT IN (
+       SELECT COALESCE(persona_id, 0)
+       FROM usuarios
+       WHERE email = 'admin@sigap.edu.co'
+     )`,
+    [],
     client
   )
-  return result.rows[0]
+
+  console.log("  ✓ Limpieza completada")
 }
 
-// -----------------------------------------------------------------------------
-// CREAR USUARIO vinculado a una persona
-// -----------------------------------------------------------------------------
-// const crearUsuario = async (
-//   client: any,
-//   personaId: number,
-//   persona: any,
-//   roleId: number
-// ) => {
-//   const username = generarUsername(persona.nombres, persona.apellido_paterno)
-//   const email    = faker.internet.email({
-//     firstName: persona.nombres.split(" ")[0],
-//     lastName:  persona.apellido_paterno,
-//   }).toLowerCase()
+// ============================================================
+// FASE 1 — CARGAR IDs DE CATÁLOGOS
+// ============================================================
+interface Catalogos {
+  tipoCC:       { tipo_documento_id: number }
+  tipoTI:       { tipo_documento_id: number }
+  jornadas:     { jornada_id: number }[]
+  cursoMap:     Map<string, number>           // "6°-A-{jornada_id}" → curso_id
+  decretos:     { decreto_id: number; codigo: string }[]
+  gradosMap:    Map<number, { grado_id: number }[]>  // decreto_id → grados
+  rolEstudiante: number
+  rolProfesor:  number
+  rolAdmin:     number
+}
 
-//   // Verificar si ya tiene usuario
-//   const existing = await query(
-//     `SELECT usuario_id FROM usuarios WHERE persona_id = $1`, [personaId], client
-//   )
-//   if (existing.rows.length > 0) return existing.rows[0]
+const cargarCatalogos = async (client: any): Promise<Catalogos> => {
+  const [tiposDoc, jornadas, cursos, roles, decretos, gradosEscalafon] = await Promise.all([
+    query(`SELECT tipo_documento_id, tipo_documento FROM tipo_documento`, [], client),
+    query(`SELECT jornada_id FROM jornadas`, [], client),
+    query(`SELECT curso_id, grado, grupo, jornada_id FROM cursos`, [], client),
+    query(`SELECT role_id, nombre FROM roles`, [], client),
+    query(`SELECT decreto_id, codigo FROM decretos`, [], client),
+    query(`SELECT grado_id, decreto_id FROM grados_escalafon ORDER BY decreto_id, orden`, [], client),
+  ])
 
-//   const usuarioResult = await query(
-//     `INSERT INTO usuarios (persona_id, username, email, contraseña, activo)
-//      VALUES ($1, $2, $3, $4, true)
-//      ON CONFLICT (email) DO UPDATE SET username = EXCLUDED.username
-//      RETURNING *`,
-//     [personaId, username, email, hashedDefaultPassword],
-//     client
-//   )
-//   const usuario = usuarioResult.rows[0]
+  if (tiposDoc.rows.length === 0)
+    throw new Error("No hay tipos de documento. Ejecuta seed:DefaultData primero.")
+  if (jornadas.rows.length === 0)
+    throw new Error("No hay jornadas. Ejecuta seed:DefaultData primero.")
+  if (cursos.rows.length === 0)
+    throw new Error("No hay cursos. Ejecuta seed:DefaultData primero.")
 
-//   await query(
-//     `INSERT INTO usuarios_role (usuario_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-//     [usuario.usuario_id, roleId],
-//     client
-//   )
-
-//   return usuario
-// }
-
-// -----------------------------------------------------------------------------
-// SEED PROFESORES
-// -----------------------------------------------------------------------------
-const seedProfesores = async (client: any, ids: Awaited<ReturnType<typeof getIds>>) => {
-  console.log("  → Creando", PROFERSOR_FAKER, " profesores...")
-  const tipoCC = ids.tiposDoc.find(t => t.tipo_documento === "CC")!
-
-  let creados = 0
-
-  for (let i = 0; i < PROFERSOR_FAKER; i++) {
-    const persona          = await crearPersona(client, tipoCC.tipo_documento_id)
-    const fechaContratacion = faker.date.past({ years: 10 })
-    const fechaNombramiento = faker.date.between({ from: fechaContratacion, to: new Date() })
-    const titulo            = randomItem(titulos)
-    const area              = randomItem(areasProfesor)
-    const tienePosgrado     = faker.datatype.boolean(0.6)
-
-    // Insertar en docente (campos compartidos de contratación)
-    const docenteResult = await query(
-      `INSERT INTO docente
-         (persona_id, cargo, sede, jornada_id, tipo_contrato, estado, fecha_contratacion)
-       VALUES ($1, $2, $3, $4, $5, 'activo', $6)
-       ON CONFLICT (persona_id) DO NOTHING
-       RETURNING docente_id`,
-      [
-        persona.persona_id,
-        randomItem(cargosProfesor),
-        randomItem(sedes),
-        randomItem(ids.jornadas).jornada_id,
-        randomItem(tiposContratoProfesor),
-        fechaContratacion.toISOString().split("T")[0],
-      ],
-      client
-    )
-    if (docenteResult.rows.length === 0) continue
-    const docenteId = docenteResult.rows[0].docente_id
-
-    // Insertar en profesores (campos específicos)
-    const profResult = await query(
-      `INSERT INTO profesores
-         (docente_id, fecha_nombramiento, numero_resolucion, titulo,
-          perfil_profesional, posgrado, grado_escalafon, area)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT DO NOTHING
-       RETURNING *`,
-      [
-        docenteId,
-        fechaNombramiento.toISOString().split("T")[0],
-        `RES-${fechaNombramiento.getFullYear()}-${faker.string.numeric(5)}`,
-        titulo,
-        faker.lorem.sentences({ min: 1, max: 2 }),
-        tienePosgrado ? randomItem(posgrados) : null,
-        randomItem(gradosEscalafon),
-        area,
-      ],
-      client
-    )
-
-    if (profResult.rows.length > 0) creados++
+  const cursoMap = new Map<string, number>()
+  for (const c of cursos.rows) {
+    cursoMap.set(`${c.grado}-${c.grupo}-${c.jornada_id}`, c.curso_id)
   }
 
-  console.log(`  ✓ ${creados} profesores creados`)
+  const gradosMap = new Map<number, { grado_id: number }[]>()
+  for (const g of gradosEscalafon.rows) {
+    if (!gradosMap.has(g.decreto_id)) gradosMap.set(g.decreto_id, [])
+    gradosMap.get(g.decreto_id)!.push({ grado_id: g.grado_id })
+  }
+
+  const tipoCC = tiposDoc.rows.find((t: any) => t.tipo_documento === "CC")
+  const tipoTI = tiposDoc.rows.find((t: any) => t.tipo_documento === "TI")
+  if (!tipoCC || !tipoTI) throw new Error("Tipos de documento CC o TI no encontrados.")
+
+  const findRole = (nombre: string) => roles.rows.find((r: any) => r.nombre === nombre)?.role_id as number
+
+  return {
+    tipoCC,
+    tipoTI,
+    jornadas:      jornadas.rows,
+    cursoMap,
+    decretos:      decretos.rows,
+    gradosMap,
+    rolEstudiante: findRole("estudiante"),
+    rolProfesor:   findRole("profesor"),
+    rolAdmin:      findRole("administrativo"),
+  }
 }
 
-// -----------------------------------------------------------------------------
-// SEED ADMINISTRATIVOS
-// -----------------------------------------------------------------------------
-const seedAdministrativos = async (client: any, ids: Awaited<ReturnType<typeof getIds>>) => {
-  console.log("  → Creando ", ADMINISTRATIVO_FAKER, " administrativos...")
-  const tipoCC = ids.tiposDoc.find(t => t.tipo_documento === "CC")!
+// Helper para obtener curso_id con error explícito si no existe
+const getCursoId = (grado: string, grupo: string, jornadaId: number, cursoMap: Map<string, number>): number => {
+  const key = `${grado}-${grupo}-${jornadaId}`
+  const id = cursoMap.get(key)
+  if (!id) throw new Error(`Curso no encontrado en mapa: ${key}. Verifica seed:DefaultData.`)
+  return id
+}
 
-  const cargosAdmin = ["Secretaria", "Coordinador Académico", "Rector", "Tesorero", "Psicólogo"]
+// ============================================================
+// FASE 2 — PERÍODOS DE MATRÍCULA Y PROCESOS DE INSCRIPCIÓN
+// ============================================================
+const seedPeriodos = async (client: any): Promise<Map<number, number>> => {
+  console.log(`  → Creando períodos ${CONFIG.ANIO_INICIO}–${CONFIG.ANIO_FIN}...`)
+  const periodoMap = new Map<number, number>() // anio → periodo_id
 
-  let creados = 0
-  for (let i = 0; i < ADMINISTRATIVO_FAKER; i++) {
-    const persona = await crearPersona(client, tipoCC.tipo_documento_id)
+  for (let anio = CONFIG.ANIO_INICIO; anio <= CONFIG.ANIO_FIN; anio++) {
+    const esActual = anio === (CONFIG.ANIO_FIN as number)
 
-    // Insertar en docente (verificar que no exista ya por esta persona)
-    const docenteResult = await query(
-      `INSERT INTO docente (persona_id, cargo, estado)
-       VALUES ($1, $2, 'activo')
-       ON CONFLICT (persona_id) DO NOTHING
-       RETURNING docente_id`,
-      [persona.persona_id, randomItem(cargosAdmin)],
+    const result = await query(
+      `INSERT INTO periodos_matricula (anio, fecha_inicio, fecha_fin, activo, descripcion)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING periodo_id`,
+      [
+        anio,
+        `${anio}-01-15`,
+        `${anio}-11-30`,
+        esActual,
+        `Período académico ${anio}`,
+      ],
       client
     )
-    if (docenteResult.rows.length === 0) continue
-    const docenteId = docenteResult.rows[0].docente_id
+    const periodoId: number = result.rows[0].periodo_id
+    periodoMap.set(anio, periodoId)
 
-    // Insertar en administrativos
+    // Proceso de inscripción: abre en noviembre del año anterior
+    const anioInscripcion = anio - 1
     await query(
-      `INSERT INTO administrativos (docente_id)
-       VALUES ($1)
-       ON CONFLICT DO NOTHING`,
-      [docenteId],
+      `INSERT INTO procesos_inscripcion
+         (periodo_id, nombre, fecha_inicio_inscripcion, fecha_fin_inscripcion, activo)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        periodoId,
+        `Matrícula ordinaria ${anio}`,
+        `${anioInscripcion}-11-01`,
+        `${anioInscripcion}-12-15`,
+        !esActual,
+      ],
       client
     )
-    creados++
   }
 
-  console.log(`  ✓ ${creados} administrativos creados`)
+  console.log(`  ✓ ${periodoMap.size} períodos creados`)
+  return periodoMap
 }
 
-// -----------------------------------------------------------------------------
-// SEED ESTUDIANTES con ficha, vivienda y acudiente
-// -----------------------------------------------------------------------------
-const seedEstudiantes = async (
+// ============================================================
+// FASE 3 — PROFESORES
+// ============================================================
+const seedProfesores = async (
   client: any,
-  ids: Awaited<ReturnType<typeof getIds>>,
-  periodoId: number,
-) => {
-  console.log("  → Creando ", ESTUDIANTE_FAKER, ", estudiantes con ficha, vivienda y acudiente...")
+  cat: Catalogos,
+): Promise<ProfesorGenerado[]> => {
+  console.log(`  → Creando ${CONFIG.NUM_PROFESORES} profesores...`)
+  const profesores: ProfesorGenerado[] = []
 
-  const tipoCC = ids.tiposDoc.find(t => t.tipo_documento === "CC")!
-  const tipoTI = ids.tiposDoc.find(t => t.tipo_documento === "TI")!
-
-  const cursosDisponibles = [...ids.cursos]
-
-  for (let i = 0; i < ESTUDIANTE_FAKER; i++) {
-    // 1. Persona del estudiante (usa TI para menores)
-    const genero  = randomItem(generos)
-    const sexo    = genero === "Masculino" ? "male" : "female"
-    const nombres = faker.person.firstName(sexo)
+  for (let i = 0; i < CONFIG.NUM_PROFESORES; i++) {
+    const genero    = pick(GENEROS)
+    const sexo      = genero === "Masculino" ? "male" : "female"
     const apellidoP = faker.person.lastName()
     const apellidoM = faker.person.lastName()
 
-    const personaEstudiante = await query(
+    const personaRes = await query(
       `INSERT INTO personas
          (nombres, apellido_paterno, apellido_materno, tipo_documento_id, numero_documento,
           fecha_nacimiento, genero, grupo_sanguineo, grupo_etnico, credo_religioso,
           lugar_nacimiento, expedida_en)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-       ON CONFLICT (numero_documento) DO UPDATE SET nombres = EXCLUDED.nombres
-       RETURNING *`,
+       RETURNING persona_id`,
       [
-        nombres, apellidoP, apellidoM,
-        tipoTI.tipo_documento_id,
-        generarDocumento("TI"),
-        faker.date.birthdate({ min: 5, max: 18, mode: "age" }).toISOString().split("T")[0],
+        faker.person.firstName(sexo),
+        apellidoP,
+        apellidoM,
+        cat.tipoCC.tipo_documento_id,
+        generarDocumentoCC(),
+        faker.date.birthdate({ min: 25, max: 60, mode: "age" }).toISOString().split("T")[0],
         genero,
-        randomItem(gruposSanguineos),
-        randomItem(gruposEtnicos),
-        randomItem(credos),
-        faker.location.city(),
-        faker.location.city(),
+        pick(GRUPOS_SANGUINEOS),
+        pick(GRUPOS_ETNICOS),
+        pick(CREDOS),
+        pick(MUNICIPIOS_CO),
+        pick(MUNICIPIOS_CO),
       ],
       client
     )
-    const persona = personaEstudiante.rows[0]
+    const personaId: number = personaRes.rows[0].persona_id
 
-    // 2. Estudiante
-    const estudianteResult = await query(
-      `INSERT INTO estudiantes (persona_id, fecha_ingreso, estado)
-       VALUES ($1, $2, 'activo')
-       ON CONFLICT DO NOTHING
-       RETURNING *`,
-      [persona.persona_id, faker.date.past({ years: 3 }).toISOString().split("T")[0]],
+    const decreto       = pick(cat.decretos)
+    const gradosList    = cat.gradosMap.get(decreto.decreto_id) ?? []
+    const gradoEscalafon = gradosList.length > 0 ? pick(gradosList) : null
+    const fechaContrato  = faker.date.past({ years: 15, refDate: new Date(`${CONFIG.ANIO_INICIO}-01-01`) })
+    const fechaNombramiento = faker.date.between({ from: fechaContrato, to: new Date(`${CONFIG.ANIO_INICIO}-01-01`) })
+
+    const docenteRes = await query(
+      `INSERT INTO docente
+         (persona_id, sede, jornada_id, tipo_contrato, estado, fecha_contratacion,
+          decreto_id, titulo, area, posgrado, grado_escalafon_id, fecha_nombramiento,
+          numero_resolucion, perfil_profesional)
+       VALUES ($1,$2,$3,$4,'activo',$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       RETURNING docente_id`,
+      [
+        personaId,
+        pick(SEDES),
+        pick(cat.jornadas).jornada_id,
+        pick(TIPOS_CONTRATO),
+        fechaContrato.toISOString().split("T")[0],
+        decreto.decreto_id,
+        pick(TITULOS_DOCENTE),
+        pick(AREAS_DOCENTE),
+        faker.datatype.boolean(0.5) ? pick(POSGRADOS_DOCENTE) : null,
+        gradoEscalafon?.grado_id ?? null,
+        fechaNombramiento.toISOString().split("T")[0],
+        `RES-${fechaNombramiento.getFullYear()}-${faker.string.numeric(5)}`,
+        faker.lorem.sentences({ min: 1, max: 2 }),
+      ],
       client
     )
-    if (estudianteResult.rows.length === 0) continue
-    const estudiante = estudianteResult.rows[0]
+    const docenteId: number = docenteRes.rows[0].docente_id
 
-    // 3. Usuario del estudiante
-    // await crearUsuario(client, persona.persona_id, persona, ids.roleEstudiante)
+    const profRes = await query(
+      `INSERT INTO profesores (docente_id) VALUES ($1) RETURNING profesor_id`,
+      [docenteId],
+      client
+    )
+    const profesorId: number = profRes.rows[0].profesor_id
 
-    // 4. Ficha del estudiante
+    // Contactos de emergencia (1–2 por profesor)
+    const numContactos = faker.number.int({ min: 1, max: CONFIG.CONTACTOS_EMERGENCIA_MAX })
+    for (let c = 0; c < numContactos; c++) {
+      const sexoContacto = pick(["male", "female"] as const)
+      await query(
+        `INSERT INTO profesor_contactos_emergencia
+           (profesor_id, nombre, parentesco, telefono, celular, activo)
+         VALUES ($1,$2,$3,$4,$5,true)`,
+        [
+          profesorId,
+          `${faker.person.firstName(sexoContacto)} ${faker.person.lastName()}`,
+          pick(PARENTESCOS_CONTACTO),
+          telefonoColombia(),
+          faker.datatype.boolean(0.7) ? celularColombia() : null,
+        ],
+        client
+      )
+    }
+
+    profesores.push({ profesor_id: profesorId, docente_id: docenteId })
+  }
+
+  console.log(`  ✓ ${profesores.length} profesores creados con contactos de emergencia`)
+  return profesores
+}
+
+// ============================================================
+// FASE 4 — ADMINISTRATIVOS
+// ============================================================
+const seedAdministrativos = async (client: any, cat: Catalogos): Promise<void> => {
+  console.log(`  → Creando ${CONFIG.NUM_ADMINISTRATIVOS} administrativos...`)
+
+  for (let i = 0; i < CONFIG.NUM_ADMINISTRATIVOS; i++) {
+    const genero = pick(GENEROS)
+    const sexo   = genero === "Masculino" ? "male" : "female"
+
+    const personaRes = await query(
+      `INSERT INTO personas
+         (nombres, apellido_paterno, apellido_materno, tipo_documento_id, numero_documento,
+          fecha_nacimiento, genero, grupo_sanguineo, lugar_nacimiento, expedida_en)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       RETURNING persona_id`,
+      [
+        faker.person.firstName(sexo),
+        faker.person.lastName(),
+        faker.person.lastName(),
+        cat.tipoCC.tipo_documento_id,
+        generarDocumentoCC(),
+        faker.date.birthdate({ min: 25, max: 60, mode: "age" }).toISOString().split("T")[0],
+        genero,
+        pick(GRUPOS_SANGUINEOS),
+        pick(MUNICIPIOS_CO),
+        pick(MUNICIPIOS_CO),
+      ],
+      client
+    )
+    const personaId: number = personaRes.rows[0].persona_id
+
+    const docenteRes = await query(
+      `INSERT INTO docente (persona_id, estado) VALUES ($1,'activo') RETURNING docente_id`,
+      [personaId],
+      client
+    )
+    await query(
+      `INSERT INTO administrativos (docente_id, cargo) VALUES ($1,$2)`,
+      [docenteRes.rows[0].docente_id, pick(CARGOS_ADMIN)],
+      client
+    )
+  }
+
+  console.log(`  ✓ ${CONFIG.NUM_ADMINISTRATIVOS} administrativos creados`)
+}
+
+// ============================================================
+// FASE 5 — ESTUDIANTES, FAMILIAS, FICHAS Y TRAYECTORIAS
+// ============================================================
+const seedEstudiantes = async (
+  client:     any,
+  cat:        Catalogos,
+  periodoMap: Map<number, number>,
+): Promise<EstudianteGenerado[]> => {
+  console.log(`  → Creando ${CONFIG.NUM_ESTUDIANTES} estudiantes con familias y trayectorias...`)
+
+  const anios = Array.from({ length: CONFIG.ANIO_FIN - CONFIG.ANIO_INICIO + 1 },
+    (_, i) => CONFIG.ANIO_INICIO + i)
+
+  // Calcular distribución de familias
+  const numConHermanos   = Math.round(CONFIG.NUM_ESTUDIANTES * CONFIG.PCT_HERMANOS / 2)
+  const numSinHermanos   = CONFIG.NUM_ESTUDIANTES - numConHermanos * 2
+  const estudiantesGen:   EstudianteGenerado[] = []
+
+  // Jornada por defecto (la primera disponible, que es "Mañana" del seed.default)
+  const jornadaPrincipal = cat.jornadas[0].jornada_id
+
+  const crearAcudiente = async (apellidoFamilia: string): Promise<AcudienteGenerado> => {
+    const genero = pick(GENEROS)
+    const sexo   = genero === "Masculino" ? "male" : "female"
+    const apellidoM = faker.person.lastName()
+
+    const pRes = await query(
+      `INSERT INTO personas
+         (nombres, apellido_paterno, apellido_materno, tipo_documento_id, numero_documento,
+          fecha_nacimiento, genero, grupo_sanguineo, grupo_etnico, credo_religioso,
+          lugar_nacimiento, expedida_en)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       RETURNING persona_id`,
+      [
+        faker.person.firstName(sexo),
+        apellidoFamilia,
+        apellidoM,
+        cat.tipoCC.tipo_documento_id,
+        generarDocumentoCC(),
+        faker.date.birthdate({ min: 30, max: 65, mode: "age" }).toISOString().split("T")[0],
+        genero,
+        pick(GRUPOS_SANGUINEOS),
+        pick(GRUPOS_ETNICOS),
+        pick(CREDOS),
+        pick(MUNICIPIOS_CO),
+        pick(MUNICIPIOS_CO),
+      ],
+      client
+    )
+    const personaId: number = pRes.rows[0].persona_id
+
+    await query(
+      `INSERT INTO contactos (persona_id, tipo_contacto, valor, es_principal, activo)
+       VALUES ($1,'celular',$2,true,true)`,
+      [personaId, celularColombia()],
+      client
+    )
+
+    const aRes = await query(
+      `INSERT INTO acudientes (persona_id, parentesco, ocupacion, nivel_estudio)
+       VALUES ($1,$2,$3,$4)
+       RETURNING acudiente_id`,
+      [
+        personaId,
+        pick(PARENTESCOS_ACUDIENTE),
+        faker.person.jobTitle(),
+        pick(NIVEL_ESTUDIO),
+      ],
+      client
+    )
+
+    return { acudiente_id: aRes.rows[0].acudiente_id, persona_id: personaId, apellido_p: apellidoFamilia }
+  }
+
+  const crearEstudiante = async (
+    apellidoFamilia: string,
+    acudiente1: AcudienteGenerado,
+    acudiente2: AcudienteGenerado,
+  ): Promise<EstudianteGenerado> => {
+    const genero    = pick(GENEROS)
+    const sexo      = genero === "Masculino" ? "male" : "female"
+    const apellidoM = faker.person.lastName()
+
+    const pRes = await query(
+      `INSERT INTO personas
+         (nombres, apellido_paterno, apellido_materno, tipo_documento_id, numero_documento,
+          fecha_nacimiento, genero, grupo_sanguineo, grupo_etnico, credo_religioso,
+          lugar_nacimiento, expedida_en)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       RETURNING persona_id`,
+      [
+        faker.person.firstName(sexo),
+        apellidoFamilia,
+        apellidoM,
+        cat.tipoTI.tipo_documento_id,
+        generarDocumentoTI(),
+        faker.date.birthdate({ min: 10, max: 18, mode: "age" }).toISOString().split("T")[0],
+        genero,
+        pick(GRUPOS_SANGUINEOS),
+        pick(GRUPOS_ETNICOS),
+        pick(CREDOS),
+        pick(MUNICIPIOS_CO),
+        pick(MUNICIPIOS_CO),
+      ],
+      client
+    )
+    const personaId: number = pRes.rows[0].persona_id
+
+    const eRes = await query(
+      `INSERT INTO estudiantes (persona_id, fecha_ingreso, estado)
+       VALUES ($1,$2,'activo')
+       RETURNING estudiante_id`,
+      [personaId, `${CONFIG.ANIO_INICIO}-02-01`],
+      client
+    )
+    const estudianteId: number = eRes.rows[0].estudiante_id
+
+    // Ficha del estudiante
     await query(
       `INSERT INTO ficha_estudiante
          (estudiante_id, numero_hermanos, posicion_hermanos, eps_ars, alergia,
           centro_atencion_medica, medio_transporte, transporte_propio, observaciones)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-       ON CONFLICT (estudiante_id) DO NOTHING`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [
-        estudiante.estudiante_id,
+        estudianteId,
         faker.number.int({ min: 0, max: 5 }),
         faker.number.int({ min: 1, max: 5 }),
-        randomItem(eps),
-        faker.datatype.boolean(0.3) ? faker.lorem.words(3) : null,
-        faker.company.name() + " Clínica",
-        randomItem(tiposTransporte),
-        faker.datatype.boolean(0.3),
-        faker.datatype.boolean(0.2) ? faker.lorem.sentence() : null,
+        pick(EPS),
+        faker.datatype.boolean(0.25) ? faker.lorem.words(3) : null,
+        `Clínica ${faker.company.name()}`,
+        pick(TIPOS_TRANSPORTE),
+        faker.datatype.boolean(0.25),
+        faker.datatype.boolean(0.15) ? faker.lorem.sentence() : null,
       ],
       client
     )
 
-    // 5. Vivienda
-    const materialesParedes = ["Ladrillo", "Bloque", "Madera", "Bahareque", "Adobe"]
-    const materalesTecho    = ["Zinc", "Concreto", "Palma", "Eternit", "Teja"]
-    const materialesPisos   = ["Cerámica", "Cemento", "Madera", "Baldosa", "Tierra"]
-
+    // Vivienda
     await query(
       `INSERT INTO vivienda_estudiante
          (estudiante_id, tipo_paredes, tipo_techo, tipo_pisos, num_banos, num_cuartos)
-       VALUES ($1,$2,$3,$4,$5,$6)
-       ON CONFLICT (estudiante_id) DO NOTHING`,
+       VALUES ($1,$2,$3,$4,$5,$6)`,
       [
-        estudiante.estudiante_id,
-        randomItem(materialesParedes),
-        randomItem(materalesTecho),
-        randomItem(materialesPisos),
+        estudianteId,
+        pick(MATERIALES_PAREDES),
+        pick(MATERIALES_TECHO),
+        pick(MATERIALES_PISOS),
         faker.number.int({ min: 1, max: 3 }),
         faker.number.int({ min: 2, max: 6 }),
       ],
       client
     )
 
-    // 6. Acudiente
-    const personaAcudiente = await crearPersona(client, tipoCC.tipo_documento_id)
-
-    const acudienteResult = await query(
-      `INSERT INTO acudientes (persona_id, parentesco, ocupacion, nivel_estudio)
-       VALUES ($1,$2,$3,$4)
-       ON CONFLICT DO NOTHING
-       RETURNING *`,
-      [
-        personaAcudiente.persona_id,
-        randomItem(["Padre", "Madre", "Abuelo", "Abuela", "Tío", "Tía", "Hermano mayor"]),
-        faker.person.jobTitle(),
-        randomItem(["Primaria", "Bachillerato", "Técnico", "Tecnólogo", "Universitario"]),
-      ],
-      client
-    )
-
-    if (acudienteResult.rows.length > 0) {
-      const acudiente = acudienteResult.rows[0]
+    // Colegios anteriores (0–max, solo si empezó desde antes del primer año)
+    const numColegios = faker.number.int({ min: 0, max: CONFIG.COLEGIOS_PREVIOS_MAX })
+    for (let c = 0; c < numColegios; c++) {
+      const anioColAnterior = CONFIG.ANIO_INICIO - faker.number.int({ min: 1, max: 3 })
       await query(
-        `INSERT INTO acudiente_estudiante
-           (estudiante_id, acudiente_id, tipo_relacion, es_principal)
-         VALUES ($1,$2,$3,true)
-         ON CONFLICT DO NOTHING`,
-        [estudiante.estudiante_id, acudiente.acudiente_id, "familiar"],
-        client
-      )
-
-      // Contacto del acudiente
-      await query(
-        `INSERT INTO contactos (persona_id, tipo_contacto, valor, es_principal, activo)
-         VALUES ($1,'celular',$2,true,true)
-         ON CONFLICT DO NOTHING`,
-        [personaAcudiente.persona_id, faker.phone.number({style: "human"})],
+        `INSERT INTO colegios_anteriores
+           (estudiante_id, nombre_colegio, ciudad, grado_cursado, anio, orden)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [
+          estudianteId,
+          `Institución Educativa ${faker.company.name()}`,
+          pick(MUNICIPIOS_CO),
+          pick(CONFIG.GRADOS_INICIALES),
+          anioColAnterior,
+          c + 1,
+        ],
         client
       )
     }
 
-    // 7. Matrícula en el período activo (jornada_id ya no está en matriculas, vive en cursos)
-    const curso = randomItem(cursosDisponibles)
-
+    // Vincular los dos acudientes
     await query(
-      `INSERT INTO matriculas (estudiante_id, curso_id, periodo_id, estado)
-       VALUES ($1, $2, $3, 'activa')
-       ON CONFLICT (estudiante_id, periodo_id) DO NOTHING`,
-      [estudiante.estudiante_id, curso.curso_id, periodoId],
+      `INSERT INTO acudiente_estudiante (estudiante_id, acudiente_id, tipo_relacion, es_principal)
+       VALUES ($1,$2,'familiar',true)`,
+      [estudianteId, acudiente1.acudiente_id],
       client
     )
-    
+    await query(
+      `INSERT INTO acudiente_estudiante (estudiante_id, acudiente_id, tipo_relacion, es_principal)
+       VALUES ($1,$2,'familiar',false)`,
+      [estudianteId, acudiente2.acudiente_id],
+      client
+    )
+
+    // ---- Trayectoria académica ----
+    const gradoInicial = pick(CONFIG.GRADOS_INICIALES as readonly string[])
+    let   gradoActual  = gradoInicial
+    const tramos:      TramoMatricula[] = []
+    let   terminado    = false
+
+    for (const anio of anios) {
+      if (terminado) break
+
+      const periodoId = periodoMap.get(anio)!
+      const cursoId   = getCursoId(gradoActual, CONFIG.GRUPOS[0], jornadaPrincipal, cat.cursoMap)
+      const esUltimoAnio = anio === CONFIG.ANIO_FIN
+
+      // El último año siempre queda activa (no le calculamos resultado todavía)
+      const resultado: ResultadoAnio = esUltimoAnio ? "promovido" : calcularResultadoAnio()
+
+      const estadoMatricula =
+        resultado === "retirado" || resultado === "trasladado" || resultado === "expulsado"
+          ? "retirada"
+          : esUltimoAnio
+          ? "activa"
+          : "finalizada"
+
+      const motivoRetiro =
+        resultado === "expulsado"   ? "Expulsión disciplinaria" :
+        resultado === "retirado"    ? "Retiro voluntario"       :
+        resultado === "trasladado"  ? "Traslado a otra institución" :
+        null
+
+      const fechaMatricula = new Date(`${anio}-02-${faker.number.int({ min: 1, max: 15 })}`)
+      const fechaRetiro =
+        motivoRetiro
+          ? new Date(`${anio}-${faker.number.int({ min: 3, max: 10 })}-${faker.number.int({ min: 1, max: 28 })}`)
+          : null
+
+      const mRes = await query(
+        `INSERT INTO matriculas
+           (estudiante_id, curso_id, periodo_id, fecha_matricula, estado, fecha_retiro, motivo_retiro)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
+         RETURNING matricula_id`,
+        [
+          estudianteId,
+          cursoId,
+          periodoId,
+          fechaMatricula.toISOString().split("T")[0],
+          estadoMatricula,
+          fechaRetiro ? fechaRetiro.toISOString().split("T")[0] : null,
+          motivoRetiro,
+        ],
+        client
+      )
+
+      tramos.push({ anio, grado: gradoActual, resultado: esUltimoAnio ? "promovido" : resultado, matricula_id: mRes.rows[0].matricula_id })
+
+      if (resultado === "expulsado" || resultado === "retirado" || resultado === "trasladado") {
+        terminado = true
+      } else if (!esUltimoAnio) {
+        if (resultado === "promovido") {
+          const next = siguienteGrado(gradoActual)
+          if (!next) {
+            // Completó 11° → egresado
+            terminado = true
+          } else {
+            gradoActual = next
+          }
+        }
+        // reprobado → mismo grado (gradoActual no cambia)
+      }
+
+      // Verificar graduación: si llegó a 11° y fue promovido en año no final
+      if (!esUltimoAnio && resultado === "promovido" && gradoActual === "11°" && !terminado) {
+        // Ya calculamos el next=null arriba, terminado=true
+      }
+    }
+
+    // Estado final del estudiante
+    const ultimoTramo      = tramos[tramos.length - 1]
+    let   estadoFinalEst:  EstudianteGenerado["estado_final"] = "activo"
+
+    if (!ultimoTramo) {
+      estadoFinalEst = "activo"
+    } else if (ultimoTramo.resultado === "expulsado") {
+      estadoFinalEst = "expulsado"
+    } else if (ultimoTramo.resultado === "retirado" || ultimoTramo.resultado === "trasladado") {
+      estadoFinalEst = "inactivo"
+    } else if (ultimoTramo.grado === "11°" && ultimoTramo.resultado === "promovido" && ultimoTramo.anio < CONFIG.ANIO_FIN) {
+      estadoFinalEst = "graduado"
+    } else {
+      estadoFinalEst = "activo"
+    }
+
+    // Actualizar estado del estudiante
+    await query(
+      `UPDATE estudiantes SET estado = $1 WHERE estudiante_id = $2`,
+      [estadoFinalEst, estudianteId],
+      client
+    )
+
+    // Egresado si corresponde
+    if (estadoFinalEst === "graduado") {
+      const anioGrado = ultimoTramo.anio
+      await query(
+        `INSERT INTO egresados (estudiante_id, fecha_grado) VALUES ($1,$2)`,
+        [estudianteId, `${anioGrado}-11-20`],
+        client
+      )
+    }
+
+    return { estudiante_id: estudianteId, persona_id: personaId, apellido_p: apellidoFamilia, tramos, estado_final: estadoFinalEst }
   }
 
-  console.log(ESTUDIANTE_FAKER, " estudiantes creados con ficha, vivienda, acudiente y matrícula")
-}
+  // ---- Generar familias ----
 
-// -----------------------------------------------------------------------------
-// PERÍODO DE MATRÍCULA ACTIVO
-// -----------------------------------------------------------------------------
-const seedPeriodoMatricula = async (client: any): Promise<number> => {
-  const anio = new Date().getFullYear()
-
-  // Buscar período existente para este año
-  const existing = await query(
-    `SELECT periodo_id FROM periodos_matricula WHERE anio = $1 LIMIT 1`,
-    [anio],
-    client
-  )
-  if (existing.rows.length > 0) {
-    console.log(`  ✓ Período de matrícula ${anio} ya existe — omitido`)
-    return existing.rows[0].periodo_id
+  // Familias con hermanos (2 hijos comparten los mismos 2 acudientes)
+  for (let f = 0; f < numConHermanos; f++) {
+    const apellido   = faker.person.lastName()
+    const acudiente1 = await crearAcudiente(apellido)
+    const acudiente2 = await crearAcudiente(faker.person.lastName())
+    const hijo1      = await crearEstudiante(apellido, acudiente1, acudiente2)
+    const hijo2      = await crearEstudiante(apellido, acudiente1, acudiente2)
+    estudiantesGen.push(hijo1, hijo2)
   }
 
-  // Primero desactivar cualquier período activo
-  await query(
-    `UPDATE periodos_matricula SET activo = false WHERE activo = true`,
-    [],
-    client
-  )
+  // Familias con un solo hijo
+  for (let f = 0; f < numSinHermanos; f++) {
+    const apellido   = faker.person.lastName()
+    const acudiente1 = await crearAcudiente(apellido)
+    const acudiente2 = await crearAcudiente(faker.person.lastName())
+    const hijo       = await crearEstudiante(apellido, acudiente1, acudiente2)
+    estudiantesGen.push(hijo)
+  }
 
-  const result = await query(
-    `INSERT INTO periodos_matricula
-       (anio, fecha_inicio, fecha_fin, activo, descripcion)
-     VALUES ($1, $2, $3, true, $4)
-     RETURNING periodo_id`,
-    [
-      anio,
-      `${anio}-01-15`,  // Matrícula abre en enero
-      `${anio}-12-15`,  // Cierra en diciembre
-      `Período de matrícula ordinaria ${anio}`,
-    ],
-    client
-  )
-
-  console.log(`  ✓ Período de matrícula ${anio} creado y activado`)
-  return result.rows[0].periodo_id
+  console.log(`  ✓ ${estudiantesGen.length} estudiantes creados`)
+  return estudiantesGen
 }
 
-// -----------------------------------------------------------------------------
+// ============================================================
+// FASE 6 — SUSPENSIONES
+// ============================================================
+const seedSuspensiones = async (
+  client:    any,
+  estudiantes: EstudianteGenerado[],
+): Promise<void> => {
+  console.log("  → Generando suspensiones aleatorias...")
+  let total = 0
+
+  for (const est of estudiantes) {
+    if (!faker.datatype.boolean(CONFIG.PROB_SUSPENSION)) continue
+
+    // Solo suspender en tramos activos/finalizados (no expulsados/retirados)
+    const tramosValidos = est.tramos.filter(
+      t => t.resultado !== "expulsado" && t.resultado !== "retirado" && t.resultado !== "trasladado"
+    )
+    if (tramosValidos.length === 0 || !tramosValidos[0].matricula_id) continue
+
+    const numSuspensiones = faker.number.int({ min: 1, max: CONFIG.MAX_SUSPENSIONES })
+
+    for (let s = 0; s < numSuspensiones; s++) {
+      const tramo       = pick(tramosValidos)
+      const fechaInicio = new Date(`${tramo.anio}-${faker.number.int({ min: 3, max: 9 })}-${faker.number.int({ min: 1, max: 20 })}`)
+      const diasSuspension = faker.number.int({ min: 1, max: 5 })
+      const fechaFin    = new Date(fechaInicio)
+      fechaFin.setDate(fechaFin.getDate() + diasSuspension)
+
+      await query(
+        `INSERT INTO suspensiones
+           (estudiante_id, matricula_id, motivo, fecha_inicio, fecha_fin)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [
+          est.estudiante_id,
+          tramo.matricula_id ?? null,
+          pick(MOTIVOS_SUSPENSION),
+          fechaInicio.toISOString().split("T")[0],
+          fechaFin.toISOString().split("T")[0],
+        ],
+        client
+      )
+      total++
+    }
+  }
+
+  console.log(`  ✓ ${total} suspensiones generadas`)
+}
+
+// ============================================================
+// FASE 7 — ASIGNACIONES DOCENTES, DIRECTORES Y REEMPLAZOS
+// ============================================================
+const seedAsignaciones = async (
+  client:     any,
+  cat:        Catalogos,
+  profesores: ProfesorGenerado[],
+  periodoMap: Map<number, number>,
+): Promise<void> => {
+  console.log("  → Generando asignaciones docentes y directores de grupo...")
+
+  const jornadaPrincipal = cat.jornadas[0].jornada_id
+  const cursosDisponibles: { curso_id: number; grado: string }[] = []
+
+  for (const grado of GRADOS_ORDEN) {
+    const cursoId = cat.cursoMap.get(`${grado}-${CONFIG.GRUPOS[0]}-${jornadaPrincipal}`)
+    if (cursoId) cursosDisponibles.push({ curso_id: cursoId, grado })
+  }
+
+  for (const [_anio, periodoId] of periodoMap.entries()) {
+    // Director de grupo: un profesor por curso por período
+    const profesoresShuffled = [...profesores].sort(() => faker.number.float() - 0.5)
+
+    for (let i = 0; i < cursosDisponibles.length; i++) {
+      const curso    = cursosDisponibles[i]
+      const profesor = profesoresShuffled[i % profesoresShuffled.length]
+
+      await query(
+        `INSERT INTO director_grupo (curso_id, periodo_id, profesor_id)
+         VALUES ($1,$2,$3)
+         ON CONFLICT DO NOTHING`,
+        [curso.curso_id, periodoId, profesor.profesor_id],
+        client
+      )
+
+      // Asignaciones: cada profesor enseña 1–2 materias en el curso que dirige
+      const numMaterias = faker.number.int({ min: 1, max: 2 })
+      const materiasUsadas = new Set<string>()
+
+      for (let m = 0; m < numMaterias; m++) {
+        let materia = pick(MATERIAS)
+        let intentos = 0
+        while (materiasUsadas.has(materia) && intentos < 10) {
+          materia = pick(MATERIAS)
+          intentos++
+        }
+        if (materiasUsadas.has(materia)) continue
+        materiasUsadas.add(materia)
+
+        await query(
+          `INSERT INTO asignacion_docente
+             (curso_id, profesor_id, periodo_id, materia, horas_semanales)
+           VALUES ($1,$2,$3,$4,$5)
+           ON CONFLICT DO NOTHING`,
+          [
+            curso.curso_id,
+            profesor.profesor_id,
+            periodoId,
+            materia,
+            faker.number.int({ min: 2, max: 5 }),
+          ],
+          client
+        )
+      }
+    }
+
+    // Asignaciones adicionales: otros profesores cubren materias restantes en cursos aleatorios
+    for (const profesor of profesores) {
+      const numCursosExtra = faker.number.int({ min: 1, max: 3 })
+      for (let c = 0; c < numCursosExtra; c++) {
+        const curso   = pick(cursosDisponibles)
+        const materia = pick(MATERIAS)
+
+        await query(
+          `INSERT INTO asignacion_docente
+             (curso_id, profesor_id, periodo_id, materia, horas_semanales)
+           VALUES ($1,$2,$3,$4,$5)
+           ON CONFLICT DO NOTHING`,
+          [
+            curso.curso_id,
+            profesor.profesor_id,
+            periodoId,
+            materia,
+            faker.number.int({ min: 2, max: 4 }),
+          ],
+          client
+        )
+      }
+    }
+  }
+
+  // Reemplazos: ~30% de los profesores tiene 1–2 reemplazos en algún período
+  console.log("  → Generando reemplazos de profesores...")
+  let totalReemplazos = 0
+  const aniosList = Array.from(periodoMap.keys())
+
+  for (const profesor of profesores) {
+    if (!faker.datatype.boolean(0.30)) continue
+
+    const numReemplazos = faker.number.int({ min: 1, max: 2 })
+    for (let r = 0; r < numReemplazos; r++) {
+      // El reemplazante es otro profesor distinto
+      const reemplazantes = profesores.filter(p => p.profesor_id !== profesor.profesor_id)
+      if (reemplazantes.length === 0) continue
+      const reemplazante = pick(reemplazantes)
+
+      const anio       = pick(aniosList)
+      const fechaInicio = new Date(`${anio}-${faker.number.int({ min: 3, max: 9 })}-${faker.number.int({ min: 1, max: 15 })}`)
+      const fechaFin    = new Date(fechaInicio)
+      fechaFin.setDate(fechaFin.getDate() + faker.number.int({ min: 5, max: 30 }))
+
+      await query(
+        `INSERT INTO reemplazos_profesor
+           (profesor_id, reemplaza_a_profesor_id, fecha_inicio, fecha_fin, motivo)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [
+          reemplazante.profesor_id,
+          profesor.profesor_id,
+          fechaInicio.toISOString().split("T")[0],
+          fechaFin.toISOString().split("T")[0],
+          pick(["Incapacidad médica", "Permiso sindical", "Capacitación docente", "Licencia de maternidad"]),
+        ],
+        client
+      )
+      totalReemplazos++
+    }
+  }
+
+  console.log(`  ✓ Asignaciones y directores generados`)
+  console.log(`  ✓ ${totalReemplazos} reemplazos generados`)
+}
+
+// ============================================================
 // ENTRY POINT
-// -----------------------------------------------------------------------------
+// ============================================================
 const runFakerSeed = async () => {
-  console.log("\n Ejecutando seed de datos falsos (faker)...\n")
-  console.log("  ℹ  Todos los usuarios tendrán contraseña: Test123!\n")
-
-  // Hashear contraseña por defecto una sola vez
-  await bcrypt.hash("Test123!", 12)
+  console.log("\n🌱 Ejecutando seed de datos falsos (faker)...\n")
+  console.log(`   Configuración: ${CONFIG.NUM_ESTUDIANTES} estudiantes | ${CONFIG.NUM_PROFESORES} profesores`)
+  console.log(`   Períodos:      ${CONFIG.ANIO_INICIO} – ${CONFIG.ANIO_FIN}`)
+  console.log(`   Faker seed:    ${CONFIG.SEED}\n`)
 
   try {
     await transaction(async (client) => {
-      const ids = await getIds(client)
+      await limpiarDatos(client)
 
-      if (ids.tiposDoc.length === 0) {
-        throw new Error(
-          "No hay tipos de documento en la BD. Ejecuta seed.default.ts primero."
-        )
-      }
+      const cat        = await cargarCatalogos(client)
+      const periodoMap = await seedPeriodos(client)
+      const profesores = await seedProfesores(client, cat)
 
-      const periodoId = await seedPeriodoMatricula(client)
-      await seedProfesores(client, ids)
-      await seedAdministrativos(client, ids)
-      await seedEstudiantes(client, ids, periodoId)
+      await seedAdministrativos(client, cat)
+
+      const estudiantes = await seedEstudiantes(client, cat, periodoMap)
+
+      await seedSuspensiones(client, estudiantes)
+      await seedAsignaciones(client, cat, profesores, periodoMap)
+
+      // Rehabilitar trigger antes de cerrar la transacción
+      await query(`ALTER TABLE matriculas ENABLE TRIGGER trg_verificar_periodo_activo`, [], client)
     })
 
-    console.log("\n Seed faker completado")
-    console.log("   Credenciales de prueba: cualquier usuario / Test123!\n")
+    console.log("\n✅ Seed faker completado exitosamente")
+    console.log("─────────────────────────────────────────")
     process.exit(0)
   } catch (error) {
-    console.error("\n Error ejecutando seed faker:", error)
+    console.error("\n❌ Error ejecutando seed faker:", error)
     process.exit(1)
   }
 }

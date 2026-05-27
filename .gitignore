@@ -34,6 +34,7 @@ yarn-error.log*
 API_DOCUMENTATION.md
 components.json
 CLAUDE.md
+.claude
 
 # typescript
 *.tsbuildinfo
@@ -47,3 +48,6 @@ postcss.config.msj
 
 # uploads - archivos subidos por usuarios
 /uploads
+
+# carpeta de depuracion
+dist/
