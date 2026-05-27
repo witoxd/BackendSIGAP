@@ -516,7 +516,7 @@ router.put(
   "/update/:id",
   param("id").isInt({ min: 1 }).withMessage("ID invalido"),
   checkPermission(Recurso.DOCUMENTOS, Accion.UPDATE),
-  upload.single("archivos"), // Middleware de multer (opcional)
+  upload.single("archivo"), // Middleware de multer (opcional)
   handleMulterError,
   validateUploadedFiles, // Validacion de magic bytes
   updateArchivoHttpValidator,

@@ -22,6 +22,8 @@ import procesoInscripcionRoutes from "./procesoInscripcion.routes"
 import directorGrupoRoutes from "./directorGrupo.routes"
 import asignacionDocenteRoutes from "./asignacionDocente.routes"
 import reemplazoProfesorRoutes from "./reemplazoProfesor.routes"
+import decretoRoutes from "./decreto.routes"
+import gradoEscalafonRoutes from "./gradoEscalafon.routes"
 const router = Router()
 
 router.use("/auth", authRoutes) //listo
@@ -47,6 +49,8 @@ router.use("/procesos-inscripcion", procesoInscripcionRoutes) //listo
 router.use("/director-grupo", directorGrupoRoutes)
 router.use("/asignacion-docente", asignacionDocenteRoutes)
 router.use("/reemplazos-profesor", reemplazoProfesorRoutes)
+router.use("/decretos", decretoRoutes)
+router.use("/grados-escalafon", gradoEscalafonRoutes)
 //router.use("/auditoria", auditoriaRoutes)
 
 export default router

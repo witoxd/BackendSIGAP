@@ -164,6 +164,14 @@ router.get(
   matriculaController.getByEstudiante.bind(matriculaController)
 )
 
+router.get(
+  "/byCurso/:cursoId",
+  param("cursoId").isInt({ min: 1 }).withMessage("ID de curso inválido"),
+  validate,
+  checkPermission(Recurso.MATRICULAS, Accion.READ),
+  matriculaController.getByCurso.bind(matriculaController)
+)
+
 
 /**
  * @swagger

@@ -12,7 +12,7 @@ export const validateCreateProfesorDomain = async (
     const { profesor, persona } = req.body
 
     // Validacion dominio con Sequelize (NO DB)
-    await Profesor.build(profesor).validate({ skip: ["persona_id"] })
+    await Profesor.build(profesor).validate({ skip: ["persona_id", "docente_id"] })
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "fecha_nacimiento", "genero"] })
 
     return next()

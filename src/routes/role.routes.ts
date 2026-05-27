@@ -7,7 +7,7 @@ const router = Router()
 router.use(authenticate)
 
 
-router.get("/", isAdmin, (req, res) => {
+router.get("/", isAdmin, (_req, res) => {
   res.status(501).json({
     success: false,
     message: "Endpoint no implementado aún",

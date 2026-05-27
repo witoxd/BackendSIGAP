@@ -5,14 +5,18 @@ import { body, type ValidationChain } from "express-validator"
 const profesorFieldsCreate: ValidationChain[] = [
   body("profesor").isObject().withMessage("El objeto profesor es requerido"),
 
-  body("profesor.cargo").isString().notEmpty().withMessage("El cargo es requerido"),
+  body("profesor.decreto_id")
+    .isInt({ min: 1 }).withMessage("El decreto es requerido"),
+
+  body("profesor.grado_escalafon_id")
+    .isInt({ min: 1 }).withMessage("El grado de escalafón es requerido"),
+
   body("profesor.area").isString().notEmpty().withMessage("El área es requerida"),
   body("profesor.sede").isString().notEmpty().withMessage("La sede es requerida"),
   body("profesor.tipo_contrato").isString().notEmpty().withMessage("El tipo de contrato es requerido"),
-  body("profesor.grado_escalafon").isString().notEmpty().withMessage("El grado de escalafón es requerido"),
 
   body("profesor.fecha_contratacion")
-    .isISO8601().withMessage("La fecha de contratación debe ser una fecha válida"),
+    .optional().isISO8601().withMessage("La fecha de contratación debe ser una fecha válida"),
   body("profesor.fecha_nombramiento")
     .isISO8601().withMessage("La fecha de nombramiento debe ser una fecha válida"),
   body("profesor.numero_resolucion")
@@ -33,11 +37,13 @@ const profesorFieldsCreate: ValidationChain[] = [
 const profesorFieldsUpdate: ValidationChain[] = [
   body("profesor").optional().isObject(),
 
-  body("profesor.cargo").optional().isString().notEmpty(),
+  body("profesor.decreto_id").optional().isInt({ min: 1 }).withMessage("El decreto debe ser un ID válido"),
+
+  body("profesor.grado_escalafon_id").optional().isInt({ min: 1 }).withMessage("El grado de escalafón debe ser un ID válido"),
+
   body("profesor.area").optional().isString().notEmpty(),
   body("profesor.sede").optional().isString().notEmpty(),
   body("profesor.tipo_contrato").optional().isString().notEmpty(),
-  body("profesor.grado_escalafon").optional().isString().notEmpty(),
   body("profesor.fecha_contratacion").optional().isISO8601(),
   body("profesor.fecha_nombramiento").optional().isISO8601(),
   body("profesor.numero_resolucion").optional().isString().notEmpty(),
@@ -53,7 +59,7 @@ const profesorFieldsUpdate: ValidationChain[] = [
 const personaFieldsCreate: ValidationChain[] = [
   body("persona").isObject().withMessage("El objeto persona es requerido"),
   body("persona.nombres").isString().notEmpty().withMessage("Los nombres son requeridos"),
-  body("persona.apellido_paterno").isString().notEmpty().withMessage("El apellido paterno es requerido"),
+  body("persona.apellido_paterno").optional().isString(),
   body("persona.apellido_materno").optional().isString(),
   body("persona.tipo_documento_id").isInt({ min: 1 }).withMessage("El tipo de documento es requerido"),
   body("persona.numero_documento").isString().notEmpty().withMessage("El número de documento es requerido"),
