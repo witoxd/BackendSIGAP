@@ -6,7 +6,7 @@ import type { Accion, Recurso } from "../types"
 
 // Middleware para verificar permisos ACL
 export const checkPermission = (recurso: Recurso, accion: Accion) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         throw new UnauthorizedError("Usuario no autenticado")
@@ -61,7 +61,7 @@ export const checkPermission = (recurso: Recurso, accion: Accion) => {
 }
 
 // Middleware para verificar si es admin
-export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+export const isAdmin = (req: Request, _res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       throw new UnauthorizedError("Usuario no autenticado")

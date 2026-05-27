@@ -9,17 +9,20 @@ const isProduction = process.env.NODE_ENV === "production"
 const ACCESS_COOKIE = "sigap_access"
 const REFRESH_COOKIE = "sigap_refresh"
 
+const sameSite = (process.env.COOKIE_SAME_SITE as "lax" | "none" | "strict") ?? "lax"
+const secure = sameSite === "none" ? true : isProduction
+
 const accessCookieOptions = {
   httpOnly: true,
-  secure: isProduction,
-  sameSite: "strict" as const,
+  secure,
+  sameSite,
   maxAge: 15 * 60 * 1000, // 15 minutos
 }
 
 const refreshCookieOptions = {
   httpOnly: true,
-  secure: isProduction,
-  sameSite: "strict" as const,
+  secure,
+  sameSite,
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días
 }
 
@@ -35,8 +38,10 @@ export class AuthController {
   })
 
   login = asyncHandler(async (req: Request, res: Response) => {
-    const { email, contraseña } = req.body
-    const result = await authService.login(email, contraseña)
+    const { username, contraseña } = req.body
+    const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() ?? req.ip
+    const userAgent = req.headers["user-agent"]
+    const result = await authService.login(username, contraseña, ipAddress, userAgent)
 
     res.cookie(ACCESS_COOKIE, result.accessToken, accessCookieOptions)
     res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions)
@@ -68,8 +73,8 @@ export class AuthController {
       await authService.revokeAllRefreshTokens(req.user.userId)
     }
 
-    res.clearCookie(ACCESS_COOKIE)
-    res.clearCookie(REFRESH_COOKIE)
+    res.clearCookie(ACCESS_COOKIE, { httpOnly: true, secure, sameSite })
+    res.clearCookie(REFRESH_COOKIE, { httpOnly: true, secure, sameSite })
 
     res.status(200).json({ success: true, message: "Sesión cerrada exitosamente" })
   })

@@ -31,7 +31,13 @@ export const registerValidator: ValidationChain[] = [
 ]
 
 export const loginValidator: ValidationChain[] = [
-  body("email").isEmail().withMessage("Email inválido").normalizeEmail(),
+  body("username")
+    .isString()
+    .withMessage("El username debe ser texto")
+    .isLength({ min: 3, max: 50 })
+    .withMessage("El username debe tener entre 3 y 50 caracteres")
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage("El username solo puede contener letras, números y guiones bajos"),
   body("contraseña").notEmpty().withMessage("La contraseña es requerida"),
 ]
 

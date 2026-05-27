@@ -87,7 +87,7 @@ const createPartialIndexes = async () => {
       WHERE activo = true;
   `)
 
-  console.log("  ✓ Índices parciales creados")
+  console.log(" Índices parciales creados")
 }
 
 // -----------------------------------------------------------------------------

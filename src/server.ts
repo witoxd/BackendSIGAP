@@ -27,11 +27,13 @@ app.use(helmet())
 app.use(compression())
 
 // CORS configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:4000"]
+const allowedOrigins = (process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:4000"])
+  .map((o) => o.trim().replace(/\/$/, ""))
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      const normalizedOrigin = origin?.replace(/\/$/, "")
+      if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
         callback(null, true)
       } else {
         callback(new Error("Not allowed by CORS"))
@@ -59,7 +61,7 @@ if (process.env.NODE_ENV === "development") {
 app.use(rateLimiter)
 
 // Health check
-app.get("/health", (req, res) => {
+app.get("/health", (_req, res) => {
   res.status(200).json({
     status: "OK",
     timestamp: new Date().toISOString(),
@@ -98,7 +100,7 @@ const startServer = async () => {
     const dbConnected = await testConnection()
 
     if (!dbConnected) {
-      console.error("❌ Failed to connect to database. Server not started.")
+      console.error("Failed to connect to database. Server not started.")
       process.exit(1)
     }
 

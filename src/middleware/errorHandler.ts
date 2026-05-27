@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express"
 import { AppError } from "../utils/AppError"
 
-export const errorHandler = (err: Error | AppError, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: Error | AppError, req: Request, res: Response, _next: NextFunction) => {
   const SENSITIVE_FIELDS = ["contraseña", "password", "currentPassword", "newPassword", "token"]
   const safeBody = req.body ? Object.fromEntries(
     Object.entries(req.body).map(([k, v]) =>

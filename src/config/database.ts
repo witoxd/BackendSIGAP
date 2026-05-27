@@ -49,7 +49,7 @@ export const sequelize = new Sequelize({
 })
 
 // Manejo de errores del pool
-pool.on("error", (err, client) => {
+pool.on("error", (err) => {
   console.error("Unexpected error on idle client", err)
 })
 

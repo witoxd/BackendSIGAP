@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticate = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     // Leer desde cookie httpOnly; fallback a Bearer header para herramientas como Swagger
     const token: string | undefined =
@@ -63,7 +63,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 // }
 
 export const authorize = (roles: string | string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new UnauthorizedError("Usuario no autenticado"))
     }
@@ -87,7 +87,7 @@ export const authorize = (roles: string | string[]) => {
 export const isAdmin = authorize("admin")
 
 // Middleware para verificar que el usuario puede acceder a sus propios datos o es admin
-export const isSelfOrAdmin = (req: Request, res: Response, next: NextFunction) => {
+export const isSelfOrAdmin = (req: Request, _res: Response, next: NextFunction) => {
   if (!req.user) {
     return next(new UnauthorizedError("Usuario no autenticado"))
   }
