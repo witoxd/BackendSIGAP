@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler"
 
 export class JornadaController {
 
-   getAll = asyncHandler( async (req: Request, res: Response)  => {
+   getAll = asyncHandler( async (_req: Request, res: Response)  => {
 
       const jornadas = await JornadaRepository.findAll()
 

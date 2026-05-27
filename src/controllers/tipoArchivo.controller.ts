@@ -10,7 +10,7 @@ export class TipoArchivoController {
   /**
    * Obtener todos los tipos de archivo
    */
-   getAll = asyncHandler( async (req: Request, res: Response) => {
+   getAll = asyncHandler( async (_req: Request, res: Response) => {
   
       const tiposArchivo = await TipoArchivoRepository.findAll()
 
@@ -98,6 +98,17 @@ export class TipoArchivoController {
         throw new AppError("Ya existe un tipo de archivo con ese nombre", 409)
       }
 
+      // Verificar que no haya otro tipo que ya tenga extensiones de imagen
+      if (TipoArchivoData.extensiones_permitidas?.length) {
+        const conflictos = await TipoArchivoRepository.findConflictoImagenes(TipoArchivoData.extensiones_permitidas)
+        if (conflictos.length > 0) {
+          throw new AppError(
+            `Las extensiones de imagen (jpg, jpeg, png, webp) ya están asignadas al tipo "${conflictos[0].nombre}". Solo un tipo de archivo puede tenerlas.`,
+            409
+          )
+        }
+      }
+
       const tipoArchivo = await TipoArchivoRepository.create(TipoArchivoData)
 
       res.status(201).json({
@@ -130,6 +141,17 @@ export class TipoArchivoController {
         const tipoConNombre = await TipoArchivoRepository.findByNombre(TipoArchivoData.nombre)
         if (tipoConNombre) {
           throw new AppError("Ya existe otro tipo de archivo con ese nombre", 409)
+        }
+      }
+
+      // Verificar que no haya otro tipo que ya tenga extensiones de imagen
+      if (TipoArchivoData.extensiones_permitidas?.length) {
+        const conflictos = await TipoArchivoRepository.findConflictoImagenes(TipoArchivoData.extensiones_permitidas, id)
+        if (conflictos.length > 0) {
+          throw new AppError(
+            `Las extensiones de imagen (jpg, jpeg, png, webp) ya están asignadas al tipo "${conflictos[0].nombre}". Solo un tipo de archivo puede tenerlas.`,
+            409
+          )
         }
       }
 
@@ -167,7 +189,7 @@ export class TipoArchivoController {
   /**
    * Verificar si una extensión es permitida
    */
-   checkExtension = asyncHandler(async(req: Request, res: Response, next: NextFunction)  => {
+   checkExtension = asyncHandler(async(req: Request, res: Response, _next: NextFunction)  => {
       const id = Number(req.params.id)
       const { extension } = req.query
 

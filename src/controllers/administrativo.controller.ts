@@ -69,7 +69,6 @@ export class AdministrativoController {
         docente = await DocenteRepository.create(
           {
             persona_id:         persona.persona_id,
-            cargo:              administrativoData?.cargo,
             sede:               administrativoData?.sede,
             jornada_id:         administrativoData?.jornada_id,
             tipo_contrato:      administrativoData?.tipo_contrato,
@@ -79,8 +78,7 @@ export class AdministrativoController {
           client
         )
       } else if (administrativoData) {
-        // Actualizar docente con los datos nuevos si hay campos
-        const docenteFields = ["cargo", "sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
+        const docenteFields = ["sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
         const update: Record<string, unknown> = {}
         for (const key of docenteFields) {
           if (key in administrativoData) update[key] = (administrativoData as Record<string, unknown>)[key]
@@ -91,7 +89,7 @@ export class AdministrativoController {
       }
 
       const administrativo = await AdministrativoRepository.create(
-        { docente_id: docente.docente_id },
+        { docente_id: docente.docente_id, cargo: administrativoData?.cargo },
         client
       )
 
@@ -127,7 +125,12 @@ export class AdministrativoController {
       }
 
       if (administrativoData) {
-        const docenteFields = ["cargo", "sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
+        // cargo va a la tabla administrativos
+        if (administrativoData.cargo !== undefined) {
+          await AdministrativoRepository.update(administrativoId, { cargo: administrativoData.cargo }, client)
+        }
+        // resto de campos van a docente
+        const docenteFields = ["sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
         const update: Record<string, unknown> = {}
         for (const key of docenteFields) {
           if (key in administrativoData) update[key] = (administrativoData as Record<string, unknown>)[key]

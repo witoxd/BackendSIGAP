@@ -10,7 +10,7 @@ export class PeriodoMatriculaController {
   // ----------------------------------------------------------
   // getAll — lista todos los períodos ordenados por año desc
   // ----------------------------------------------------------
-  getAll = asyncHandler(async (req: Request, res: Response) => {
+  getAll = asyncHandler(async (_req: Request, res: Response) => {
     const periodos = await PeriodoMatriculaRepository.findAll()
 
     res.status(200).json({

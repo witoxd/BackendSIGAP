@@ -53,25 +53,25 @@ export class MatriculaController {
   })
 
   findMatriculaAndPeriodo = asyncHandler(async (req: Request, res: Response) => {
-        const errors = validationResult(req)
+    const errors = validationResult(req)
     if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
 
-      let hasMatricula = true
+    let hasMatricula = true
 
     const estudiante_id = Number(req.params.estudianteId)
-      const matricula_id = Number(req.params.matriculaId)
+    const matricula_id = Number(req.params.matriculaId)
 
-      const isRegister = await MatriculaRepository.findByEstudianteAndPeriodo(estudiante_id, matricula_id)
+    const isRegister = await MatriculaRepository.findByEstudianteAndPeriodo(estudiante_id, matricula_id)
 
-      if(!isRegister){
-        hasMatricula = false
+    if (!isRegister) {
+      hasMatricula = false
+    }
+    res.status(200).json(
+      {
+        success: hasMatricula,
+        message: ""
       }
-      res.status(200).json(
-        {
-          success: hasMatricula,
-          message: ""
-        }
-      )
+    )
   })
 
   getByEstudiante = asyncHandler(async (req: Request, res: Response) => {
@@ -95,7 +95,9 @@ export class MatriculaController {
 
   getByCurso = asyncHandler(async (req: Request, res: Response) => {
     const curso_id = Number(req.params.cursoId)
-    const matriculas = await MatriculaRepository.findByCurso(curso_id)
+    const periodo_id = req.query.periodo_id ? Number(req.query.periodo_id) : undefined
+    const estado = req.query.estado ? String(req.query.estado) : undefined
+    const matriculas = await MatriculaRepository.findByCursoFiltrado(curso_id, { periodo_id, estado })
     res.status(200).json({ success: true, data: matriculas })
   })
 
@@ -121,7 +123,7 @@ export class MatriculaController {
 
     res.status(201).json({ success: true, data: matricula, message: "Matrícula creada exitosamente" })
   })
-  
+
 
   // --------------------------------------------------------------------------
   // ProcessMatricula — flujo completo de matrícula con archivos
@@ -182,12 +184,26 @@ export class MatriculaController {
 
 
     // ------------------------------------------------------------------
-    // Paso 1: Verificar que el estudiante existe por persona_id
+    // Verificar que el estudiante existe por persona_id
     // ------------------------------------------------------------------
     const estudiante = await EstudianteRepository.findById(matriculaData.estudiante_id)
     if (!estudiante) {
       await archivoService.deleteFileArray(files)
       throw new AppError("No se encontró un estudiante asociado a esa persona", 404)
+    }
+
+
+    // ------------------------------------------------------------------
+    // Verificar el estado del estudiante. Solo se pueden matricular estudiantes inactivos.
+    // ------------------------------------------------------------------
+    const estadoEstudiante: string = estudiante.estudiante?.estado_efectivo ?? estudiante.estudiante?.estado
+    if (estadoEstudiante === "graduado") {
+      await archivoService.deleteFileArray(files)
+      throw new AppError("No se puede matricular a un estudiante egresado", 409)
+    }
+    if (estadoEstudiante === "expulsado") {
+      await archivoService.deleteFileArray(files)
+      throw new AppError("No se puede matricular a un estudiante expulsado", 409)
     }
 
     if (!matriculaData.curso_id) {
@@ -196,7 +212,7 @@ export class MatriculaController {
     }
 
     // ------------------------------------------------------------------
-    // Paso 2: Parsear metadata
+    // Parsear metadata
     // La metadata viene como JSON string desde FormData porque multipart
     // no puede enviar objetos anidados directamente.
     // ------------------------------------------------------------------
@@ -212,7 +228,7 @@ export class MatriculaController {
     }
 
     // ------------------------------------------------------------------
-    // Paso 3: Obtener tipos de archivo requeridos para el contexto matrícula
+    // Obtener los tipos de archivo requeridos para el contexto matrícula
     // Esto nos da la lista de tipos VÁLIDOS para una matrícula.
     // Se hace fuera de la transacción porque es solo lectura y es costoso
     // repetirlo por cada archivo.
@@ -229,9 +245,9 @@ export class MatriculaController {
     )
 
     // ------------------------------------------------------------------
-    // Paso 4: Validar cada archivo antes de tocar la BD.
-    // Fallar rápido: verificamos todo antes de iniciar la transacción.
-    // Si algo está mal, limpiamos el disco y lanzamos error.
+    // Validar cada archivo antes de tocar la BD.
+    // Si falla algo se amnda error, el orden es importante 
+    // 
     // ------------------------------------------------------------------
     const archivosValidados: Array<{
       file: Express.Multer.File
@@ -250,7 +266,7 @@ export class MatriculaController {
       }
 
       // El tipo de archivo debe estar permitido en el contexto matrícula.
-      // Analogía: no puedes entregar una hoja de vida para matricularte —
+      // no se puede entregar una hoja de vida para matricularse es ilogico —
       // solo se aceptan los documentos del contexto matrícula.
       if (!tiposPermitidosIds.has(Number(meta.tipo_archivo_id))) {
         await archivoService.deleteFileArray(files)
@@ -263,6 +279,7 @@ export class MatriculaController {
       // Error de logica, pero se deja comentado por si se quiere activar la validación de permisos a futuro.
       // Cuando se intenta registrar la matricula esta da error debido a que matricula se asume como rol, esto crea un conflicto de logica ya que un estudiante no es matricula
       // La persona debe tener permiso para subir este tipo específico.
+
       // const puedeSubir = await PersonaRepository.personaPuedeSubirArchivo(
       //   Number(estudiante.persona.persona_id),
       //   Number(meta.tipo_archivo_id)
@@ -276,6 +293,7 @@ export class MatriculaController {
       // }
 
       // La extensión del archivo debe estar en la lista blanca del tipo.
+
       const ext = path.extname(file.originalname).toLowerCase()
       const extPermitida = await TipoArchivoRepository.isExtensionAllowed(
         Number(meta.tipo_archivo_id),
@@ -293,15 +311,8 @@ export class MatriculaController {
     }
 
     // ------------------------------------------------------------------
-    // Paso 5: Transacción atómica
-    //
-    // Todo lo que toca la BD se hace aquí. Si cualquier operación falla,
-    // PostgreSQL revierte automáticamente con el ROLLBACK del try/catch
-    // de nuestra función transaction().
-    //
-    // IMPORTANTE: los archivos físicos en disco NO son parte de la
-    // transacción de BD — si la transacción falla, hay que eliminarlos
-    // manualmente en el catch exterior.
+    // Transacion principal: crea matricula, registra archovos y asociaciones si algo falla no se hace nada
+    // Todo en la cama o todo a la basura >:v
     // ------------------------------------------------------------------
     try {
       const resultado = await transaction(async (client) => {
@@ -312,9 +323,9 @@ export class MatriculaController {
           throw new AppError("No hay período de matrícula activo", 400)
         }
 
-        // 5b. Crear matrícula o reutilizar la existente en este período.
+        // Crear matrícula o reutilizar la existente en este período.
         // El UNIQUE(estudiante_id, periodo_id) en la BD lo garantiza,
-        // pero damos un mensaje amigable antes de llegar al constraint.
+        // pero damos un mensaje amigable antes de llegar al constraint o no toque la DB
         let matricula = await MatriculaRepository.findByEstudianteAndPeriodo(
           estudiante.estudiante.estudiante_id,
           periodoActivo.periodo_id
@@ -350,7 +361,7 @@ export class MatriculaController {
 
 
 
-        // 5d. Asociar cada archivo a la matrícula
+        // Asociacion de cada archivo a la matrícula
         const archivoIds = archivosGuardados.map((a: any) => a.archivo_id)
         console.log("Id de archivos guardados: ", archivoIds, "que se asociaran a matricula: ", matricula.matricula_id)
 
@@ -375,16 +386,14 @@ export class MatriculaController {
         },
       })
     } catch (error) {
-      // Si la transacción de BD falló, eliminamos los archivos físicos
-      // que multer ya había guardado en disco. Sin esto quedarían huérfanos.
+      // Si algo falla todos los archivos físicos que se subieron al inicio deben son eliminados para evitar tener archivos huérfanos en el disco.
       await archivoService.deleteFileArray(files)
       throw error
     }
   })
 
   // --------------------------------------------------------------------------
-  // retirar — único cambio de estado manual permitido en una matrícula.
-  // Los demás estados (activa, finalizada) se derivan de las fechas.
+  // retirar — cambia el estado de la matrícula a "retirada" y registra el motivo
   // --------------------------------------------------------------------------
   retirar = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.matriculaId)
@@ -406,6 +415,13 @@ export class MatriculaController {
     })
   })
 
+
+  // --------------------------------------------------------------------------
+  // update — actualiza campos de la matrícula, pero solo si no está retirada o finalizada
+  // Deberia llamarse de otra forma, solo modifica grado y jornada, no se puede modificar nada mas, el nombre update es muy generico para lo que hace esta función
+  // Ademas tambien guarda el historial de cambios, lo que es importante para el seguimiento de la matricula, pero el nombre no refleja esa funcionalidad
+  // Como lo llamaria? Nota: renombrar esta función es un breaking change, hay que actualizar el nombre en las rutas y en los tests
+  // --------------------------------------------------------------------------
   update = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())

@@ -90,7 +90,7 @@ export class EstudianteController {
       throw new AppError("Errores de validación", 400, errors.array())
     }
 
-    const { persona: PersonaData, estudiante: estudianteData } = req.body as CreateEstudianteDTO
+    const { persona: PersonaData, estudiante: _estudianteData } = req.body as CreateEstudianteDTO
 
     // Validar que no exista documento
     const existingPersona = await PersonaRepository.findByDocumento(PersonaData.numero_documento)
@@ -103,8 +103,8 @@ export class EstudianteController {
       const newPersona = await PersonaRepository.create(PersonaData, client)
 
       // Crear estudiante usando persona_id recién creado
+      // estado e fecha_ingreso se ignoran del body — el repo aplica los defaults
       const newEstudiante = await EstudianteRepository.create({
-        ...estudianteData,
         persona_id: newPersona.persona_id,
       }, client)
 

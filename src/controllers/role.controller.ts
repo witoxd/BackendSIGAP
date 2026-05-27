@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler"
 
 
 export class RoleController {
-  getAllRoles = asyncHandler(async (req: Request, res: Response) => {
+  getAllRoles = asyncHandler(async (_req: Request, res: Response) => {
   const roles = await RoleRepository.findAll()
 
   res.status(200).json({

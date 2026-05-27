@@ -28,7 +28,7 @@ export class AcudienteController {
       })
   })
 
-  getById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  getById = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
 
     const id = Number(req.params.id)
     const acudiente = await AcudienteRepository.findById(id)
@@ -123,7 +123,7 @@ export class AcudienteController {
   })
 
 
-   update = asyncHandler( async (req: Request, res: Response, next: NextFunction)  => {
+   update = asyncHandler( async (req: Request, res: Response, _next: NextFunction)  => {
 
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
@@ -171,7 +171,7 @@ export class AcudienteController {
       })
   })
 
-   delete = asyncHandler( async (req: Request, res: Response, next: NextFunction) => {
+   delete = asyncHandler( async (req: Request, res: Response, _next: NextFunction) => {
 
       const id = Number(req.params.id)
       const acudiente = await AcudienteRepository.delete(id)
@@ -188,7 +188,7 @@ export class AcudienteController {
       })
   })
 
-   assignToEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   assignToEstudiante = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
 
     const { assignToEstudiante: AcudienteAssingEstudiante } = req.body as assignToEstudiante
 
@@ -217,7 +217,7 @@ export class AcudienteController {
       })
   })
 
-   removeFromEstudiante = asyncHandler(async (req: Request, res: Response, next: NextFunction) =>{
+   removeFromEstudiante = asyncHandler(async (req: Request, res: Response, _next: NextFunction) =>{
       const estudianteId = Number(req.params.estudianteId)
       const acudienteId = Number(req.params.acudienteId)
       const result = await AcudienteRepository.removeFromEstudiante(
@@ -235,7 +235,7 @@ export class AcudienteController {
       })
   })
 
-   getEstudiantesByAcudiente = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   getEstudiantesByAcudiente = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
 
       const estudianteId = Number(req.params.id)
       const estudiantes = await AcudienteRepository.getAcudientesByEstudiante(estudianteId)

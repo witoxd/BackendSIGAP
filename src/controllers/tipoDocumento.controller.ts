@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler"
 
 export class TipoDocumentoController {
 
-   getAll = asyncHandler(async (req: Request, res: Response) => {
+   getAll = asyncHandler(async (_req: Request, res: Response) => {
       const tiposDocumento = await TipoDocumentoRepository.findAll()
 
       res.status(200).json({

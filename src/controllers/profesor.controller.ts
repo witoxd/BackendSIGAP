@@ -79,20 +79,22 @@ export class ProfesorController {
         const existingProfesor = await ProfesorRepository.findByPersonaId(persona.persona_id)
         if (existingProfesor) throw new AppError("Esta persona ya está registrada como profesor", 409)
 
-        // Crear solo el registro de profesor con el docente_id existente
-        const profesor = await ProfesorRepository.create(
+        // Actualizar docente con campos académicos y crear solo el registro marcador de profesor
+        await DocenteRepository.update(
+          existingDocente.docente_id,
           {
-            docente_id:         existingDocente.docente_id,
-            fecha_nombramiento: profesorData.fecha_nombramiento ? new Date(profesorData.fecha_nombramiento) : undefined,
-            numero_resolucion:  profesorData.numero_resolucion,
-            grado_escalafon:    profesorData.grado_escalafon,
-            area:               profesorData.area,
-            titulo:             profesorData.titulo,
-            posgrado:           profesorData.posgrado,
-            perfil_profesional: profesorData.perfil_profesional,
+            decreto_id:          profesorData.decreto_id,
+            titulo:              profesorData.titulo,
+            area:                profesorData.area,
+            posgrado:            profesorData.posgrado,
+            grado_escalafon_id:  profesorData.grado_escalafon_id,
+            fecha_nombramiento:  profesorData.fecha_nombramiento ? new Date(profesorData.fecha_nombramiento) : undefined,
+            numero_resolucion:   profesorData.numero_resolucion,
+            perfil_profesional:  profesorData.perfil_profesional,
           },
           client
         )
+        const profesor = await ProfesorRepository.create({ docente_id: existingDocente.docente_id }, client)
         const emergencia = await ProfesorContactoEmergenciaRepository.create(
           { ...emergenciaData, profesor_id: profesor.profesor_id },
           client
@@ -104,29 +106,24 @@ export class ProfesorController {
       const docente = await DocenteRepository.create(
         {
           persona_id:         persona.persona_id,
-          cargo:              profesorData.cargo,
           sede:               profesorData.sede,
           jornada_id:         profesorData.jornada_id,
           tipo_contrato:      profesorData.tipo_contrato,
           estado:             profesorData.estado ?? "activo",
           fecha_contratacion: profesorData.fecha_contratacion ? new Date(profesorData.fecha_contratacion) : undefined,
+          decreto_id:          profesorData.decreto_id,
+          titulo:              profesorData.titulo,
+          area:                profesorData.area,
+          posgrado:            profesorData.posgrado,
+          grado_escalafon_id:  profesorData.grado_escalafon_id,
+          fecha_nombramiento:  profesorData.fecha_nombramiento ? new Date(profesorData.fecha_nombramiento) : undefined,
+          numero_resolucion:   profesorData.numero_resolucion,
+          perfil_profesional:  profesorData.perfil_profesional,
         },
         client
       )
 
-      const profesor = await ProfesorRepository.create(
-        {
-          docente_id:         docente.docente_id,
-          fecha_nombramiento: profesorData.fecha_nombramiento ? new Date(profesorData.fecha_nombramiento) : undefined,
-          numero_resolucion:  profesorData.numero_resolucion,
-          grado_escalafon:    profesorData.grado_escalafon,
-          area:               profesorData.area,
-          titulo:             profesorData.titulo,
-          posgrado:           profesorData.posgrado,
-          perfil_profesional: profesorData.perfil_profesional,
-        },
-        client
-      )
+      const profesor = await ProfesorRepository.create({ docente_id: docente.docente_id }, client)
 
       await ContactoRepository.bulkCreate(
         contactosData.map((c: any) => ({ ...c, persona_id: persona.persona_id })),
@@ -170,21 +167,16 @@ export class ProfesorController {
       }
 
       if (profesorData) {
-        // Campos de docente
-        const docenteFields = ["cargo", "sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
+        // Todos los campos van a docente (incluidos los académicos)
+        const docenteFields = ["sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion", "decreto_id", "titulo", "area", "posgrado", "grado_escalafon_id", "fecha_nombramiento", "numero_resolucion", "perfil_profesional"]
         const docenteUpdate: Record<string, unknown> = {}
-        const profesorUpdate: Record<string, unknown> = {}
 
         for (const [key, value] of Object.entries(profesorData)) {
           if (docenteFields.includes(key)) docenteUpdate[key] = value
-          else profesorUpdate[key] = value
         }
 
         if (Object.keys(docenteUpdate).length > 0) {
           await DocenteRepository.update(existing.docente.docente_id, docenteUpdate as any, client)
-        }
-        if (Object.keys(profesorUpdate).length > 0) {
-          await ProfesorRepository.update(profesorId, profesorUpdate as any, client)
         }
       }
     })

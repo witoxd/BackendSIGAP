@@ -268,18 +268,14 @@ export class ArchivoController {
         throw new AppError("Archivo no encontrado", 404)
       }
 
-      const updateData: any = {
-        descripcion: req.body.descripcion,
-        tipo_archivo_id: req.body.tipo_archivo_id ? Number(req.body.tipo_archivo_id) : undefined,
+      const esDeMatricula = await ArchivoRepository.isDeMatricula(id)
+      if (esDeMatricula) {
+        if (req.file) await deleteFile(req.file.path)
+        throw new AppError("No se puede modificar un archivo vinculado a una matrícula", 409)
       }
 
-      // Si se actualiza el tipo de archivo, validar que existe
-      if (updateData.tipo_archivo_id) {
-        const tipoArchivo = await TipoArchivoRepository.findById(updateData.tipo_archivo_id)
-        if (!tipoArchivo) {
-          if (req.file) await deleteFile(req.file.path)
-          throw new AppError("Tipo de archivo no encontrado", 404)
-        }
+      const updateData: any = {
+        descripcion: req.body.descripcion,
       }
 
       if (req.file) {
@@ -287,13 +283,12 @@ export class ArchivoController {
         updateData.url_archivo = getFileUrl(req.file)
         updateData.nombre = req.file.originalname
 
-        // Validar extensión si hay tipo de archivo
-        const tipoArchivoId = updateData.tipo_archivo_id || archivoActual.tipo_archivo_id
+        // Validar extensión contra el tipo de archivo original (no modificable)
         const ext = path.extname(req.file.originalname).toLowerCase()
-        const isAllowed = await TipoArchivoRepository.isExtensionAllowed(tipoArchivoId, ext)
+        const isAllowed = await TipoArchivoRepository.isExtensionAllowed(archivoActual.tipo_archivo_id, ext)
         if (!isAllowed) {
           await deleteFile(req.file.path)
-          const tipoArchivo = await TipoArchivoRepository.findById(tipoArchivoId)
+          const tipoArchivo = await TipoArchivoRepository.findById(archivoActual.tipo_archivo_id)
           throw new AppError(
             `La extensión ${ext} no está permitida para ${tipoArchivo?.nombre}`,
             400
@@ -350,6 +345,11 @@ export class ArchivoController {
       const archivo = await ArchivoRepository.findById(id)
       if (!archivo) {
         throw new AppError("Archivo no encontrado", 404)
+      }
+
+      const esDeMatricula = await ArchivoRepository.isDeMatricula(id)
+      if (esDeMatricula) {
+        throw new AppError("No se puede eliminar un archivo vinculado a una matrícula", 409)
       }
 
       await ArchivoRepository.softDelete(id)
