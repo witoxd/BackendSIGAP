@@ -77,7 +77,9 @@ export type {
 // ============================================================================
 
 export interface AdministrativoPayload {
+  // Campo propio del administrativo
   cargo?:              string
+  // Campos del docente base
   sede?:               string
   jornada_id?:         number
   tipo_contrato?:      string
@@ -134,16 +136,16 @@ export interface CreateAssingProfesorDTO {
 // Payload plano que el controller distribuye entre docente + profesores
 export interface ProfesorPayload {
   // Campos que van a docente (contratación)
-  cargo?:             string
   sede?:              string
   jornada_id?:        number
   tipo_contrato?:     string
   estado?:            "activo" | "inactivo"
   fecha_contratacion?: Date | string
-  // Campos que van a profesores (específicos)
+  // Campos académicos (van a docente)
+  decreto_id?:          number
   fecha_nombramiento?:  Date | string
   numero_resolucion?:   string
-  grado_escalafon?:     string
+  grado_escalafon_id?:  number
   area?:                string
   titulo?:              string
   posgrado?:            string
@@ -359,6 +361,7 @@ export enum RoleType {
 export interface JwtPayload {
   userId: number
   personaId: number
+  username: string
   email: string
   roles: string[]
 }
@@ -461,5 +464,27 @@ export enum Recurso {
   PERMISOS = "permisos",
   ACUDIENTES = "acudientes",
   JORNADAS = "jornadas",
-  EXPEDIENTE = "expedientes"
+  EXPEDIENTE = "expedientes",
+  DECRETOS = "decretos",
+  GRADOS_ESCALAFON = "grados_escalafon",
+}
+
+// ============================================================================
+//  DECRETO / GRADO ESCALAFON TYPES
+// ============================================================================
+
+export interface CreateDecretoDTO {
+  decreto: { codigo: string; nombre: string; descripcion?: string }
+}
+
+export interface UpdateDecretoDTO {
+  decreto: Partial<{ codigo: string; nombre: string; descripcion?: string }>
+}
+
+export interface CreateGradoEscalafonDTO {
+  grado: { decreto_id: number; codigo: string; descripcion?: string; orden?: number }
+}
+
+export interface UpdateGradoEscalafonDTO {
+  grado: Partial<{ decreto_id: number; codigo: string; descripcion?: string; orden: number }>
 }
