@@ -5,6 +5,7 @@ interface RefreshTokenAttributes {
   token_id: number
   usuario_id: number
   token: string
+  familia: string
   expires_at: Date
   created_at: Date
   revoked: boolean
@@ -20,6 +21,7 @@ export class RefreshToken
   declare token_id: number
   declare usuario_id: number
   declare token: string
+  declare familia: string
   declare expires_at: Date
   declare created_at: Date
   declare revoked: boolean
@@ -42,6 +44,10 @@ RefreshToken.init(
       type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
+    },
+    familia: {
+      type: DataTypes.UUID,
+      allowNull: false,
     },
     expires_at: {
       type: DataTypes.DATE,

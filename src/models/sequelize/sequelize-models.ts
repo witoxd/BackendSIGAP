@@ -33,7 +33,10 @@ import { DirectorGrupo } from "./DirectorGrupo"
 import { AsignacionDocente } from "./AsignacionDocente"
 import { Docente } from "./Docente"
 import { RefreshToken } from "./RefreshToken"
+import { Sesion } from "./Sesion"
 import { Suspension } from "./Suspension"
+import { Decreto } from "./Decreto"
+import { GradoEscalafon } from "./GradoEscalafon"
 
 export const setupAssociations = () => {
 
@@ -68,6 +71,12 @@ export const setupAssociations = () => {
 
   Persona.hasMany(Archivos, { foreignKey: "persona_id", as: "archivos" })
   Archivos.belongsTo(Persona, { foreignKey: "persona_id", as: "persona" })
+
+  Decreto.hasMany(Docente, { foreignKey: "decreto_id", as: "docentes" })
+  Docente.belongsTo(Decreto, { foreignKey: "decreto_id", as: "decreto" })
+
+  GradoEscalafon.belongsTo(Decreto, { foreignKey: "decreto_id", as: "decretos" })
+  Decreto.hasMany(GradoEscalafon, { foreignKey: "decreto_id", as: "grado_escalafon" })
 
   // ----------------------------------------------------------
   // TipoDocumento
@@ -279,11 +288,14 @@ export const setupAssociations = () => {
   Auditoria.belongsTo(Usuario, { foreignKey: "usuario_id", as: "usuario" })
 
   // ----------------------------------------------------------
-  // Refresh Tokens
+  // Refresh Tokens y Sesiones
   // ----------------------------------------------------------
 
   Usuario.hasMany(RefreshToken, { foreignKey: "usuario_id", as: "refresh_tokens" })
   RefreshToken.belongsTo(Usuario, { foreignKey: "usuario_id", as: "usuario" })
+
+  Usuario.hasMany(Sesion, { foreignKey: "usuario_id", as: "sesiones" })
+  Sesion.belongsTo(Usuario, { foreignKey: "usuario_id", as: "usuario" })
 }
 
 export const initializeModels = () => {
@@ -332,5 +344,6 @@ export {
   AsignacionDocente,
   Docente,
   RefreshToken,
+  Sesion,
   Suspension,
 }

@@ -8,6 +8,15 @@ import { sequelize } from "../../config/database"
 // El enum de tipo_contacto......... No me llama mucho la atencion es..... restrictiva
 // Tener en cuenta no repetir datos
 
+// Estoy pensando en convertir esta tabla en 3 tablas distintas acorde al enum
+// ContactoTelefono, ContactoEmail, ContactoDireccion, etc.
+// Esta tabla es algo amibigua y ademas puede llegar a ser incongruencias, como un numero de telefono pero que es direccion
+// y no hay validacion de por medio
+// Dejear esta tabla como esta y que sea otro contacto y quitar el unum tipo_contacto
+
+// Cuando lo implementaria?
+
+
 interface ContactoAttributes {
   contacto_id: number
   persona_id: number
