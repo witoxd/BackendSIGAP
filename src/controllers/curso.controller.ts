@@ -50,6 +50,20 @@ export class CursoController{
     res.status(200).json({ success: true, data: curso })
   })
 
+  getDetallesPorPeriodo = asyncHandler(async (req: Request, res: Response) => {
+    const cursoId   = Number(req.params.id)
+    const periodoId = Number(req.query.periodo_id)
+
+    if (!periodoId) throw new AppError("periodo_id es requerido", 400)
+
+    const curso = await CursoRepository.findById(cursoId)
+    if (!curso) throw new AppError("Curso no encontrado", 404)
+
+    const data = await CursoRepository.findDetallesPorPeriodo(cursoId, periodoId)
+
+    res.status(200).json({ success: true, data })
+  })
+
   create = asyncHandler(async (req: Request, res: Response)  => {
 
   const errors = validationResult(req)

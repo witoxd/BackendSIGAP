@@ -97,6 +97,74 @@ export class CursoRepository {
     }
   }
 
+  static async findDetallesPorPeriodo(cursoId: number, periodoId: number) {
+    const [periodoResult, directorResult, asignacionesResult, estudiantesResult] = await Promise.all([
+      query(
+        `SELECT periodo_id, anio, descripcion, activo, fecha_inicio, fecha_fin
+         FROM periodos_matricula
+         WHERE periodo_id = $1`,
+        [periodoId]
+      ),
+      query(
+        `SELECT
+           dg.director_id,
+           pr.profesor_id,
+           p.nombres,
+           p.apellido_paterno,
+           p.apellido_materno
+         FROM director_grupo dg
+         INNER JOIN profesores pr ON dg.profesor_id = pr.profesor_id
+         INNER JOIN docente d     ON pr.docente_id  = d.docente_id
+         INNER JOIN personas p    ON d.persona_id   = p.persona_id
+         WHERE dg.curso_id = $1 AND dg.periodo_id = $2
+         LIMIT 1`,
+        [cursoId, periodoId]
+      ),
+      query(
+        `SELECT
+           ad.asignacion_id,
+           ad.materia,
+           ad.horas_semanales,
+           pr.profesor_id,
+           p.nombres,
+           p.apellido_paterno,
+           p.apellido_materno
+         FROM asignacion_docente ad
+         INNER JOIN profesores pr ON ad.profesor_id = pr.profesor_id
+         INNER JOIN docente d     ON pr.docente_id  = d.docente_id
+         INNER JOIN personas p    ON d.persona_id   = p.persona_id
+         WHERE ad.curso_id = $1 AND ad.periodo_id = $2
+         ORDER BY ad.materia`,
+        [cursoId, periodoId]
+      ),
+      query(
+        `SELECT
+           m.matricula_id,
+           m.estado_actual,
+           e.estudiante_id,
+           p.nombres,
+           p.apellido_paterno,
+           p.apellido_materno,
+           p.numero_documento,
+           td.nombre_documento AS tipo_documento
+         FROM v_matriculas m
+         INNER JOIN estudiantes e  ON m.estudiante_id = e.estudiante_id
+         INNER JOIN personas p     ON e.persona_id    = p.persona_id
+         LEFT  JOIN tipo_documento td ON p.tipo_documento_id = td.tipo_documento_id
+         WHERE m.curso_id = $1 AND m.periodo_id = $2
+         ORDER BY p.apellido_paterno, p.apellido_materno, p.nombres`,
+        [cursoId, periodoId]
+      ),
+    ])
+
+    return {
+      periodo:     periodoResult.rows[0]    ?? null,
+      director:    directorResult.rows[0]   ?? null,
+      asignaciones: asignacionesResult.rows,
+      estudiantes:  estudiantesResult.rows,
+    }
+  }
+
   static async create(data: Omit<CursoCreationAttributes, "curso_id">, client?: any) {
     const result = await query(
       `INSERT INTO cursos (grado, nivel, grupo, jornada_id, capacidad_maxima, activo)

@@ -103,6 +103,14 @@ router.get(
   cursoController.getDetalles.bind(cursoController),
 )
 
+router.get(
+  "/getDetallesPorPeriodo/:id",
+  param("id").isInt({ min: 1 }).withMessage("ID invalido"),
+  validate,
+  checkPermission(Recurso.CURSOS, Accion.READ),
+  cursoController.getDetallesPorPeriodo.bind(cursoController),
+)
+
 /**
  * @swagger
  * /cursos/getById/{id}:
