@@ -17,15 +17,19 @@ export class ReemplazoProfesorController {
   })
 
   create = asyncHandler(async (req: Request, res: Response) => {
-    const { profesor_id, reemplaza_a_profesor_id, fecha_inicio, motivo } = req.body as {
+    const { profesor_id, reemplaza_a_profesor_id, fecha_inicio, fecha_fin, motivo } = req.body as {
       profesor_id:             number
       reemplaza_a_profesor_id: number
       fecha_inicio:            string
+      fecha_fin:               string
       motivo?:                 string
     }
 
-    if (!profesor_id || !reemplaza_a_profesor_id || !fecha_inicio) {
-      throw new AppError("profesor_id, reemplaza_a_profesor_id y fecha_inicio son requeridos", 400)
+    if (!profesor_id || !reemplaza_a_profesor_id || !fecha_inicio || !fecha_fin) {
+      throw new AppError("profesor_id, reemplaza_a_profesor_id, fecha_inicio y fecha_fin son requeridos", 400)
+    }
+    if (fecha_fin <= fecha_inicio) {
+      throw new AppError("fecha_fin debe ser posterior a fecha_inicio", 400)
     }
     if (profesor_id === reemplaza_a_profesor_id) {
       throw new AppError("Un profesor no puede reemplazarse a sí mismo", 400)
@@ -43,7 +47,7 @@ export class ReemplazoProfesorController {
       if (activo) throw new AppError("El profesor ya tiene un reemplazo activo", 409)
 
       const reemplazo = await ReemplazoProfesorRepository.create(
-        { profesor_id, reemplaza_a_profesor_id, fecha_inicio: new Date(fecha_inicio), motivo },
+        { profesor_id, reemplaza_a_profesor_id, fecha_inicio: new Date(fecha_inicio), fecha_fin: new Date(fecha_fin), motivo },
         client
       )
 

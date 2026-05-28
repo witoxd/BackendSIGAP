@@ -40,9 +40,9 @@ export class ReemplazoProfesorRepository {
 
   static async create(data: Omit<ReemplazoProfesorCreationAttributes, "reemplazo_id">, client?: any) {
     const result = await query(
-      `INSERT INTO reemplazos_profesor (profesor_id, reemplaza_a_profesor_id, fecha_inicio, motivo)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [data.profesor_id, data.reemplaza_a_profesor_id, data.fecha_inicio, data.motivo ?? null],
+      `INSERT INTO reemplazos_profesor (profesor_id, reemplaza_a_profesor_id, fecha_inicio, fecha_fin, motivo)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [data.profesor_id, data.reemplaza_a_profesor_id, data.fecha_inicio, data.fecha_fin ?? null, data.motivo ?? null],
       client
     )
     return result.rows[0]

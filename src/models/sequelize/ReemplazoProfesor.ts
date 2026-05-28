@@ -8,12 +8,12 @@ interface ReemplazoProfesorAttributes {
   profesor_id: number           
   reemplaza_a_profesor_id: number 
   fecha_inicio: Date
-  fecha_fin?: Date
+  fecha_fin: Date
   motivo?: string
 }
 
 export interface ReemplazoProfesorCreationAttributes
-  extends Optional<ReemplazoProfesorAttributes, "reemplazo_id" | "fecha_fin" | "motivo"> {}
+  extends Optional<ReemplazoProfesorAttributes, "reemplazo_id" | "motivo"> {}
 
 export class ReemplazoProfesor
   extends Model<ReemplazoProfesorAttributes, ReemplazoProfesorCreationAttributes>
@@ -23,7 +23,7 @@ export class ReemplazoProfesor
   public profesor_id!: number
   public reemplaza_a_profesor_id!: number
   public fecha_inicio!: Date
-  public fecha_fin?: Date
+  public fecha_fin!: Date
   public motivo?: string
 }
 
