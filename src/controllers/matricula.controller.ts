@@ -406,6 +406,10 @@ export class MatriculaController {
       throw new AppError("La matrícula ya está en estado retirada", 409)
     }
 
+    if (matricula.estado_raw === "finalizada") {
+      throw new AppError("No se puede retirar una matrícula ya finalizada", 409)
+    }
+
     const actualizada = await MatriculaRepository.retirar(id, motivo)
 
     res.status(200).json({
