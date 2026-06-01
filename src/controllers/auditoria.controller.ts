@@ -40,34 +40,31 @@ export class AuditoriaController {
   })
 
   getByUsuarioId = asyncHandler(async (req: Request, res: Response) => {
-    const { usuario_id, page, limit } = req.query
+    const { page, limit } = req.query
     const { limit: pLimit, offset } = getPagination(page as string, limit as string)
+    const usuarioId = Number(req.params.usuarioId)
 
-    if (!usuario_id) {
-      throw new AppError("El usuario_id es requerido", 400)
-    }
-
-    const auditorias = await AuditoriaRepository.findByUsuarioId(
-      Number.parseInt(usuario_id as string),
-      pLimit,
-      offset
-    )
+    const auditorias = await AuditoriaRepository.findByUsuarioId(usuarioId, pLimit, offset)
+    const total = await AuditoriaRepository.countByUsuario(usuarioId)
 
     res.status(200).json({
       success: true,
       data: auditorias,
+      pagination: {
+        page: Math.floor(offset / pLimit) + 1,
+        limit: pLimit,
+        total,
+        pages: Math.ceil(total / pLimit),
+      },
     })
   })
 
   getByAccion = asyncHandler(async (req: Request, res: Response) => {
-    const { accion, page, limit } = req.query
+    const { page, limit } = req.query
     const { limit: pLimit, offset } = getPagination(page as string, limit as string)
+    const accion = String(req.params.accion)
 
-    if (!accion) {
-      throw new AppError("La acción es requerida", 400)
-    }
-
-    const auditorias = await AuditoriaRepository.findByAccion(accion as string, pLimit, offset)
+    const auditorias = await AuditoriaRepository.findByAccion(accion, pLimit, offset)
 
     res.status(200).json({
       success: true,
@@ -76,14 +73,11 @@ export class AuditoriaController {
   })
 
   getByTabla = asyncHandler(async (req: Request, res: Response) => {
-    const { tabla, page, limit } = req.query
+    const { page, limit } = req.query
     const { limit: pLimit, offset } = getPagination(page as string, limit as string)
+    const tabla = String(req.params.tabla)
 
-    if (!tabla) {
-      throw new AppError("La tabla es requerida", 400)
-    }
-
-    const auditorias = await AuditoriaRepository.findByTabla(tabla as string, pLimit, offset)
+    const auditorias = await AuditoriaRepository.findByTabla(tabla, pLimit, offset)
 
     res.status(200).json({
       success: true,
