@@ -7,7 +7,7 @@ export class AuditoriaRepository {
        FROM auditoria a
        LEFT JOIN usuarios u ON a.usuario_id = u.usuario_id
        LEFT JOIN personas p ON u.persona_id = p.persona_id
-       ORDER BY a.fecha_accion DESC LIMIT $1 OFFSET $2`,
+       ORDER BY a.fecha DESC LIMIT $1 OFFSET $2`,
       [limit, offset],
     )
     return result.rows
@@ -27,7 +27,12 @@ export class AuditoriaRepository {
 
   static async findByUsuarioId(usuarioId: number, limit = 50, offset = 0) {
     const result = await query(
-      "SELECT * FROM auditoria WHERE usuario_id = $1 ORDER BY fecha_accion DESC LIMIT $2 OFFSET $3",
+      `SELECT a.*, u.username, p.nombres, p.apellido_paterno
+       FROM auditoria a
+       LEFT JOIN usuarios u ON a.usuario_id = u.usuario_id
+       LEFT JOIN personas p ON u.persona_id = p.persona_id
+       WHERE a.usuario_id = $1
+       ORDER BY a.fecha DESC LIMIT $2 OFFSET $3`,
       [usuarioId, limit, offset],
     )
     return result.rows
@@ -40,7 +45,7 @@ export class AuditoriaRepository {
        LEFT JOIN usuarios u ON a.usuario_id = u.usuario_id
        LEFT JOIN personas p ON u.persona_id = p.persona_id
        WHERE a.accion = $1
-       ORDER BY a.fecha_accion DESC LIMIT $2 OFFSET $3`,
+       ORDER BY a.fecha DESC LIMIT $2 OFFSET $3`,
       [accion, limit, offset],
     )
     return result.rows
@@ -52,13 +57,12 @@ export class AuditoriaRepository {
        FROM auditoria a
        LEFT JOIN usuarios u ON a.usuario_id = u.usuario_id
        LEFT JOIN personas p ON u.persona_id = p.persona_id
-       WHERE a.tabla = $1
-       ORDER BY a.fecha_accion DESC LIMIT $2 OFFSET $3`,
+       WHERE a.tabla_nombre = $1
+       ORDER BY a.fecha DESC LIMIT $2 OFFSET $3`,
       [tabla, limit, offset],
     )
     return result.rows
   }
-
 
   static async count() {
     const result = await query("SELECT COUNT(*) FROM auditoria")

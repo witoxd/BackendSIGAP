@@ -10,6 +10,7 @@ import { PersonaCreationAttributes } from "../models/sequelize/Persona"
 import { PersonaRepository } from "../models/Repository/PersonaRepository"
 import { UserRepository } from "../models/Repository/UserRepository"
 import { parsePostgresArray } from "../utils/parsePostgresArray"
+import { registrarAuditoria } from "../utils/auditoria"
 export class AuthService {
   // Registrar un nuevo usuario
 
@@ -207,7 +208,8 @@ export class AuthService {
           break
 
         default:
-          throw new Error(`Rol '${role}' no tiene una tabla específica asociada`)
+          // Roles personalizados: solo existen en usuarios_roles, sin tabla adicional
+          break
       }
     } catch (error) {
       console.error("Error creando registro específico de rol:", error)
@@ -222,7 +224,7 @@ export class AuthService {
       const result = await query(
         `SELECT
           u.usuario_id, u.persona_id, u.username, u.email, u.contraseña, u.activo,
-          COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL),  ARRAY[]::enum_roles_nombre[]) as roles
+          COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL),  ARRAY[]::text[]) as roles
         FROM usuarios u
         LEFT JOIN usuarios_role ur ON u.usuario_id = ur.usuario_id
         LEFT JOIN roles r ON ur.role_id = r.role_id
@@ -261,11 +263,18 @@ export class AuthService {
       const familia = randomUUID()
       const { token: refreshToken } = await this.createRefreshToken(user.usuario_id, familia)
 
-      // Registrar sesión para auditoría
+      // Registrar sesión para seguridad
       await query(
         `INSERT INTO sesiones (usuario_id, familia, ip_address, user_agent) VALUES ($1, $2, $3, $4)`,
         [user.usuario_id, familia, ipAddress ?? null, userAgent ?? null],
       )
+
+      await registrarAuditoria({
+        tabla_nombre: "sesiones",
+        accion: "LOGIN",
+        usuario_id: user.usuario_id,
+        detalle: { username: user.username, ip: ipAddress ?? null },
+      })
 
       // Limpieza pasiva: eliminar tokens ya revocados y expirados
       await this.cleanExpiredTokens()
@@ -320,7 +329,7 @@ export class AuthService {
     const result = await query(
       `SELECT rt.token_id, rt.usuario_id, rt.expires_at, rt.revoked, rt.familia,
               u.username, u.email, u.persona_id, u.activo,
-              COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL), ARRAY[]::enum_roles_nombre[]) AS roles
+              COALESCE(ARRAY_REMOVE(ARRAY_AGG(r.nombre), NULL), ARRAY[]::text[]) AS roles
        FROM refresh_tokens rt
        JOIN usuarios u ON rt.usuario_id = u.usuario_id
        LEFT JOIN usuarios_role ur ON u.usuario_id = ur.usuario_id
@@ -384,6 +393,7 @@ export class AuthService {
       `UPDATE sesiones SET estado = 'cerrada', fecha_cierre = NOW() WHERE usuario_id = $1 AND estado = 'activa'`,
       [usuarioId],
     )
+    await registrarAuditoria({ tabla_nombre: "sesiones", accion: "LOGOUT", usuario_id: usuarioId })
   }
 
   // Eliminar tokens ya revocados y expirados (limpieza pasiva, se llama en cada login)
@@ -418,6 +428,8 @@ export class AuthService {
 
       // Actualizar contraseña
       await query("UPDATE usuarios SET contraseña = $1 WHERE usuario_id = $2", [hashedPassword, userId])
+
+      await registrarAuditoria({ tabla_nombre: "usuarios", accion: "UPDATE", usuario_id: userId, detalle: { campo: "contraseña" } })
 
       return { message: "Contraseña actualizada exitosamente" }
     } catch (error: any) {
@@ -456,6 +468,10 @@ export class AuthService {
       // Nota: arreglar la manera de client, si se pasa client, se asume que ya se hizo validacion de persona
       if (usuarioResult) {
         await UserRepository.assignRole(usuarioResult.usuario_id, roleId, client)
+        await registrarAuditoria(
+          { tabla_nombre: "usuarios", accion: "CREATE", usuario_id: usuarioResult.usuario_id, detalle: { username: user.username, role } },
+          client,
+        )
       }
 
       return {
@@ -532,6 +548,13 @@ export class AuthService {
       if (result.rows.length === 0) {
         throw new NotFoundError("Usuario asociado a la persona no encontrado")
       }
+
+      await registrarAuditoria({
+        tabla_nombre: "usuarios",
+        accion: "UPDATE",
+        usuario_id: result.rows[0].usuario_id,
+        detalle: { campo: "contraseña_reset", personaId },
+      })
 
       return { message: "Contraseña restablecida al número de documento exitosamente" }
     } catch (error: any) {
