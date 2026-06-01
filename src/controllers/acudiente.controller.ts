@@ -10,6 +10,7 @@ import { assignToEstudiante } from "../types"
 import { PersonaService } from "../services/persona.service"
 import { asyncHandler } from "../utils/asyncHandler"
 import { EstudianteRepository } from "../models/Repository/EstudianteRepository"
+import { registrarAuditoria } from "../utils/auditoria"
 
 
 
@@ -112,6 +113,13 @@ export class AcudienteController {
       })
 
 
+      await registrarAuditoria({
+        tabla_nombre: "acudientes",
+        accion: "CREATE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { acudienteId: NewAcudiente.acudiente_id, personaId: NewPersona.persona_id },
+      })
+
       res.status(201).json({
         success: true,
         message: "Acudiente creado exitosamente",
@@ -161,6 +169,13 @@ export class AcudienteController {
 
       const updatePersona = await PersonaRepository.findById(existingAcudiente.persona_id)
 
+      await registrarAuditoria({
+        tabla_nombre: "acudientes",
+        accion: "UPDATE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { acudienteId: AcudienteId },
+      })
+
       res.status(200).json({
         success: true,
         message: "Acudiente actualizado exitosamente",
@@ -181,6 +196,13 @@ export class AcudienteController {
       }
 
       await PersonaRepository.delete(acudiente.persona_id)
+
+      await registrarAuditoria({
+        tabla_nombre: "acudientes",
+        accion: "DELETE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { acudienteId: id },
+      })
 
       res.status(200).json({
         success: true,
