@@ -10,18 +10,30 @@ export class PersonaService {
     client?: any
   ): Promise<PersonaAttributes> {
     try {
+      // Normalizar strings vacíos a null en campos opcionales antes de validar.
+      // Sequelize ejecuta los validadores de instancia sobre "" aunque allowNull=true.
+      const optionalStringFields = [
+        "apellido_paterno", "apellido_materno", "grupo_sanguineo",
+        "grupo_etnico", "credo_religioso", "lugar_nacimiento",
+        "serial_registro_civil", "expedida_en",
+      ] as const
+      const data = { ...personaData }
+      for (const field of optionalStringFields) {
+        if ((data as any)[field] === "") (data as any)[field] = null
+      }
+
       const existingPersona = await PersonaRepository.existingPersonaByDocumento(
-        personaData.numero_documento
+        data.numero_documento
       )
 
       if (existingPersona) {
         return existingPersona
       }
 
-      await Persona.build(personaData).validate()
+      await Persona.build(data).validate()
 
-      //  Crear persona
-      return await PersonaRepository.create(personaData, client)
+      //  Crear persona con datos ya normalizados
+      return await PersonaRepository.create(data, client)
 
     } catch (error) {
       //  Error de validación de dominio

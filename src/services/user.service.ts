@@ -2,6 +2,7 @@ import { query, transaction } from "../config/database"
 import type { PaginationParams, PaginatedResponse } from "../types"
 import { NotFoundError, ConflictError, ForbiddenError, DatabaseError } from "../utils/AppError"
 import { parsePostgresArray } from "../utils/parsePostgresArray"
+import { registrarAuditoria } from "../utils/auditoria"
 
 export class UserService {
   // Obtener usuario por ID con información completa
@@ -181,12 +182,12 @@ export class UserService {
       // Asignar rol
       await query("INSERT INTO usuarios_role (usuario_id, role_id) VALUES ($1, $2)", [targetUserId, adminRoleId])
 
-      // Registrar en auditoría
-      await query(
-        `INSERT INTO auditoria (tabla_nombre, accion, usuario_id, detalle)
-         VALUES ($1, $2, $3, $4)`,
-        ["usuarios_role", "ASSIGN_ADMIN", adminUserId, JSON.stringify({ targetUserId, roleId: adminRoleId })],
-      )
+      await registrarAuditoria({
+        tabla_nombre: "usuarios_role",
+        accion: "UPDATE",
+        usuario_id: adminUserId,
+        detalle: { targetUserId, roleId: adminRoleId, operacion: "ASSIGN_ADMIN" },
+      })
 
       return { message: "Rol de administrador asignado exitosamente" }
     } catch (error: any) {
@@ -231,11 +232,14 @@ export class UserService {
           [toUserId, adminRoleId],
         )
 
-        // Registrar en auditoría
-        await client.query(
-          `INSERT INTO auditoria (tabla_nombre, accion, usuario_id, detalle)
-           VALUES ($1, $2, $3, $4)`,
-          ["usuarios_role", "TRANSFER_ADMIN", fromUserId, JSON.stringify({ fromUserId, toUserId, roleId: adminRoleId })],
+        await registrarAuditoria(
+          {
+            tabla_nombre: "usuarios_role",
+            accion: "UPDATE",
+            usuario_id: fromUserId,
+            detalle: { fromUserId, toUserId, roleId: adminRoleId, operacion: "TRANSFER_ADMIN" },
+          },
+          client,
         )
       })
 
@@ -249,7 +253,7 @@ export class UserService {
   }
 
   // Activar/desactivar usuario
-  async toggleUserStatus(userId: number, activo: boolean) {
+  async toggleUserStatus(userId: number, activo: boolean, actorId?: number) {
     try {
       const result = await query("UPDATE usuarios SET activo = $1 WHERE usuario_id = $2 RETURNING usuario_id", [
         activo,
@@ -259,6 +263,13 @@ export class UserService {
       if (result.rows.length === 0) {
         throw new NotFoundError("Usuario no encontrado")
       }
+
+      await registrarAuditoria({
+        tabla_nombre: "usuarios",
+        accion: "UPDATE",
+        usuario_id: actorId ?? null,
+        detalle: { targetUserId: userId, activo },
+      })
 
       return { message: `Usuario ${activo ? "activado" : "desactivado"} exitosamente` }
     } catch (error: any) {
