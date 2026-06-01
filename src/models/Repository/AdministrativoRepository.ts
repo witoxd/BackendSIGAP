@@ -4,13 +4,24 @@ import { PERSONA_FIELDS_JSON } from "../shared/personasql"
 
 const DOCENTE_FIELDS_JSON = `
   json_build_object(
-    'docente_id',         d.docente_id,
-    'sede',               d.sede,
-    'jornada_id',         d.jornada_id,
-    'jornada_nombre',     j.nombre,
-    'tipo_contrato',      d.tipo_contrato,
-    'estado',             d.estado,
-    'fecha_contratacion', d.fecha_contratacion
+    'docente_id',             d.docente_id,
+    'sede',                   d.sede,
+    'jornada_id',             d.jornada_id,
+    'jornada_nombre',         j.nombre,
+    'tipo_contrato',          d.tipo_contrato,
+    'estado',                 d.estado,
+    'fecha_contratacion',     d.fecha_contratacion,
+    'decreto_id',             d.decreto_id,
+    'decreto_codigo',         dec.codigo,
+    'decreto_nombre',         dec.nombre,
+    'titulo',                 d.titulo,
+    'area',                   d.area,
+    'posgrado',               d.posgrado,
+    'grado_escalafon_id',     d.grado_escalafon_id,
+    'grado_escalafon_codigo', ge.codigo,
+    'fecha_nombramiento',     d.fecha_nombramiento,
+    'numero_resolucion',      d.numero_resolucion,
+    'perfil_profesional',     d.perfil_profesional
   ) AS docente
 `
 

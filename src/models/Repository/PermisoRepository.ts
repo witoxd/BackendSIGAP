@@ -15,7 +15,7 @@ export class PermisoRepository {
   static async findByRole(roleId: number) {
     const result = await query(
       `SELECT p.* FROM permisos p
-       INNER JOIN role_permiso rp ON p.permiso_id = rp.permiso_id
+       INNER JOIN role_permisos rp ON p.permiso_id = rp.permiso_id
        WHERE rp.role_id = $1
        ORDER BY p.recurso, p.accion`,
       [roleId],
