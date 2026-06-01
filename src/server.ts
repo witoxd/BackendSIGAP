@@ -22,6 +22,10 @@ const app = express()
 const PORT = process.env.PORT || 3000
 const HOST = process.env.HOST || "localhost"
 
+// Necesario cuando el servidor está detrás de un proxy inverso (Cloudflare, nginx, etc.)
+// Permite que express-rate-limit lea la IP real desde X-Forwarded-For
+app.set("trust proxy", 1)
+
 // Security middleware
 app.use(helmet())
 app.use(compression())

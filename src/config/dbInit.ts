@@ -442,6 +442,35 @@ const createPerformanceIndexes = async () => {
 }
 
 // -----------------------------------------------------------------------------
+// MIGRACIÓN: roles.nombre ENUM → VARCHAR
+//
+// Sequelize definía la columna como DataTypes.ENUM(...), lo que creaba el tipo
+// enum_roles_nombre en PostgreSQL. Cambiamos a DataTypes.STRING para permitir
+// roles personalizados. Esta función migra bases existentes y es idempotente:
+// si la columna ya es VARCHAR, el bloque DO ignora el error y continúa.
+// -----------------------------------------------------------------------------
+const migrateRolesEnum = async () => {
+  await query(`
+    DO $$ BEGIN
+      ALTER TABLE roles
+        ALTER COLUMN nombre TYPE VARCHAR(100) USING nombre::text;
+    EXCEPTION
+      WHEN others THEN NULL;
+    END $$;
+  `)
+
+  await query(`
+    DO $$ BEGIN
+      DROP TYPE enum_roles_nombre;
+    EXCEPTION
+      WHEN others THEN NULL;
+    END $$;
+  `)
+
+  console.log("  ✓ roles.nombre migrado a VARCHAR(100)")
+}
+
+// -----------------------------------------------------------------------------
 // ENTRY POINT — ejecutar todo en orden
 //
 // El orden importa:
@@ -471,6 +500,7 @@ export const initializeDatabase = async () => {
   console.log("🔧 Inicializando configuración avanzada de base de datos...")
 
   try {
+    await migrateRolesEnum()
     await createEnums()
     await createPartialIndexes()
     await createConstraints()

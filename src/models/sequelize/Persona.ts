@@ -73,14 +73,22 @@ Persona.init(
       type: DataTypes.STRING(50),
       allowNull: true,
       validate: {
-        len: [2, 50],
+        lenSiPresente(val: string | null) {
+          if (!val) return
+          if (val.length < 2 || val.length > 50)
+            throw new Error("El apellido paterno debe tener entre 2 y 50 caracteres")
+        },
       },
     },
     apellido_materno: {
       type: DataTypes.STRING(50),
       allowNull: true,
       validate: {
-        len: [2, 50],
+        lenSiPresente(val: string | null) {
+          if (!val) return
+          if (val.length < 2 || val.length > 50)
+            throw new Error("El apellido materno debe tener entre 2 y 50 caracteres")
+        },
       },
     },
     tipo_documento_id: {
@@ -149,5 +157,27 @@ Persona.init(
     sequelize,
     tableName: "personas",
     timestamps: false,
+    hooks: {
+      // Convierte strings vacíos a null en campos opcionales antes de validar.
+      // Necesario porque Sequelize ejecuta len/isIn sobre "" aunque allowNull=true,
+      // y el frontend envía "" cuando el usuario deja un campo opcional en blanco.
+      beforeValidate: (persona) => {
+        const optionalStrings: (keyof PersonaAttributes)[] = [
+          "apellido_paterno",
+          "apellido_materno",
+          "grupo_sanguineo",
+          "grupo_etnico",
+          "credo_religioso",
+          "lugar_nacimiento",
+          "serial_registro_civil",
+          "expedida_en",
+        ]
+        for (const field of optionalStrings) {
+          if ((persona as any)[field] === "") {
+            ;(persona as any)[field] = null
+          }
+        }
+      },
+    },
   },
 )

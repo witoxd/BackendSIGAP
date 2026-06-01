@@ -5,6 +5,7 @@ import fs from "fs"
 import { Request, Response, NextFunction } from "express"
 import { AppError } from "../utils/AppError"
 import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepository"
+import { ArchivoRepository } from "../models/Repository/ArchivoRepository"
 // ============================================================================
 // CONFIGURACION DE ALMACENAMIENTO DE ARCHIVOS
 // ============================================================================
@@ -306,18 +307,32 @@ const getTipoArchivo = async (id: number): Promise<any> => {
 // ============================================================================
 
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
+  destination: async (req, _file, cb) => {
     try {
-      
-      const reqAny = req as any
-      if (reqAny._fileIndex === undefined) reqAny._fileIndex = 0
-      const currentIndex = reqAny._fileIndex++
+      let tipoArchivoId: number
 
-      // Parsear metadata (viene como string JSON desde el FormData)
-      const metadata = JSON.parse(req.body.metadata)
-      const tipoArchivo = Number(metadata[currentIndex]?.tipo_archivo_id)
+      if (req.body.metadata) {
+        // Ruta bulk/create: metadata es un array JSON con tipo_archivo_id por archivo
+        const reqAny = req as any
+        if (reqAny._fileIndex === undefined) reqAny._fileIndex = 0
+        const currentIndex = reqAny._fileIndex++
+        const metadata = JSON.parse(req.body.metadata)
+        tipoArchivoId = Number(metadata[currentIndex]?.tipo_archivo_id)
+      } else if (req.body.tipo_archivo_id) {
+        // Ruta single create con tipo_archivo_id explícito en el body
+        tipoArchivoId = Number(req.body.tipo_archivo_id)
+      } else if (req.params.id) {
+        // Ruta update: derivar tipo_archivo_id del registro existente
+        const existing = await ArchivoRepository.findById(Number(req.params.id))
+        if (!existing) {
+          return cb(new AppError("Archivo no encontrado", 404) as any, "")
+        }
+        tipoArchivoId = existing.tipo_archivo_id
+      } else {
+        return cb(new AppError("No se pudo determinar el tipo de archivo", 400) as any, "")
+      }
 
-      const existingTipoArchivoData = await getTipoArchivo(tipoArchivo)
+      const existingTipoArchivoData = await getTipoArchivo(tipoArchivoId)
 
       if (!existingTipoArchivoData) {
         return cb(new AppError("Tipo de archivo no encontrado", 400) as any, "")
@@ -408,7 +423,7 @@ export const upload = multer({
 // MIDDLEWARE PARA MANEJO DE ERRORES DE MULTER
 // ============================================================================
 
-export const handleMulterError = (err: any, req: any, res: any, next: any) => {
+export const handleMulterError = (err: any, _req: any, res: any, next: any) => {
   if (err instanceof multer.MulterError) {
     switch (err.code) {
       case "LIMIT_FILE_SIZE":
