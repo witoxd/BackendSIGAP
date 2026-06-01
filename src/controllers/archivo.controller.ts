@@ -274,8 +274,14 @@ export class ArchivoController {
         throw new AppError("No se puede modificar un archivo vinculado a una matrícula", 409)
       }
 
-      const updateData: any = {
-        descripcion: req.body.descripcion,
+      if (!req.file && req.body.descripcion === undefined) {
+        throw new AppError("Se debe enviar un archivo o una descripción para actualizar", 400)
+      }
+
+      // Solo incluir descripcion si fue enviada explícitamente
+      const updateData: any = {}
+      if (req.body.descripcion !== undefined) {
+        updateData.descripcion = req.body.descripcion
       }
 
       if (req.file) {
