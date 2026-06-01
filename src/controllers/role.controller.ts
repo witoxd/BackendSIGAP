@@ -4,6 +4,8 @@ import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { asyncHandler } from "../utils/asyncHandler"
 
+const ROLES_SISTEMA = new Set(["admin", "profesor", "estudiante", "administrativo"])
+
 
 export class RoleController {
   getAllRoles = asyncHandler(async (_req: Request, res: Response) => {
@@ -71,9 +73,17 @@ export class RoleController {
 
   const id  = Number(req.params.id)
 
+  const existing = await RoleRepository.findById(id)
+  if (!existing) throw new AppError("Rol no encontrado", 404)
+
+  // No permitir cambiar el nombre de roles del sistema
+  if (req.body.nombre && ROLES_SISTEMA.has(existing.nombre) && req.body.nombre !== existing.nombre) {
+    throw new AppError("No se puede cambiar el nombre de un rol del sistema", 409)
+  }
+
   if (req.body.nombre) {
-    const existingRole = await RoleRepository.findByName(req.body.nombre)
-    if (existingRole && existingRole.role_id !== id) {
+    const conflicto = await RoleRepository.findByName(req.body.nombre)
+    if (conflicto && conflicto.role_id !== id) {
       throw new AppError("Ya existe otro rol con ese nombre", 409)
     }
   }
@@ -92,7 +102,15 @@ export class RoleController {
 })
 
   deleteRole = asyncHandler(async (req: Request, res: Response) => {
-  const  id  = Number(req.params.id)
+  const id = Number(req.params.id)
+
+  const existing = await RoleRepository.findById(id)
+  if (!existing) throw new AppError("Rol no encontrado", 404)
+
+  if (ROLES_SISTEMA.has(existing.nombre)) {
+    throw new AppError("No se pueden eliminar los roles del sistema", 409)
+  }
+
   const role = await RoleRepository.delete(id)
 
   if (!role) {

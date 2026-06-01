@@ -70,7 +70,7 @@ export class UserController {
       const userId = Number(req.params.id)
       const  activo  = req.params.activo === "true" // Convertir a booleano
 
-      const result = await userService.toggleUserStatus(userId, activo)
+      const result = await userService.toggleUserStatus(userId, activo, req.user?.userId)
 
       res.status(200).json({
         success: true,
