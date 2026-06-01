@@ -8,6 +8,7 @@ import { PeriodoMatriculaRepository } from "../models/Repository/PeriodoMatricul
 import { asyncHandler } from "../utils/asyncHandler"
 import { getFileUrl } from "../config/multer"
 import { ArchivoRepository } from "../models/Repository/ArchivoRepository"
+import { registrarAuditoria } from "../utils/auditoria"
 import { TipoArchivoRepository } from "../models/Repository/TipoArchivoRepository"
 import path from "path"
 import { archivoService } from "../services/archivos.services"
@@ -119,6 +120,13 @@ export class MatriculaController {
     const matricula = await MatriculaRepository.create({
       ...matriculaData,
       periodo_id: periodoActivo.periodo_id,
+    })
+
+    await registrarAuditoria({
+      tabla_nombre: "matriculas",
+      accion: "CREATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { matriculaId: matricula.matricula_id, estudianteId: matriculaData.estudiante_id, cursoId: matriculaData.curso_id },
     })
 
     res.status(201).json({ success: true, data: matricula, message: "Matrícula creada exitosamente" })
@@ -411,6 +419,13 @@ export class MatriculaController {
     }
 
     const actualizada = await MatriculaRepository.retirar(id, motivo)
+
+    await registrarAuditoria({
+      tabla_nombre: "matriculas",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { matriculaId: id, motivo: motivo ?? null, estado: "retirada" },
+    })
 
     res.status(200).json({
       success: true,

@@ -4,7 +4,8 @@ import { AppError } from "../utils/AppError";
 import { Request, Response } from "express";
 import { validationResult } from "express-validator"
 import { CreatePersonaDTO, UpdatePersonaDTO } from "../types";
-import { asyncHandler } from "../utils/asyncHandler";
+import { asyncHandler } from "../utils/asyncHandler"
+import { registrarAuditoria } from "../utils/auditoria"
 
 export class PersonaController {
 
@@ -116,6 +117,13 @@ export class PersonaController {
 
     const persona = await PersonaRepository.create(PersonaData)
 
+    await registrarAuditoria({
+      tabla_nombre: "personas",
+      accion: "CREATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { personaId: persona.persona_id, numero_documento: PersonaData.numero_documento },
+    })
+
     res.status(201).json({
       success: true,
       data: persona,
@@ -146,6 +154,13 @@ export class PersonaController {
       throw new AppError("Persona no encontrada", 404)
     }
 
+    await registrarAuditoria({
+      tabla_nombre: "personas",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { personaId: id },
+    })
+
     res.status(200).json({
       success: true,
       data: persona,
@@ -160,6 +175,13 @@ export class PersonaController {
     if (!persona) {
       throw new AppError("Persona no encontrada", 404)
     }
+
+    await registrarAuditoria({
+      tabla_nombre: "personas",
+      accion: "DELETE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { personaId: Number(id) },
+    })
 
     res.status(200).json({
       success: true,

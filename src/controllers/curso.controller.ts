@@ -4,6 +4,7 @@ import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { CreateCursoDTO, updateCursoDTO } from "../types"
 import { asyncHandler } from "../utils/asyncHandler"
+import { registrarAuditoria } from "../utils/auditoria"
 
 export class CursoController{
 
@@ -75,6 +76,13 @@ export class CursoController{
 
   const curso = await CursoRepository.create(CursoData)
 
+  await registrarAuditoria({
+    tabla_nombre: "cursos",
+    accion: "CREATE",
+    usuario_id: req.user?.userId ?? null,
+    detalle: { cursoId: curso.curso_id },
+  })
+
   res.status(201).json({
     success: true,
     data: curso,
@@ -98,6 +106,13 @@ export class CursoController{
     throw new AppError("Curso no encontrado", 404)
   }
 
+  await registrarAuditoria({
+    tabla_nombre: "cursos",
+    accion: "UPDATE",
+    usuario_id: req.user?.userId ?? null,
+    detalle: { cursoId: id },
+  })
+
   res.status(200).json({
     success: true,
     data: curso,
@@ -112,6 +127,13 @@ export class CursoController{
   if (!curso) {
     throw new AppError("Curso no encontrado", 404)
   }
+
+  await registrarAuditoria({
+    tabla_nombre: "cursos",
+    accion: "DELETE",
+    usuario_id: req.user?.userId ?? null,
+    detalle: { cursoId: id },
+  })
 
   res.status(200).json({
     success: true,

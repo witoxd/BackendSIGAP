@@ -3,6 +3,7 @@ import { PermisoRepository } from "../models/Repository/PermisoRepository"
 import { AppError } from "../utils/AppError"
 import { getPagination } from "../utils/validators"
 import { asyncHandler } from "../utils/asyncHandler"
+import { registrarAuditoria } from "../utils/auditoria"
 
 export class PermisoController {
   
@@ -45,9 +46,17 @@ export class PermisoController {
 
 
 
-   assignToRole =asyncHandler(async (req: Request, res: Response) => {
-      const { role_id, permiso_id } = req.body
-      const result = await PermisoRepository.assignToRole(role_id, permiso_id)
+   assignToRole = asyncHandler(async (req: Request, res: Response) => {
+      const roleId = Number(req.params.roleId)
+      const permisoId = Number(req.params.permisoId)
+      const result = await PermisoRepository.assignToRole(roleId, permisoId)
+
+      await registrarAuditoria({
+        tabla_nombre: "role_permisos",
+        accion: "UPDATE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { roleId, permisoId },
+      })
 
       res.status(200).json({
         success: true,
@@ -63,6 +72,13 @@ export class PermisoController {
       if (!result) {
         throw new AppError("Permiso no encontrado en este rol", 404)
       }
+
+      await registrarAuditoria({
+        tabla_nombre: "role_permisos",
+        accion: "DELETE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { roleId: Number(roleId), permisoId: Number(permisoId) },
+      })
 
       res.status(200).json({
         success: true,

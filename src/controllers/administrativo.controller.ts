@@ -8,6 +8,8 @@ import { CreateAdministrativoDTO, UpdateAdministrativoDTO } from "../types"
 import { PersonaService } from "../services/persona.service"
 import { transaction } from "../config/database"
 import { asyncHandler } from "../utils/asyncHandler"
+import { registrarAuditoria } from "../utils/auditoria"
+import { ContactoRepository } from "../models/Repository/ContactoRepository"
 
 export class AdministrativoController {
 
@@ -54,7 +56,20 @@ export class AdministrativoController {
     const errors = validationResult(req)
     if (!errors.isEmpty()) throw new AppError("Errores de validación", 400, errors.array())
 
-    const { persona: personaData, administrativo: administrativoData } = req.body as CreateAdministrativoDTO
+    const {
+      persona: personaData,
+      administrativo: administrativoData,
+      contactos: contactosData = [],
+    } = req.body as CreateAdministrativoDTO & { contactos?: any[] }
+
+    if (!contactosData.length) throw new AppError("Se requiere al menos un contacto", 400)
+
+    // Todos los campos de docente que un administrativo puede tener
+    const ALL_DOCENTE_FIELDS = [
+      "sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion",
+      "decreto_id", "grado_escalafon_id", "area", "titulo", "posgrado",
+      "perfil_profesional", "fecha_nombramiento", "numero_resolucion",
+    ]
 
     const result = await transaction(async (client) => {
       const persona = await PersonaService.validateOrCreatePersona(personaData, client)
@@ -63,24 +78,22 @@ export class AdministrativoController {
       const existente = await AdministrativoRepository.findByPersonaId(persona.persona_id)
       if (existente) throw new AppError("La persona ya tiene rol administrativo", 409)
 
-      // Si la persona ya tiene un docente, reutilizarlo; si no, crearlo
+      // Si la persona ya tiene un docente (ej: es profesor), reutilizarlo; si no, crearlo
       let docente = await DocenteRepository.findByPersonaId(persona.persona_id)
       if (!docente) {
-        docente = await DocenteRepository.create(
-          {
-            persona_id:         persona.persona_id,
-            sede:               administrativoData?.sede,
-            jornada_id:         administrativoData?.jornada_id,
-            tipo_contrato:      administrativoData?.tipo_contrato,
-            estado:             administrativoData?.estado ?? "activo",
-            fecha_contratacion: administrativoData?.fecha_contratacion ? new Date(administrativoData.fecha_contratacion) : undefined,
-          },
-          client
-        )
+        const docenteData: Record<string, unknown> = { persona_id: persona.persona_id, estado: administrativoData?.estado ?? "activo" }
+        for (const key of ALL_DOCENTE_FIELDS) {
+          if (administrativoData && key in administrativoData) {
+            const val = (administrativoData as Record<string, unknown>)[key]
+            docenteData[key] = key === "fecha_contratacion" || key === "fecha_nombramiento"
+              ? (val ? new Date(val as string) : undefined)
+              : val
+          }
+        }
+        docente = await DocenteRepository.create(docenteData as any, client)
       } else if (administrativoData) {
-        const docenteFields = ["sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
         const update: Record<string, unknown> = {}
-        for (const key of docenteFields) {
+        for (const key of ALL_DOCENTE_FIELDS) {
           if (key in administrativoData) update[key] = (administrativoData as Record<string, unknown>)[key]
         }
         if (Object.keys(update).length > 0) {
@@ -93,7 +106,19 @@ export class AdministrativoController {
         client
       )
 
+      await ContactoRepository.bulkCreate(
+        contactosData.map((c: any) => ({ ...c, persona_id: persona.persona_id })),
+        client
+      )
+
       return { persona, docente, administrativo }
+    })
+
+    await registrarAuditoria({
+      tabla_nombre: "administrativos",
+      accion: "CREATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { administrativoId: result.administrativo.administrativo_id, personaId: result.persona.persona_id },
     })
 
     res.status(201).json({
@@ -117,7 +142,7 @@ export class AdministrativoController {
       if (personaData) {
         if (personaData.numero_documento) {
           const conflicto = await PersonaRepository.findByDocumento(personaData.numero_documento)
-          if (conflicto && conflicto.persona_id !== existing.persona.persona_id) {
+          if (conflicto && conflicto.persona?.persona_id !== existing.persona.persona_id) {
             throw new AppError("Ya existe otra persona con ese documento", 409)
           }
         }
@@ -130,7 +155,11 @@ export class AdministrativoController {
           await AdministrativoRepository.update(administrativoId, { cargo: administrativoData.cargo }, client)
         }
         // resto de campos van a docente
-        const docenteFields = ["sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion"]
+        const docenteFields = [
+          "sede", "jornada_id", "tipo_contrato", "estado", "fecha_contratacion",
+          "decreto_id", "grado_escalafon_id", "area", "titulo", "posgrado",
+          "perfil_profesional", "fecha_nombramiento", "numero_resolucion",
+        ]
         const update: Record<string, unknown> = {}
         for (const key of docenteFields) {
           if (key in administrativoData) update[key] = (administrativoData as Record<string, unknown>)[key]
@@ -142,6 +171,13 @@ export class AdministrativoController {
     })
 
     const updated = await AdministrativoRepository.findById(administrativoId)
+
+    await registrarAuditoria({
+      tabla_nombre: "administrativos",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { administrativoId },
+    })
 
     res.status(200).json({
       success: true,
@@ -155,6 +191,13 @@ export class AdministrativoController {
     const administrativo = await AdministrativoRepository.delete(id)
 
     if (!administrativo) throw new AppError("Administrativo no encontrado", 404)
+
+    await registrarAuditoria({
+      tabla_nombre: "administrativos",
+      accion: "DELETE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { administrativoId: id },
+    })
 
     res.status(200).json({
       success: true,

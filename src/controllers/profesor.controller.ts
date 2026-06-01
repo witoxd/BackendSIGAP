@@ -10,6 +10,7 @@ import { CreateProfesorDTO, UpdateProfesorDTO } from "../types"
 import { transaction } from "../config/database"
 import { PersonaService } from "../services/persona.service"
 import { asyncHandler } from "../utils/asyncHandler"
+import { registrarAuditoria } from "../utils/auditoria"
 
 export class ProfesorController {
 
@@ -138,6 +139,13 @@ export class ProfesorController {
       return { persona, docente, profesor, emergencia }
     })
 
+    await registrarAuditoria({
+      tabla_nombre: "profesores",
+      accion: "CREATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { profesorId: result.profesor.profesor_id, personaId: result.persona.persona_id },
+    })
+
     res.status(201).json({
       success: true,
       data: result,
@@ -159,7 +167,7 @@ export class ProfesorController {
       if (personaData) {
         if (personaData.numero_documento) {
           const conflicto = await PersonaRepository.findByDocumento(personaData.numero_documento)
-          if (conflicto && conflicto.persona_id !== existing.persona.persona_id) {
+          if (conflicto && conflicto.persona?.persona_id !== existing.persona.persona_id) {
             throw new AppError("Ya existe otra persona con ese documento", 409)
           }
         }
@@ -183,6 +191,13 @@ export class ProfesorController {
 
     const updated = await ProfesorRepository.findDetalles(profesorId)
 
+    await registrarAuditoria({
+      tabla_nombre: "profesores",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { profesorId },
+    })
+
     res.status(200).json({
       success: true,
       data: updated,
@@ -191,8 +206,17 @@ export class ProfesorController {
   })
 
   delete = asyncHandler(async (req: Request, res: Response) => {
-    const profesor = await ProfesorRepository.delete(Number(req.params.id))
+    const id = Number(req.params.id)
+    const profesor = await ProfesorRepository.delete(id)
     if (!profesor) throw new AppError("Profesor no encontrado", 404)
+
+    await registrarAuditoria({
+      tabla_nombre: "profesores",
+      accion: "DELETE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { profesorId: id },
+    })
+
     res.status(200).json({ success: true, data: profesor, message: "Profesor eliminado exitosamente" })
   })
 }

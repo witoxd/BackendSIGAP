@@ -7,6 +7,7 @@ import { AppError } from "../utils/AppError"
 import { validationResult } from "express-validator"
 import { transaction } from "../config/database"
 import { asyncHandler } from "../utils/asyncHandler"
+import { registrarAuditoria } from "../utils/auditoria"
 
 async function assertEstudianteExists(estudianteId: number) {
   const estudiante = await EstudianteRepository.findById(estudianteId)
@@ -55,6 +56,13 @@ export class FichaEstudianteController {
 
       const ficha = await FichaEstudianteRepository.upsert(estudianteId, fichaData)
 
+      await registrarAuditoria({
+        tabla_nombre: "ficha_estudiantes",
+        accion: "UPDATE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { estudianteId },
+      })
+
       res.status(200).json({
         success: true,
         message: "Ficha del estudiante guardada exitosamente",
@@ -76,6 +84,13 @@ export class FichaEstudianteController {
     if (!ficha) {
       throw new AppError("Ficha no encontrada para este estudiante", 404)
     }
+
+    await registrarAuditoria({
+      tabla_nombre: "ficha_estudiantes",
+      accion: "DELETE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId },
+    })
 
     res.status(200).json({
       success: true,
@@ -131,6 +146,13 @@ export class ColegioAnteriorController {
       estudiante_id: estudianteId,
     })
 
+    await registrarAuditoria({
+      tabla_nombre: "colegios_anteriores",
+      accion: "CREATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId, colegioId: colegio.colegio_anterior_id },
+    })
+
     res.status(201).json({
       success: true,
       message: "Colegio anterior registrado exitosamente",
@@ -159,6 +181,13 @@ export class ColegioAnteriorController {
       // se revierte y el estudiante no queda sin colegios
       const result = await transaction(async (client) => {
         return await ColegioAnteriorRepository.replaceAll(estudianteId, colegios, client)
+      })
+
+      await registrarAuditoria({
+        tabla_nombre: "colegios_anteriores",
+        accion: "UPDATE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { estudianteId, operacion: "replaceAll" },
       })
 
       res.status(200).json({
@@ -195,6 +224,13 @@ export class ColegioAnteriorController {
     const { colegio: colegioData } = req.body
     const updated = await ColegioAnteriorRepository.update(colegioId, colegioData)
 
+    await registrarAuditoria({
+      tabla_nombre: "colegios_anteriores",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId, colegioId },
+    })
+
     res.status(200).json({
       success: true,
       message: "Colegio actualizado exitosamente",
@@ -217,6 +253,13 @@ export class ColegioAnteriorController {
     }
 
     await ColegioAnteriorRepository.delete(colegioId)
+
+    await registrarAuditoria({
+      tabla_nombre: "colegios_anteriores",
+      accion: "DELETE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId, colegioId },
+    })
 
     res.status(200).json({
       success: true,
@@ -268,6 +311,13 @@ export class ViviendaEstudianteController {
 
       const vivienda = await ViviendaEstudianteRepository.upsert(estudianteId, viviendaData)
 
+      await registrarAuditoria({
+        tabla_nombre: "vivienda_estudiante",
+        accion: "UPDATE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { estudianteId },
+      })
+
       res.status(200).json({
         success: true,
         message: "Datos de vivienda guardados exitosamente",
@@ -290,6 +340,13 @@ export class ViviendaEstudianteController {
       if (!vivienda) {
         throw new AppError("Datos de vivienda no encontrados para este estudiante", 404)
       }
+
+      await registrarAuditoria({
+        tabla_nombre: "vivienda_estudiante",
+        accion: "DELETE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: { estudianteId },
+      })
 
       res.status(200).json({
         success: true,
@@ -363,6 +420,16 @@ export class ExpedienteController {
         ])
 
         return { ficha: fichaResult, colegios: colegiosResult, vivienda: viviendaResult }
+      })
+
+      await registrarAuditoria({
+        tabla_nombre: "expediente_estudiante",
+        accion: "UPDATE",
+        usuario_id: req.user?.userId ?? null,
+        detalle: {
+          estudianteId,
+          secciones: [ficha && "ficha", colegios && "colegios", vivienda && "vivienda"].filter(Boolean),
+        },
       })
 
       res.status(200).json({

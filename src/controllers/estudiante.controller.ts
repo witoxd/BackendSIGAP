@@ -9,6 +9,7 @@ import { MatriculaRepository } from "../models/Repository/MatriculaRepository"
 import { CreateEstudianteDTO, UpdateEstudianteDTO } from "../types"
 import { transaction } from "../config/database"
 import { asyncHandler } from "../utils/asyncHandler"
+import { registrarAuditoria } from "../utils/auditoria"
 
 
 export class EstudianteController {
@@ -112,7 +113,13 @@ export class EstudianteController {
     })
 
 
-    // Respuesta
+    await registrarAuditoria({
+      tabla_nombre: "estudiantes",
+      accion: "CREATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId: newEstudiante.estudiante_id, personaId: newPersona.persona_id },
+    })
+
     return res.status(201).json({
       success: true,
       message: "Estudiante creado exitosamente",
@@ -171,7 +178,13 @@ export class EstudianteController {
     // Obtener persona actualizada
     const updatedPersona = await PersonaRepository.findById(existing.persona.persona_id)
 
-    // Respuesta final unificada
+    await registrarAuditoria({
+      tabla_nombre: "estudiantes",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId },
+    })
+
     return res.status(200).json({
       success: true,
       message: "Estudiante actualizado exitosamente",
@@ -191,6 +204,13 @@ export class EstudianteController {
     }
 
     const persona = await PersonaRepository.delete(estudiante.persona_id)
+
+    await registrarAuditoria({
+      tabla_nombre: "estudiantes",
+      accion: "DELETE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId: id },
+    })
 
     res.status(200).json({
       success: true,
@@ -241,6 +261,13 @@ export class EstudianteController {
       creado_por: req.user?.userId ?? null,
     })
 
+    await registrarAuditoria({
+      tabla_nombre: "estudiantes",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId, operacion: "suspender", fecha_inicio, fecha_fin, motivo },
+    })
+
     res.status(201).json({ success: true, message: "Suspensión registrada", data: suspension })
   })
 
@@ -270,6 +297,13 @@ export class EstudianteController {
       await EstudianteRepository.update(estudianteId, { estado: "expulsado" }, client)
     })
 
+    await registrarAuditoria({
+      tabla_nombre: "estudiantes",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId, operacion: "expulsar", motivo },
+    })
+
     res.status(200).json({ success: true, message: "Estudiante expulsado" })
   })
 
@@ -287,6 +321,13 @@ export class EstudianteController {
     }
 
     await EstudianteRepository.update(estudianteId, { estado: "activo" })
+
+    await registrarAuditoria({
+      tabla_nombre: "estudiantes",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId, operacion: "reactivar" },
+    })
 
     res.status(200).json({ success: true, message: "Expulsión revertida, estudiante reactivado" })
   })
@@ -319,6 +360,13 @@ export class EstudianteController {
         { estudiante_id: estudianteId, fecha_grado: fecha_grado || new Date() },
         client
       )
+    })
+
+    await registrarAuditoria({
+      tabla_nombre: "estudiantes",
+      accion: "UPDATE",
+      usuario_id: req.user?.userId ?? null,
+      detalle: { estudianteId, operacion: "egresar", fecha_grado: fecha_grado || new Date() },
     })
 
     res.status(201).json({ success: true, message: "Estudiante egresado exitosamente", data: egresado })
