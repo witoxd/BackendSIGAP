@@ -24,6 +24,7 @@ import asignacionDocenteRoutes from "./asignacionDocente.routes"
 import reemplazoProfesorRoutes from "./reemplazoProfesor.routes"
 import decretoRoutes from "./decreto.routes"
 import gradoEscalafonRoutes from "./gradoEscalafon.routes"
+import auditoriaRoutes from "./auditoria.routes"
 const router = Router()
 
 router.use("/auth", authRoutes) //listo
@@ -51,6 +52,6 @@ router.use("/asignacion-docente", asignacionDocenteRoutes)
 router.use("/reemplazos-profesor", reemplazoProfesorRoutes)
 router.use("/decretos", decretoRoutes)
 router.use("/grados-escalafon", gradoEscalafonRoutes)
-//router.use("/auditoria", auditoriaRoutes)
+router.use("/auditoria", auditoriaRoutes)
 
 export default router

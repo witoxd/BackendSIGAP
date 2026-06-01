@@ -141,6 +141,14 @@ router.get(
   egresadoController.getById.bind(egresadoController),
 )
 
+router.get(
+  "/byEstudiante/:estudianteId",
+  param("estudianteId").isInt({ min: 1 }).withMessage("ID de estudiante invalido"),
+  validate,
+  checkPermission(Recurso.ESTUDIANTES, Accion.READ),
+  egresadoController.getByEstudianteId.bind(egresadoController),
+)
+
 /**
  * @swagger
  * /egresados/create:

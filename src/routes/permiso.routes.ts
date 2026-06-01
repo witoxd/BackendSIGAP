@@ -6,103 +6,24 @@ import { validate } from "../middleware/validate"
 import { param } from "express-validator"
 import { Recurso, Accion } from "../types"
 
-
 const router = Router()
 const permisoController = new PermisoController()
 
 router.use(authenticate)
 
-// =============================================================================
-// SWAGGER
-// =============================================================================
-
-/**
- * @swagger
- * tags:
- *   - name: Permisos
- *     description: Consulta de permisos del sistema por rol
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Permiso:
- *       type: object
- *       properties:
- *         permiso_id:
- *           type: integer
- *           example: 1
- *         rol:
- *           type: string
- *           example: profesor
- *         recurso:
- *           type: string
- *           example: ESTUDIANTES
- *         accion:
- *           type: string
- *           example: READ
- */
-
-/**
- * @swagger
- * /permisos:
- *   get:
- *     summary: Listar todos los permisos del sistema
- *     tags: [Permisos]
- *     responses:
- *       200:
- *         description: Lista de permisos
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Permiso'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
+// GET /permisos — todos los permisos del sistema
 router.get("/", checkPermission(Recurso.PERMISOS, Accion.READ), permisoController.getAll.bind(permisoController))
 
-/**
- * @swagger
- * /permisos/{id}:
- *   get:
- *     summary: Obtener un permiso por ID (solo admin)
- *     tags: [Permisos]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Permiso encontrado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/Permiso'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- */
+// GET /permisos/role/:roleId — permisos asignados a un rol (estática antes de /:id)
+router.get(
+  "/role/:roleId",
+  param("roleId").isInt({ min: 1 }).withMessage("ID de rol inválido"),
+  validate,
+  isAdmin,
+  permisoController.getByRole.bind(permisoController),
+)
+
+// GET /permisos/:id — permiso por ID
 router.get(
   "/:id",
   param("id").isInt({ min: 1 }).withMessage("ID inválido"),
@@ -112,21 +33,24 @@ router.get(
   permisoController.getById.bind(permisoController),
 )
 
-// router.post(
-//   "/",
-//   createPermisoValidator,
-//   validate,
-//   checkPermission(Recurso.PERMISOS, Accion.CREATE),
-//   permisoController.create.bind(permisoController),
-// )
+// POST /permisos/:roleId/assign/:permisoId — asignar permiso a rol
+router.post(
+  "/:roleId/assign/:permisoId",
+  param("roleId").isInt({ min: 1 }).withMessage("ID de rol inválido"),
+  param("permisoId").isInt({ min: 1 }).withMessage("ID de permiso inválido"),
+  validate,
+  isAdmin,
+  permisoController.assignToRole.bind(permisoController),
+)
 
-// router.put(
-//   "/:id",
-//   param("id").isInt({ min: 1 }).withMessage("ID inválido"),
-//   validate,
-//   checkPermission(Recurso.PERMISOS, Accion.UPDATE),
-//   permisoController.create.bind(permisoController),
-// )
-
+// DELETE /permisos/:roleId/remove/:permisoId — remover permiso de rol
+router.delete(
+  "/:roleId/remove/:permisoId",
+  param("roleId").isInt({ min: 1 }).withMessage("ID de rol inválido"),
+  param("permisoId").isInt({ min: 1 }).withMessage("ID de permiso inválido"),
+  validate,
+  isAdmin,
+  permisoController.removeFromRole.bind(permisoController),
+)
 
 export default router

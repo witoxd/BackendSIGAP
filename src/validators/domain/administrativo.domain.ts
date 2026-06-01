@@ -12,7 +12,7 @@ export const validateCreateAdministrativoDomain = async (
     const { administrativo, persona } = req.body
 
     // Validacion dominio con Sequelize 
-    await Administrativo.build(administrativo).validate({ skip: ["persona_id"] })
+    await Administrativo.build(administrativo).validate({ skip: ["persona_id", "docente_id"] })
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "fecha_nacimiento", "genero"] })
 
     return next()
@@ -42,7 +42,7 @@ export const validateUpdateAdministrativoDomain = async (
 
     // Para update, validamos solo los campos proporcionados
     if (administrativo) {
-      await Administrativo.build(administrativo).validate({ skip: ["persona_id"] })
+      await Administrativo.build(administrativo).validate({ skip: ["persona_id", "docente_id"] })
     }
     if (persona) {
       await Persona.build(persona).validate({ skip: ["tipo_documento_id", "numero_documento", "fecha_nacimiento", "genero"] })

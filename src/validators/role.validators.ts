@@ -3,8 +3,15 @@ import { body, type ValidationChain } from "express-validator"
 // HTTP Validators - Validacion de estructura de request
 export const createRoleHttpValidator: ValidationChain[] = [
   body("nombre")
-    .isIn(["admin", "profesor", "estudiante", "administrativo"])
-    .withMessage("El nombre debe ser admin, profesor, estudiante o administrativo"),
+    .isString()
+    .withMessage("El nombre debe ser texto")
+    .trim()
+    .notEmpty()
+    .withMessage("El nombre es requerido")
+    .isLength({ max: 100 })
+    .withMessage("El nombre debe tener máximo 100 caracteres")
+    .matches(/^[a-z0-9_]+$/)
+    .withMessage("El nombre solo puede contener letras minúsculas, números y guiones bajos"),
   body("descripcion")
     .optional()
     .isString()
@@ -16,8 +23,13 @@ export const createRoleHttpValidator: ValidationChain[] = [
 export const updateRoleHttpValidator: ValidationChain[] = [
   body("nombre")
     .optional()
-    .isIn(["admin", "profesor", "estudiante", "administrativo"])
-    .withMessage("El nombre debe ser admin, profesor, estudiante o administrativo"),
+    .isString()
+    .withMessage("El nombre debe ser texto")
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage("El nombre debe tener máximo 100 caracteres")
+    .matches(/^[a-z0-9_]+$/)
+    .withMessage("El nombre solo puede contener letras minúsculas, números y guiones bajos"),
   body("descripcion")
     .optional()
     .isString()
