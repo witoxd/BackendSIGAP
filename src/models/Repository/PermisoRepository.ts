@@ -76,4 +76,27 @@ export class PermisoRepository {
     )
     return result.rows[0].tiene_permiso
   }
+
+  // Reemplaza el loop N+1 de checkPermission en acl.ts.
+  // Recibe los nombres de los roles directamente desde el JWT y resuelve el
+  // permiso en una sola query en lugar de 2 queries por rol.
+  static async checkPermissionByRoles(
+    roleNames: string[],
+    recurso:   string,
+    accion:    string,
+  ): Promise<boolean> {
+    const result = await query(
+      `SELECT EXISTS(
+        SELECT 1
+        FROM roles r
+        INNER JOIN role_permisos rp ON rp.role_id    = r.role_id
+        INNER JOIN permisos p       ON rp.permiso_id = p.permiso_id
+        WHERE r.nombre = ANY($1::text[])
+          AND p.recurso = $2
+          AND (p.accion = $3 OR p.accion = 'manage')
+      ) AS tiene_permiso`,
+      [roleNames, recurso, accion],
+    )
+    return result.rows[0].tiene_permiso
+  }
 }

@@ -8,17 +8,18 @@ dotenv.config()
 
 export const FORCE_DATABASE_SYNC = process.env.FORCE_DATABASE_SYNC === "true"
 
+
 const poolConfig: PoolConfig = {
-  host: process.env.DB_HOST || "localhost",
-  port: Number.parseInt(process.env.DB_PORT || "5432"),
-  database: process.env.DB_NAME || "almirante_padilla",
-  user: process.env.DB_USER || "postgres",
+  host:     process.env.DB_HOST     || "localhost",
+  port:     Number.parseInt(process.env.DB_PORT || "5432"),
+  database: process.env.DB_NAME     || "almirante_padilla",
+  user:     process.env.DB_USER     || "postgres",
   password: process.env.DB_PASSWORD || "postgres",
-  min: Number.parseInt(process.env.DB_POOL_MIN || "2"),
-  max: Number.parseInt(process.env.DB_POOL_MAX || "10"),
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: Number.parseInt(process.env.DB_TIMEOUT || "5000"),
-  statement_timeout: Number.parseInt(process.env.DB_TIMEOUT || "5000"),
+  min:                    Number.parseInt(process.env.DB_POOL_MIN     || "5"),
+  max:                    Number.parseInt(process.env.DB_POOL_MAX     || "30"),
+  idleTimeoutMillis:      Number.parseInt(process.env.DB_IDLE_TIMEOUT || "60000"),
+  connectionTimeoutMillis: Number.parseInt(process.env.DB_CONN_TIMEOUT || "10000"),
+  statement_timeout:       Number.parseInt(process.env.DB_STMT_TIMEOUT || "30000"),
 }
 
 // pg Pool — Toda la capa DML: queries, inserts, updates, transacciones.
@@ -36,14 +37,14 @@ export const sequelize = new Sequelize({
   username: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD || "postgres",
   pool: {
-    min: Number.parseInt(process.env.DB_POOL_MIN || "2"),
-    max: Number.parseInt(process.env.DB_POOL_MAX || "10"),
-    acquire: Number.parseInt(process.env.DB_TIMEOUT || "5000"),
-    idle: 30000,
+    min:     Number.parseInt(process.env.DB_POOL_MIN     || "5"),
+    max:     Number.parseInt(process.env.DB_POOL_MAX     || "30"),
+    acquire: Number.parseInt(process.env.DB_CONN_TIMEOUT || "10000"),
+    idle:    Number.parseInt(process.env.DB_IDLE_TIMEOUT || "60000"),
   },
   logging: process.env.NODE_ENV === "development" ? console.log : false,
   define: {
-    timestamps: false, // Manejamos manualmente las fechas
+    timestamps: false, // Manejamos de manera manual las fechas
     underscored: true, // Usa snake_case para nombres de columnas
   },
 })
@@ -53,7 +54,7 @@ pool.on("error", (err) => {
   console.error("Unexpected error on idle client", err)
 })
 
-// SEGURIDAD: Siempre usa $1, $2, $3... con array de params para prevenir SQL injection
+// NOta de seguridad: Siempre usa $1, $2, $3... con array de params para evitar SQL injection
 export const query = async (
   text: string,
   params?: any[],

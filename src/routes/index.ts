@@ -1,4 +1,5 @@
-import { Router } from "express"
+import { Router }      from "express"
+import { writeLimiter } from "../middleware/rateLimiter"
 import authRoutes from "./auth.routes"
 import userRoutes from "./user.routes"
 import personaRoutes from "./persona.routes"
@@ -26,6 +27,19 @@ import decretoRoutes from "./decreto.routes"
 import gradoEscalafonRoutes from "./gradoEscalafon.routes"
 import auditoriaRoutes from "./auditoria.routes"
 const router = Router()
+
+// Limiter de escrituras: POST / PUT / PATCH / DELETE en toda la API.
+// Se excluyen las rutas de auth (tienen su propio limiter más estricto aplicado
+// directamente en auth.routes.ts). El keyGenerator usa userId del JWT.
+router.use((req, res, next) => {
+  const esEscritura = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method)
+  const esAuth      = req.path.startsWith("/auth")
+  if (esEscritura && !esAuth) {
+    writeLimiter(req, res, next)
+    return
+  }
+  next()
+})
 
 router.use("/auth", authRoutes) //listo
 router.use("/users", userRoutes) //listo
